@@ -1,0 +1,98 @@
+﻿namespace BCCStudents.Presentation
+{
+    partial class StatusChangeGroupsForm
+    {
+        private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.ComboBox cmbGroups;
+        private System.Windows.Forms.Label lblSelectGroup;
+        private System.Windows.Forms.Button btnOk;
+        private System.Windows.Forms.Button btnAllGroups;
+        private System.Windows.Forms.Button btnCancel;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private void InitializeComponent()
+        {
+            this.cmbGroups = new System.Windows.Forms.ComboBox();
+            this.lblSelectGroup = new System.Windows.Forms.Label();
+            this.btnOk = new System.Windows.Forms.Button();
+            this.btnAllGroups = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
+            this.SuspendLayout();
+            // 
+            // lblSelectGroup
+            // 
+            this.lblSelectGroup.AutoSize = true;
+            this.lblSelectGroup.Location = new System.Drawing.Point(20, 20);
+            this.lblSelectGroup.Name = "lblSelectGroup";
+            this.lblSelectGroup.Size = new System.Drawing.Size(120, 13);
+            this.lblSelectGroup.TabIndex = 0;
+            this.lblSelectGroup.Text = "áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡:";
+            // 
+            // cmbGroups
+            // 
+            this.cmbGroups.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbGroups.FormattingEnabled = true;
+            this.cmbGroups.Location = new System.Drawing.Point(23, 45);
+            this.cmbGroups.Name = "cmbGroups";
+            this.cmbGroups.Size = new System.Drawing.Size(220, 21);
+            this.cmbGroups.TabIndex = 1;
+            // 
+            // btnOk
+            // 
+            this.btnOk.Location = new System.Drawing.Point(23, 85);
+            this.btnOk.Name = "btnOk";
+            this.btnOk.Size = new System.Drawing.Size(70, 25);
+            this.btnOk.TabIndex = 2;
+            this.btnOk.Text = "OK";
+            this.btnOk.UseVisualStyleBackColor = true;
+            this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
+            // 
+            // btnAllGroups
+            // 
+            this.btnAllGroups.Location = new System.Drawing.Point(100, 85);
+            this.btnAllGroups.Name = "btnAllGroups";
+            this.btnAllGroups.Size = new System.Drawing.Size(90, 25);
+            this.btnAllGroups.TabIndex = 3;
+            this.btnAllGroups.Text = "áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜";
+            this.btnAllGroups.UseVisualStyleBackColor = true;
+            this.btnAllGroups.Click += new System.EventHandler(this.btnAllGroups_Click);
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(197, 85);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(70, 25);
+            this.btnCancel.TabIndex = 4;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
+            // StatusChangeGroupsForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(290, 130);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnAllGroups);
+            this.Controls.Add(this.btnOk);
+            this.Controls.Add(this.cmbGroups);
+            this.Controls.Add(this.lblSelectGroup);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "StatusChangeGroupsForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ¨áƒ˜";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+        }
+    }
+} 

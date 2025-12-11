@@ -1,0 +1,729 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platforms>AnyCPU;x64</Platforms>
+    <ProjectGuid>{9ED2C964-79D7-4D46-9659-DCF43BE7255B}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>BCCStudents</RootNamespace>
+    <AssemblyName>BCCStudents</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
+    <StartupObject>BCCStudents.Program</StartupObject>
+    <ResolveComReferencesSilently>true</ResolveComReferencesSilently>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ResolveComReferences>false</ResolveComReferences>
+    <RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <TargetCulture>ka-GE</TargetCulture>
+    <ProductName>Student Management</ProductName>
+    <PublisherName>ბოლნისის კულტურის ცენტრი</PublisherName>
+    <ApplicationRevision>3</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>true</UseApplicationTrust>
+    <CreateDesktopShortcut>true</CreateDesktopShortcut>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\BCCStudents.xml</DocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>EEE04B8A0F147E6D3AF39BF38B581D4F480C3661</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>BCCStudents_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BouncyCastle.Cryptography">
+      <HintPath>..\packages\BouncyCastle.Cryptography.2.6.2\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
+    </Reference>
+    <Reference Include="ClosedXML">
+      <HintPath>..\packages\ClosedXML.0.104.2\lib\netstandard2.0\ClosedXML.dll</HintPath>
+    </Reference>
+    <Reference Include="ClosedXML.Parser">
+      <HintPath>..\packages\ClosedXML.Parser.1.2.0\lib\netstandard2.0\ClosedXML.Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="DocumentFormat.OpenXml">
+      <HintPath>..\packages\DocumentFormat.OpenXml.3.1.1\lib\net46\DocumentFormat.OpenXml.dll</HintPath>
+    </Reference>
+    <Reference Include="DocumentFormat.OpenXml.Framework">
+      <HintPath>..\packages\DocumentFormat.OpenXml.Framework.3.1.1\lib\net46\DocumentFormat.OpenXml.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelNumberFormat">
+      <HintPath>..\packages\ExcelNumberFormat.1.1.0\lib\net20\ExcelNumberFormat.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>..\packages\Google.Protobuf.3.32.0\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4">
+      <HintPath>..\packages\K4os.Compression.LZ4.1.3.8\lib\net462\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4.Streams">
+      <HintPath>..\packages\K4os.Compression.LZ4.Streams.1.3.8\lib\net462\K4os.Compression.LZ4.Streams.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Hash.xxHash">
+      <HintPath>..\packages\K4os.Hash.xxHash.1.0.8\lib\net462\K4os.Hash.xxHash.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.10.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode">
+      <HintPath>..\packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.10.0.0\lib\net462\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.10.0.0\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Toolkit.Uwp.Notifications">
+      <HintPath>..\packages\Microsoft.Toolkit.Uwp.Notifications.7.1.3\lib\net461\Microsoft.Toolkit.Uwp.Notifications.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data">
+      <HintPath>..\packages\MySql.Data.9.5.0\lib\net462\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationFramework" />
+    <Reference Include="RBush">
+      <HintPath>..\packages\RBush.4.0.0\lib\net47\RBush.dll</HintPath>
+    </Reference>
+    <Reference Include="SixLabors.Fonts">
+      <HintPath>..\packages\SixLabors.Fonts.1.0.0\lib\netstandard2.0\SixLabors.Fonts.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers">
+      <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.ConfigurationManager">
+      <HintPath>..\packages\System.Configuration.ConfigurationManager.8.0.0\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Diagnostics.DiagnosticSource">
+      <HintPath>..\packages\System.Diagnostics.DiagnosticSource.8.0.1\lib\net462\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Pipelines">
+      <HintPath>..\packages\System.IO.Pipelines.10.0.0\lib\net462\System.IO.Pipelines.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Management" />
+    <Reference Include="System.Memory">
+      <HintPath>..\packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>..\packages\System.Text.Encodings.Web.10.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>..\packages\System.Text.Json.10.0.0\lib\net462\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.6.3\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.6.1\lib\net462\System.ValueTuple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="ToastNotifications">
+      <HintPath>..\packages\ToastNotifications.2.5.1\lib\net40\ToastNotifications.dll</HintPath>
+    </Reference>
+    <Reference Include="ToastNotifications.Messages">
+      <HintPath>..\packages\ToastNotifications.Messages.2.5.1\lib\net40\ToastNotifications.Messages.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="ZstdSharp">
+      <HintPath>..\packages\ZstdSharp.Port.0.8.6\lib\net462\ZstdSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Class\AdminCodeManager.cs" />
+    <Compile Include="Class\BackupManager.cs" />
+    <Compile Include="Class\ImportEventArgs.cs" />
+    <Compile Include="Class\OperationResultContext.cs" />
+    <Compile Include="Class\SmsService.cs" />
+    <Compile Include="Core\ApprovalResult.cs" />
+    <Compile Include="Core\ImportResult.cs" />
+    <Compile Include="Core\PaymentDetail.cs" />
+    <Compile Include="Core\PendingStudents.cs" />
+    <Compile Include="Core\PendingStudentSubGroup.cs" />
+    <Compile Include="Core\RegisterUserModel.cs" />
+    <Compile Include="Core\SmsSendResult.cs" />
+    <Compile Include="Core\StudentSubGroups.cs" />
+    <Compile Include="Core\UserInfo.cs" />
+    <Compile Include="Core\UserModel.cs" />
+    <Compile Include="Data\Configuration\BackupConfig.cs" />
+    <Compile Include="Data\FormTitleHelper.cs" />
+    <Compile Include="Data\Repositories\Implementations\CleanupRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\PendingStudentGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\PendingStudentRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\StudentGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\StudentSubGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\SubGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\UserRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\ICleanupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IExcelPaymentImportService.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IGroupService.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IImportService.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IPendingStudentGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IPendingStudentRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IStudentGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IStudentRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IStudentSubGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\ISubGroupRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IUserRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IUserService.cs" />
+    <Compile Include="ImportTestHelper.cs" />
+    <Compile Include="Models\AnalyzedPayment.cs" />
+    <Compile Include="Services\AutoFileDetection\AutoFileDetectionConfig.cs" />
+    <Compile Include="Services\AutoFileDetection\AutoFileDetectionManager.cs" />
+    <Compile Include="Services\AutoFileDetection\AutoFileDetectionService.cs" />
+    <Compile Include="Services\AutoFileDetection\AutoImportNotificationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Services\AutoFileDetection\FileTrackingRepository.cs" />
+    <Compile Include="Services\AutoFileDetection\IFileTrackingRepository.cs" />
+    <Compile Include="Services\CleanupService.cs" />
+    <Compile Include="Services\ConfigurationService.cs" />
+    <Compile Include="Services\ConnectionMonitorService.cs" />
+    <Compile Include="Services\ConnectionService.cs" />
+    <Compile Include="Services\Discount.cs" />
+    <Compile Include="Services\DocumentConfig.cs" />
+    <Compile Include="Services\DocumentService.cs" />
+    <Compile Include="Services\ExcelPaymentImportService.cs" />
+    <Compile Include="Services\ImportService.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IPendingStudentService.cs" />
+    <Compile Include="Services\PaymentDateService.cs" />
+    <Compile Include="Services\PaymentDescriptionAnalyzer.cs" />
+    <Compile Include="Services\PendingStudentService.cs" />
+    <Compile Include="Services\StatisticsService.cs" />
+    <Compile Include="Services\StudentExportService.cs" />
+    <Compile Include="Services\SubGroupService.cs" />
+    <Compile Include="Services\UserService.cs" />
+    <Compile Include="UI\AdminCodePrompt.cs">
+      <SubType>Form</SubType>
+    </Compile>
+            <Compile Include="UI\AdminPanelForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\BaseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\PaymentTestForm.cs" />
+    <Compile Include="UI\PaymentTestForm.Designer.cs" />
+    <Compile Include="UI\SyncStatusControl.cs" />
+    <Compile Include="UI\AdminPanelForm.Designer.cs">
+      <DependentUpon>AdminPanelForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data\Repositories\Implementations\BalanceRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IBalanceRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\ILoggerRepository.cs" />
+    <Compile Include="Data\Repositories\Interfaces\IPaymentRepository.cs" />
+    <Compile Include="Class\PaymentResult.cs" />
+    <Compile Include="Class\PaymentSource.cs" />
+    <Compile Include="UI\BackupContentViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\BackupContentViewerForm.designer.cs">
+      <DependentUpon>BackupContentViewerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\BackupManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\BackupManagementForm.designer.cs">
+      <DependentUpon>BackupManagementForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\ConnectionSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ConnectionSettingsForm.Designer.cs">
+      <DependentUpon>ConnectionSettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\ContractPrintForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ContractPrintForm.Designer.cs">
+      <DependentUpon>ContractPrintForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data\DatabaseHelper.cs" />
+    <Compile Include="Core\UserSession.cs" />
+    <Compile Include="Data\Repositories\Implementations\GroupRepository.cs" />
+    <Compile Include="DataBase\PaymentLogger.cs" />
+    <Compile Include="Data\Repositories\Implementations\PaymentRepository.cs" />
+    <Compile Include="Data\Repositories\Implementations\StudentRepository.cs" />
+    <Compile Include="UI\FailedStudentsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FailedStudentsForm.Designer.cs">
+      <DependentUpon>FailedStudentsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\FinanceManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FinanceManagementForm.Designer.cs">
+      <DependentUpon>FinanceManagementForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\GroupDiscountForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ImportTestForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ImportTestForm.designer.cs">
+      <DependentUpon>ImportTestForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\StudentGroupAssignmentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\GroupsEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\GroupsEdit.Designer.cs">
+      <DependentUpon>GroupsEdit.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\ImportForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ImportForm.Designer.cs">
+      <DependentUpon>ImportForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data\JSON\StudentJsonHelper.cs" />
+    <Compile Include="Data\Repositories\Implementations\LoggerRepository.cs" />
+    <Compile Include="UI\LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\LoginForm.Designer.cs">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\LogViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Group.cs" />
+    <Compile Include="UI\GroupManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\GroupManagementForm.Designer.cs">
+      <DependentUpon>GroupManagementForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Payment.cs" />
+    <Compile Include="Services\PaymentDateManager.cs" />
+    <Compile Include="UI\PaymentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\PaymentForm.Designer.cs">
+      <DependentUpon>PaymentForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\PaymentSummary.cs" />
+    <Compile Include="UI\PaymentImportHistoryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\PaymentImportHistoryForm.designer.cs">
+      <DependentUpon>PaymentImportHistoryForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\PaymentsImportForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\PaymentsImportForm.Designer.cs">
+      <DependentUpon>PaymentsImportForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\PendingStudentsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\PendingStudentsForm.Designer.cs">
+      <DependentUpon>PendingStudentsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\RegisterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\RegisterForm.Designer.cs">
+      <DependentUpon>RegisterForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Services\GroupService.cs" />
+    <Compile Include="Services\PaymentService.cs" />
+    <Compile Include="Services\Update\UpdateService.cs" />
+    <Compile Include="UI\UpdateProgressForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\UpdateProgressForm.Designer.cs">
+      <DependentUpon>UpdateProgressForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Services\StudentService.cs" />
+    <Compile Include="Services\Sync\SyncChangePayload.cs" />
+    <Compile Include="Services\Sync\SyncLogger.cs" />
+    <Compile Include="Services\Sync\SyncOperationType.cs" />
+    <Compile Include="Services\Sync\SyncStatusEventArgs.cs" />
+    <Compile Include="Services\Sync\DownStream\IDownStreamSyncService.cs" />
+    <Compile Include="Services\Sync\DownStream\DownStreamDataFetcher.cs" />
+    <Compile Include="Services\Sync\DownStream\DownStreamSyncRepository.cs" />
+    <Compile Include="Services\Sync\DownStream\DownStreamSyncService.cs" />
+    <Compile Include="Services\Sync\DownStream\DownStreamConflictResolver.cs" />
+    <Compile Include="Services\Sync\DownStream\DownStreamSyncManager.cs" />
+    <Compile Include="Services\Sync\DownStream\SyncResult.cs" />
+    <Compile Include="Services\Sync\DownStream\TableSyncResult.cs" />
+    <Compile Include="Services\Sync\DownStream\SyncStateRecord.cs" />
+    <Compile Include="Services\Sync\UpStream\IUpStreamSyncRepository.cs" />
+    <Compile Include="Services\Sync\UpStream\IUpStreamSyncService.cs" />
+    <Compile Include="Services\Sync\UpStream\UpStreamChangeTracker.cs" />
+    <Compile Include="Services\Sync\UpStream\UpStreamPayloadBuilder.cs" />
+    <Compile Include="Services\Sync\UpStream\UpStreamSyncRepository.cs" />
+    <Compile Include="Services\Sync\UpStream\UpStreamSyncService.cs" />
+    <Compile Include="Services\Sync\UpStream\UpStreamSyncManager.cs" />
+    <Compile Include="Services\Sync\UpStream\SyncOutboxItem.cs" />
+    <Compile Include="UI\SetStudyStartDateForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\SetStudyStartDateForm.Designer.cs">
+      <DependentUpon>SetStudyStartDateForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\SettingsForm.Designer.cs">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\StatisticsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\StatisticsForm.Designer.cs">
+      <DependentUpon>StatisticsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\Student.cs" />
+    <Compile Include="Class\StudentCodeGenerator.cs" />
+    <Compile Include="Core\StudentGroups.cs" />
+    <Compile Include="UI\StatusChangeGroupsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\StatusChangeGroupsForm.designer.cs">
+      <DependentUpon>StatusChangeGroupsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\StudentManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\StudentManagementForm.Designer.cs">
+      <DependentUpon>StudentManagementForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Class\StudyStartDateManager.cs" />
+    <Compile Include="Core\SubGroup.cs" />
+    <Compile Include="UI\StudentsEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\StudentsEditForm.designer.cs">
+      <DependentUpon>StudentsEditForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\GroupDiscountForm.Designer.cs">
+      <DependentUpon>GroupDiscountForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\StudentGroupAssignmentForm.Designer.cs">
+      <DependentUpon>StudentGroupAssignmentForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\UnmatchedPaymentsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\UnmatchedPaymentsForm.designer.cs">
+      <DependentUpon>UnmatchedPaymentsForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="UI\AdminPanelForm.resx">
+      <DependentUpon>AdminPanelForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\BackupContentViewerForm.resx">
+      <DependentUpon>BackupContentViewerForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\BackupManagementForm.resx">
+      <DependentUpon>BackupManagementForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ConnectionSettingsForm.resx">
+      <DependentUpon>ConnectionSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ContractPrintForm.resx">
+      <DependentUpon>ContractPrintForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\FailedStudentsForm.resx">
+      <DependentUpon>FailedStudentsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\FinanceManagementForm.resx">
+      <DependentUpon>FinanceManagementForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\GroupManagementForm.resx">
+      <DependentUpon>GroupManagementForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\GroupsEdit.resx">
+      <DependentUpon>GroupsEdit.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\GroupDiscountForm.resx">
+      <DependentUpon>GroupDiscountForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\StudentGroupAssignmentForm.resx">
+      <DependentUpon>StudentGroupAssignmentForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ImportForm.resx">
+      <DependentUpon>ImportForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\PaymentForm.resx">
+      <DependentUpon>PaymentForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\PaymentImportHistoryForm.resx">
+      <DependentUpon>PaymentImportHistoryForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\PaymentsImportForm.resx">
+      <DependentUpon>PaymentsImportForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="UI\PendingStudentsForm.resx">
+      <DependentUpon>PendingStudentsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\RegisterForm.resx">
+      <DependentUpon>RegisterForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SetStudyStartDateForm.resx">
+      <DependentUpon>SetStudyStartDateForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\StatisticsForm.resx">
+      <DependentUpon>StatisticsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\StudentManagementForm.resx">
+      <DependentUpon>StudentManagementForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\StudentsEditForm.resx">
+      <DependentUpon>StudentsEditForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\UnmatchedPaymentsForm.resx">
+      <DependentUpon>UnmatchedPaymentsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="App.config" />
+    <None Include="BackupSystem_README.md" />
+    <None Include="BackupViewer_README.md" />
+    <None Include="BCCStudentsInstaller.iss" />
+    <None Include="BCCStudents_TemporaryKey.pfx" />
+    <None Include="DebugEncoding_README.md" />
+    <None Include="GeorgianEncoding_README.md" />
+    <None Include="GeorgianTextDecoder_README.md" />
+    <None Include="MySQLBackup_README.md" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\Configuration\App.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="libmysql.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libcrypto-1_1-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libssl-1_1-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libcrypto-1_1.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libssl-1_1.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AppIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Resources\AppIcon.ico" />
+    <None Include="Resources\Icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ClosedXML">
+      <Version>0.104.2</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection">
+      <Version>9.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
+      <Version>7.1.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client">
+      <Version>19.225.1</Version>
+    </PackageReference>
+    <PackageReference Include="MySql.Data">
+      <Version>9.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="SQLite.Interop.dll">
+      <Version>1.0.103</Version>
+    </PackageReference>
+    <PackageReference Include="System.Data.SQLite">
+      <Version>1.0.119</Version>
+    </PackageReference>
+    <PackageReference Include="ToastNotifications.Messages">
+      <Version>2.5.1</Version>
+    </PackageReference>
+    <PackageReference Include="Tools.InnoSetup">
+      <Version>6.4.3</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Microsoft.Office.Core">
+      <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>7</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Interop.Word">
+      <Guid>{00020905-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>8</VersionMajor>
+      <VersionMinor>6</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="VBIDE">
+      <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>5</VersionMajor>
+      <VersionMinor>3</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

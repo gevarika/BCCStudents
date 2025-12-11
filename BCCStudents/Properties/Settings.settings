@@ -1,0 +1,104 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+	<Settings>
+		<Setting Name="SmsApiKey" Type="System.String" Scope="User">
+			<Value Profile="(Default)">bd1199c025234dfab9da6331d6c5be20</Value>
+		</Setting>
+		<Setting Name="SmsText_Registration" Type="System.String" Scope="User">
+			<Value Profile="(Default)">მოგესალმებით, თქვენ რეგისტრირდით</Value>
+		</Setting>
+		<Setting Name="SmsText_Payment" Type="System.String" Scope="User">
+			<Value Profile="(Default)">გადახდა შესრულებულია ✅</Value>
+		</Setting>
+		<Setting Name="SmsText_UpcomingReminder" Type="System.String" Scope="User">
+			<Value Profile="(Default)">მოგახსენებთ, რომ გადახდის თარიღი ახლოვდება</Value>
+		</Setting>
+		<Setting Name="SmsText_OverdueReminder" Type="System.String" Scope="User">
+			<Value Profile="(Default)">გადახდის ვადა გადავიდა ⚠️</Value>
+		</Setting>
+		<Setting Name="SmsEnabled" Type="System.boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		<Setting Name="IsTestDb" Type="System.boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		
+		<!-- ბექაპის კონფიგურაციის პარამეტრები -->
+		<Setting Name="BackupDirectory" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="BackupIntervalHours" Type="System.Int32" Scope="User">
+			<Value Profile="(Default)">24</Value>
+		</Setting>
+		<Setting Name="BackupIntervalMinutes" Type="System.Int32" Scope="User">
+			<Value Profile="(Default)">1440</Value>
+		</Setting>
+		<Setting Name="MaxBackupFiles" Type="System.Int32" Scope="User">
+			<Value Profile="(Default)">30</Value>
+		</Setting>
+		<Setting Name="AutoBackupEnabled" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		<Setting Name="MySqlDumpPath" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="ServerHost" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="DatabaseName" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="BackupUsername" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="BackupPassword" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="Username" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="Password" Type="System.String" Scope="User">
+			<Value Profile="(Default)"></Value>
+		</Setting>
+		<Setting Name="LastBackupTime" Type="System.DateTime" Scope="User">
+			<Value Profile="(Default)">1900-01-01</Value>
+		</Setting>
+		<Setting Name="DbChangedSinceLastBackup" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">false</Value>
+		</Setting>
+		<Setting Name="UseLocalDb" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		<Setting Name="AutoDownstreamSyncEnabled" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">false</Value>
+		</Setting>
+		<Setting Name="AutoUpstreamSyncEnabled" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		<Setting Name="AutoUpdateEnabled" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">true</Value>
+		</Setting>
+		<Setting Name="LocalMySqlConnectionString" Type="System.String" Scope="User">
+			<Value Profile="(Default)">Server=localhost;Port=3307;Database=bccstudents_local;User=root;Password=Admin.25;SslMode=Preferred;CharSet=utf8mb4;</Value>
+		</Setting>
+		<Setting Name="ServerMySqlConnectionString" Type="System.String" Scope="User">
+			<Value Profile="(Default)">Server=bccenter.ge;Port=3306;Database=bccenter_SchoolManagement;User=bccenter_schoolAdmin25;Password=@wh0X0kpPHey</Value>
+		</Setting>
+		<Setting Name="LocalMySqlConnectionString_Test" Type="System.String" Scope="User">
+			<Value Profile="(Default)">Server=localhost;Port=3307;Database=bccstudents_local_test;User=root;Password=Admin.25;SslMode=Preferred;CharSet=utf8mb4;</Value>
+		</Setting>
+		<Setting Name="ServerMySqlConnectionString_Test" Type="System.String" Scope="User">
+			<Value Profile="(Default)">Server=bccenter.ge;Port=3306;Database=bccenter_SchoolManagement_Test;User=bccenter_schoolAdmin25;Password=@wh0X0kpPHey</Value>
+		</Setting>
+		<Setting Name="UpgradeRequired" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">True</Value>
+		</Setting>
+		<Setting Name="AdminCode" Type="System.String" Scope="User">
+			<Value Profile="(Default)">admin123</Value>
+		</Setting>
+		
+	</Settings>
+</SettingsFile>
