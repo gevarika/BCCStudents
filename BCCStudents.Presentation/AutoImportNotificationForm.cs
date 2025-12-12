@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using BCCStudents.Application.Services;
 using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -17,7 +19,7 @@ namespace BCCStudents.Presentation
         private readonly List<DetectedFile> _newFiles;
         private readonly AutoFileDetectionService _detectionService;
         private readonly IExcelPaymentImportService _importService;
-        private readonly PaymentDescriptionAnalyzer _descriptionAnalyzer;
+        private readonly IPaymentDescriptionAnalyzer _descriptionAnalyzer;
         
         public List<DetectedFile> SelectedFiles { get; private set; }
         public bool ShouldOpenImportForm { get; private set; } = false;
@@ -26,7 +28,7 @@ namespace BCCStudents.Presentation
             List<DetectedFile> newFiles,
             AutoFileDetectionService detectionService,
             IExcelPaymentImportService importService,
-            PaymentDescriptionAnalyzer descriptionAnalyzer)
+            IPaymentDescriptionAnalyzer descriptionAnalyzer)
         {
             _newFiles = newFiles;
             _detectionService = detectionService;

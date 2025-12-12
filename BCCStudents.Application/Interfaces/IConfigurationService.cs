@@ -28,6 +28,20 @@ namespace BCCStudents.Domain.Interfaces
         string BackupPassword { get; set; }
         
         void Save();
+        
+        /// <summary>
+        /// წაიკითხავს კავშირის სტრიქონს App.config-დან
+        /// </summary>
+        /// <param name="connectionStringName">კავშირის სტრიქონის სახელი App.config-ში</param>
+        /// <returns>კავშირის სტრიქონი, ან null თუ არ მოიძებნა</returns>
+        string GetConnectionString(string connectionStringName);
+        
+        /// <summary>
+        /// ინახავს კავშირის სტრიქონს App.config-ში
+        /// </summary>
+        /// <param name="connectionStringName">კავშირის სტრიქონის სახელი App.config-ში</param>
+        /// <param name="connectionString">კავშირის სტრიქონი შესანახად</param>
+        void SaveConnectionString(string connectionStringName, string connectionString);
     }
 }
 

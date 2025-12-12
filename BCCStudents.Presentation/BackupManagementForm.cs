@@ -9,16 +9,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
+using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
     public partial class BackupManagementForm : Form
     {
+        private readonly BackupManager _backupManager;
         private List<BackupInfo> _backups;
         private bool _isLoading = false;
 
-        public BackupManagementForm()
+        public BackupManagementForm(BackupManager backupManager)
         {
+            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             InitializeComponent();
             InitializeForm();
             LoadBackups();
@@ -127,9 +130,9 @@ namespace BCCStudents.Presentation
                 
                 // áƒ•áƒáƒ©áƒ•áƒ”áƒœáƒáƒ— áƒžáƒ áƒáƒ’áƒ áƒ”áƒ¡áƒ˜
                 lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒ”áƒ¥áƒáƒžáƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ...";
-                Application.DoEvents();
+                System.Windows.Forms.Application.DoEvents();
                 
-                _backups = await Task.Run(() => BackupManager.GetBackupList());
+                _backups = await Task.Run(() => _backupManager.GetBackupList());
                 
                 // áƒ’áƒáƒ•áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒ— áƒ—áƒáƒ áƒ˜áƒ¦áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—
                 ApplyDateFilter();
@@ -167,9 +170,9 @@ namespace BCCStudents.Presentation
             {
                 btnCreateBackup.Enabled = false;
                 lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ...";
-                Application.DoEvents();
+                System.Windows.Forms.Application.DoEvents();
                 
-                bool success = BackupManager.CreatePeriodicBackup();
+                bool success = _backupManager.CreatePeriodicBackup();
                 
                 if (success)
                 {
@@ -215,9 +218,9 @@ namespace BCCStudents.Presentation
                 {
                     btnRestoreBackup.Enabled = false;
                     lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ...";
-                    Application.DoEvents();
+                    System.Windows.Forms.Application.DoEvents();
                     
-                    bool success = BackupManager.RestoreBackup(selectedBackup.FilePath);
+                    bool success = _backupManager.RestoreBackup(selectedBackup.FilePath);
                     
                     if (success)
                     {
@@ -282,12 +285,12 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                if (!Directory.Exists(BackupManager.BackupDirectory))
+                if (!Directory.Exists(_backupManager.BackupDirectory))
                 {
-                    Directory.CreateDirectory(BackupManager.BackupDirectory);
+                    Directory.CreateDirectory(_backupManager.BackupDirectory);
                 }
                 
-                System.Diagnostics.Process.Start("explorer.exe", BackupManager.BackupDirectory);
+                System.Diagnostics.Process.Start("explorer.exe", _backupManager.BackupDirectory);
             }
             catch (Exception ex)
             {
@@ -300,8 +303,8 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                BackupManager.AutoBackupEnabled = true;
-                BackupManager.InitializePeriodicBackup();
+                _backupManager.AutoBackupEnabled = true;
+                _backupManager.InitializePeriodicBackup();
                 UpdateAutoBackupStatus();
                 MessageBox.Show("áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -316,8 +319,8 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                BackupManager.AutoBackupEnabled = false;
-                BackupManager.StopPeriodicBackup();
+                _backupManager.AutoBackupEnabled = false;
+                _backupManager.StopPeriodicBackup();
                 UpdateAutoBackupStatus();
                 MessageBox.Show("áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ’áƒáƒ›áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -342,9 +345,9 @@ namespace BCCStudents.Presentation
 
         private void UpdateAutoBackupStatus()
         {
-            if (BackupManager.AutoBackupEnabled)
+                if (_backupManager.AutoBackupEnabled)
             {
-                lblAutoBackupStatus.Text = $"áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ (áƒ˜áƒœáƒ¢áƒ”áƒ áƒ•áƒáƒšáƒ˜: {BackupManager.BackupIntervalHours} áƒ¡áƒáƒáƒ—áƒ˜)";
+                lblAutoBackupStatus.Text = $"áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ (áƒ˜áƒœáƒ¢áƒ”áƒ áƒ•áƒáƒšáƒ˜: {_backupManager.BackupIntervalHours} áƒ¡áƒáƒáƒ—áƒ˜)";
                 lblAutoBackupStatus.ForeColor = Color.Green;
                 btnEnableAutoBackup.Enabled = false;
                 btnDisableAutoBackup.Enabled = true;
@@ -357,9 +360,9 @@ namespace BCCStudents.Presentation
                 btnDisableAutoBackup.Enabled = false;
             }
             
-            if (BackupManager.LastBackupTime != DateTime.MinValue)
+            if (_backupManager.LastBackupTime != DateTime.MinValue)
             {
-                lblLastBackup.Text = $"áƒ‘áƒáƒšáƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜: {BackupManager.LastBackupTime:yyyy-MM-dd HH:mm}";
+                lblLastBackup.Text = $"áƒ‘áƒáƒšáƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜: {_backupManager.LastBackupTime:yyyy-MM-dd HH:mm}";
             }
             else
             {

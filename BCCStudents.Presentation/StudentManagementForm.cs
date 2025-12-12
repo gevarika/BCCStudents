@@ -15,6 +15,8 @@ using Microsoft.Extensions.DependencyInjection;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
+using BCCStudents.Infrastructure.Services;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -28,15 +30,19 @@ namespace BCCStudents.Presentation
         //private readonly ImportService _importService;
         private readonly StudentCodeGenerator _studentCodeGenerator;
         private readonly IServiceProvider _serviceProvider;
+        private readonly BackupManager _backupManager;
+        private readonly ISmsService _smsservice;
         //UserSession _userSession = new UserSession();
         public StudentManagementForm(
             StudentService studentService,
             GroupService groupService, 
-            SubGroupService subGroupService, 
+            SubGroupService subGroupService,
             StudentCodeGenerator studentCodeGenerator,
             IServiceProvider serviceProvider,
             PaymentDateService paymentDateService,
-            StudentExportService studentExportService
+            StudentExportService studentExportService,
+            BackupManager backupManager,
+            ISmsService smsService
             //LoginForm loginForm
             )
         {
@@ -51,6 +57,8 @@ namespace BCCStudents.Presentation
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია");
             else FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია - სატესტო რეჟიმი");
+            _backupManager = backupManager;
+            _smsservice = smsService;
         }
         private void LoadCachedTextsFromFile(string filePath, TextBox textBox)
         {
@@ -200,16 +208,15 @@ namespace BCCStudents.Presentation
 
                 if (success)
                 {
-                    BackupManager.DbChangedSinceLastBackup = true;
+                    _backupManager.DbChangedSinceLastBackup = true;
 
                     MessageBox.Show("სტუდენტი წარმატებით დაემატა!", "დადასტურება", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     //ClearFields();
                     LoadStudents();
                     if (Properties.Settings.Default.SmsEnabled)
                     {
-                        var smsService = new SmsService();
                         var message = Properties.Settings.Default.SmsText_Registration;
-                        var smsresult = await smsService.SendSmsAsync(student.PhoneNumber, message);
+                        var smsresult = await _smsservice.SendSmsAsync(student.PhoneNumber, message);
                         if (smsresult.Success)
                         {
                             MessageBox.Show("SMS გაგზავნილია!");

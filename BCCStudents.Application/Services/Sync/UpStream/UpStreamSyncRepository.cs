@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using BCCStudents.Infrastructure.Data;
 using MySql.Data.MySqlClient;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Domain.Entities;
 
@@ -14,14 +14,14 @@ namespace BCCStudents.Application.Services.Sync.UpStream
     /// </summary>
     public class UpStreamSyncRepository : IUpStreamSyncRepository
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
         private readonly object _schemaLock = new object();
         private bool _schemaEnsured;
 
-        public UpStreamSyncRepository(DatabaseHelper databaseHelper, ISyncLogger logger)
+        public UpStreamSyncRepository(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -37,7 +37,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
             try
             {
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     var sql = @"INSERT INTO SyncOutbox (TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, Status) 
@@ -79,7 +79,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
             try
             {
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                     var sql = @"SELECT Id, TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, LastError
@@ -128,7 +128,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             cancellationToken.ThrowIfCancellationRequested();
             EnsureSchema();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 var sql = @"UPDATE SyncOutbox
@@ -150,7 +150,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             cancellationToken.ThrowIfCancellationRequested();
             EnsureSchema();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 var sql = @"UPDATE SyncOutbox
@@ -176,7 +176,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             {
                 if (_schemaEnsured) return;
 
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
 

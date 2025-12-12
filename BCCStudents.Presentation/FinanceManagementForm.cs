@@ -12,6 +12,7 @@ using BCCStudents.Presentation.Properties;
 using BCCStudents.Application.Services;
 
 using Microsoft.Extensions.DependencyInjection;
+using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {

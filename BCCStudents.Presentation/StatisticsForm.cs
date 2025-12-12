@@ -6,15 +6,16 @@ using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
     public partial class StatisticsForm : Form
     {
-        private readonly StatisticsService _statisticsService;
+        private readonly IStatisticsService _statisticsService;
         private readonly IGroupRepository _groupRepository;
 
-        public StatisticsForm(StatisticsService statisticsService, IGroupRepository groupRepository)
+        public StatisticsForm(IStatisticsService statisticsService, IGroupRepository groupRepository)
         {
             InitializeComponent();
             _statisticsService = statisticsService;

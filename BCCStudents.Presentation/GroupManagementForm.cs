@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Services;
+using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
@@ -10,10 +11,11 @@ namespace BCCStudents.Presentation
     {
         private readonly GroupService _groupService;
         private readonly SubGroupService _subGroupService;
+        private readonly BackupManager _backupManager;
         private Button btnDeleteGroup;
         private int? _currentGroupId = null; // კლასის member
         private SubGroup _subgroup;
-        public GroupManagementForm(GroupService groupService, SubGroupService subGroupService)
+        public GroupManagementForm(GroupService groupService, SubGroupService subGroupService, BackupManager backupManager)
         {
             InitializeComponent();
             if (!Properties.Settings.Default.IsTestDb)
@@ -21,6 +23,7 @@ namespace BCCStudents.Presentation
             else FormTitleHelper.SetTitle(this, "ახალი ჯგუფების და ქვეჯგუფების შექმნა - სატესტო რეჟიმი");
             _groupService = groupService;
             _subGroupService = subGroupService;
+            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             btnDeleteGroup = new Button { Text = "წაშლა", Width = 80 };
             btnDeleteGroup.Enabled = false;
             btnDeleteGroup.TabIndex = 8;
@@ -131,7 +134,7 @@ namespace BCCStudents.Presentation
             }
             else
             {
-                BackupManager.DbChangedSinceLastBackup = true;
+                _backupManager.DbChangedSinceLastBackup = true;
 
                 if (cmbSubGroupCount.SelectedIndex > 0)
                 {

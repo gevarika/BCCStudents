@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Infrastructure.Data.JSON;
 using System.IO;
 using System.Windows.Forms;
 using BCCStudents.Domain.Entities;
@@ -27,8 +25,10 @@ namespace BCCStudents.Application.Services
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly IStudentSubGroupRepository _studentSubGroupRepository;
         private readonly DocumentService _documentService;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
+        private readonly IStudentJsonService _studentJsonService;
+        private readonly IStudentCodeGenerator _studentCodeGenerator;
         
         public StudentService(IStudentRepository studentRepository, 
             IGroupRepository groupRepository, 
@@ -36,11 +36,12 @@ namespace BCCStudents.Application.Services
             ISubGroupRepository subGroupRepository,
             IStudentGroupRepository studentGroupRepository,
             IStudentSubGroupRepository studentSubGroupRepository,
-            StudentCodeGenerator studentCodeGenerator, 
-            DatabaseHelper dbHelper,
+            IStudentCodeGenerator studentCodeGenerator, 
+            IDatabaseConnectionProvider connectionProvider,
             DocumentService documentService,
             IServiceProvider serviceProvider,
-            IUpStreamChangeTracker upStreamChangeTracker
+            IUpStreamChangeTracker upStreamChangeTracker,
+            IStudentJsonService studentJsonService
             )
         {
             _studentRepository = studentRepository;
@@ -50,9 +51,11 @@ namespace BCCStudents.Application.Services
             _studentSubGroupRepository = studentSubGroupRepository;
             _loggerRepository = loggerRepository;
             //_studentCodeGenerator = studentCodeGenerator ?? throw new ArgumentNullException(nameof(studentCodeGenerator));
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _documentService = documentService;
+            _studentCodeGenerator = studentCodeGenerator;
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
+            _studentJsonService = studentJsonService ?? throw new ArgumentNullException(nameof(studentJsonService));
         }
         
         public void MigrateStudentGroups()
@@ -106,7 +109,7 @@ namespace BCCStudents.Application.Services
             var postCommitSyncActions = new List<Action>();
             var studentSyncScheduled = false;
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -316,7 +319,7 @@ namespace BCCStudents.Application.Services
                 StudentGroups snapshot = null;
                 try
                 {
-                    using (var conn = _dbHelper.GetLocalConnection())
+                    using (var conn = _connectionProvider.GetLocalConnection())
                     {
                         conn.Open();
                         const string q = "SELECT Id, StudentId, GroupId, PaymentStatus, DateOfPayment, Price, Discount, Status, UpdatedAt FROM StudentGroups WHERE StudentId=@sid AND GroupId=@gid";
@@ -525,7 +528,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var conn = _dbHelper.GetLocalConnection())
+                using (var conn = _connectionProvider.GetLocalConnection())
                 {
                     conn.Open();
                     var query = "SELECT GroupId FROM StudentSubGroups WHERE StudentId = @studentId AND Status = 1 AND (IsDeleted = 0 OR IsDeleted IS NULL) LIMIT 1";
@@ -551,7 +554,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var conn = _dbHelper.GetLocalConnection())
+                using (var conn = _connectionProvider.GetLocalConnection())
                 {
                     conn.Open();
                     var query = @"
@@ -579,7 +582,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var conn = _dbHelper.GetLocalConnection())
+                using (var conn = _connectionProvider.GetLocalConnection())
                 {
                     conn.Open();
                     var query = "SELECT GroupId FROM StudentGroups WHERE StudentId = @studentId AND Status = 1 AND (IsDeleted = 0 OR IsDeleted IS NULL) LIMIT 1";
@@ -611,7 +614,7 @@ namespace BCCStudents.Application.Services
             var subGroupIds = new List<int>();
             try
             {
-                using (var conn = _dbHelper.GetLocalConnection())
+                using (var conn = _connectionProvider.GetLocalConnection())
                 {
                     conn.Open();
                     var query = "SELECT DISTINCT SubGroupId FROM StudentSubGroups WHERE StudentId=@sid AND GroupId=@gid AND (IsDeleted=0 OR IsDeleted IS NULL) AND Status=1";
@@ -701,12 +704,12 @@ namespace BCCStudents.Application.Services
         // ↓↓↓ JSON-დან მონაცემების ოპერაციები ↓↓↓
         public List<Student> LoadStudentsFromJson()
         {
-            return StudentJsonHelper.LoadStudents();
+            return _studentJsonService.LoadStudents();
         }
 
         public void SaveStudentsToJson(List<Student> students)
         {
-            StudentJsonHelper.SaveStudents(students);
+            _studentJsonService.SaveStudents(students);
         }
 
         public void DeleteStudentFromJson(List<Student> students, int index)
@@ -822,7 +825,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var connection = _dbHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, PaymentStatus, DateOfPayment, Price, Discount, Status, UpdatedAt
@@ -868,7 +871,7 @@ namespace BCCStudents.Application.Services
             var snapshots = new List<StudentSubGroups>();
             try
             {
-                using (var connection = _dbHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
@@ -908,7 +911,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var connection = _dbHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt

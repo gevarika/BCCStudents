@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using MySql.Data.MySqlClient;
-using BCCStudents.Domain.Interfaces;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.DownStream
 {
@@ -15,12 +14,12 @@ namespace BCCStudents.Application.Services.Sync.DownStream
     /// </summary>
     public class DownStreamDataFetcher : IDownStreamDataFetcher
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
 
-        public DownStreamDataFetcher(DatabaseHelper databaseHelper, ISyncLogger logger)
+        public DownStreamDataFetcher(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -89,7 +88,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             var results = new List<T>();
             try
             {
-                using (var connection = _databaseHelper.GetServerConnection())
+                using (var connection = _connectionProvider.GetServerConnection())
                 {
                     connection.Open();
                     using (var command = new MySqlCommand(sql, connection))

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading;
-using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 using System.Windows.Forms;
 
 namespace BCCStudents.Application.Services {
@@ -11,7 +11,7 @@ namespace BCCStudents.Application.Services {
     public class ConnectionMonitorService : IDisposable
     {
         private readonly System.Windows.Forms.Timer _monitorTimer;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionChecker _connectionChecker;
         private bool _isConnected;
         private bool _isDisposed;
         private readonly SynchronizationContext _syncContext; // UI thread-áƒ˜áƒ¡ áƒ¡áƒ˜áƒœáƒ¥áƒ áƒáƒœáƒ˜áƒ–áƒáƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
@@ -31,9 +31,9 @@ namespace BCCStudents.Application.Services {
         /// <summary>
         /// áƒ™áƒáƒœáƒ¡áƒ¢áƒ áƒ£áƒ¥áƒ¢áƒáƒ áƒ˜
         /// </summary>
-        public ConnectionMonitorService(IConfigurationService configurationService)
+        public ConnectionMonitorService(IDatabaseConnectionChecker connectionChecker)
         {
-            _dbHelper = new DatabaseHelper(configurationService);
+            _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             _isConnected = false;
             _isDisposed = false;
             // Windows Forms-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ SynchronizationContext-áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
@@ -203,7 +203,7 @@ namespace BCCStudents.Application.Services {
                 {
                     // Connection timeout-áƒ˜áƒ¡ áƒ“áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ (5 áƒ¬áƒáƒ›áƒ˜)
                     //connection.ConnectionTimeout = 5;
-                bool result = _dbHelper.CanConnectToMySQL();
+                bool result = _connectionChecker.CanConnectToMySQL();
                 System.Diagnostics.Debug.WriteLine($"[ConnectionMonitor] CanConnectToServer: áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒáƒ'áƒ£áƒšáƒ˜áƒ: {result}");
                 return result;
                 }

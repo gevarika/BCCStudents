@@ -7,16 +7,17 @@ using BCCStudents.Domain.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class StudentRepository : IStudentRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public StudentRepository(DatabaseHelper dbHelper)
+        public StudentRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         #region ==================== INSERT - მოსწავლის ჩასმა ====================
@@ -31,7 +32,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public int InsertStudent(Student student, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             bool useExternalConnection = connection != null;
-            var conn = connection ?? _dbHelper.GetLocalConnection();
+            var conn = connection ?? _connectionProvider.GetLocalConnection();
 
             try
             {
@@ -87,7 +88,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <returns>ახალი მოსწავლის ID</returns>
         public int InsertStudentBasic(string firstName, string lastName, string phone)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO Students 
@@ -116,7 +117,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int InsertStudentWithDetails(string firstName, string lastName, string phone, long personalId, string parentName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO Students 
@@ -151,7 +152,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Student GetStudentById(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -179,7 +180,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Student GetStudentByCode(string studentCode)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -207,7 +208,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Student GetStudentByPersonalId(long personalId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -235,7 +236,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Student GetStudentByFullName(string firstName, string lastName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -266,7 +267,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var students = new List<Student>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -293,7 +294,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var students = new List<Student>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -321,7 +322,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var students = new List<Student>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -349,7 +350,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var students = new List<Student>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
@@ -375,7 +376,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int? GetStudentIdByCode(string studentCode)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Id FROM Students WHERE StudentCode = @StudentCode";
@@ -394,7 +395,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public string GetStudentFullNameById(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT CONCAT(FirstName, ' ', LastName) FROM Students WHERE Id = @StudentId";
@@ -413,7 +414,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public string GetStudentCodeById(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT StudentCode FROM Students WHERE Id = @StudentId";
@@ -432,7 +433,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public decimal GetStudentBalanceById(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Balance FROM Students WHERE Id = @StudentId";
@@ -451,7 +452,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetStudentsAsDataTable()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Id, FirstName, LastName, StudentCode FROM Students WHERE IsDeleted = 0 ORDER BY FirstName, LastName";
@@ -469,7 +470,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool IsStudentsTableEmpty()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var cmd = new MySqlCommand("SELECT EXISTS (SELECT 1 FROM Students LIMIT 1)", connection);
@@ -483,7 +484,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool StudentExists(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(1) FROM Students WHERE Id = @StudentId AND IsDeleted = 0";
@@ -502,7 +503,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool StudentExistsByCode(string studentCode)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(1) FROM Students WHERE StudentCode = @StudentCode AND IsDeleted = 0";
@@ -521,7 +522,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool StudentExistsByPersonalId(long personalId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(1) FROM Students WHERE Id_Numb = @PersonalId AND IsDeleted = 0";
@@ -540,7 +541,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetStudentsCount()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var cmd = new MySqlCommand("SELECT COUNT(*) FROM Students WHERE IsDeleted = 0", connection);
@@ -553,7 +554,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetActiveStudentsCount()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var cmd = new MySqlCommand("SELECT COUNT(*) FROM Students WHERE IsDeleted = 0 AND (Status IS NULL OR Status = '' OR Status = 'Active')", connection);
@@ -570,7 +571,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudent(Student student)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE Students 
@@ -630,7 +631,7 @@ namespace BCCStudents.Infrastructure.Repositories
             var validFields = changedFields.Where(f => allowedFields.Contains(f.Key)).ToList();
             if (validFields.Count == 0) return false;
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
 
@@ -664,7 +665,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentFirstName(int studentId, string firstName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET FirstName = @FirstName, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -684,7 +685,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentLastName(int studentId, string lastName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET LastName = @LastName, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -704,7 +705,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentPhone(int studentId, string phone)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET PhoneNumber = @PhoneNumber, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -724,7 +725,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentAddress(int studentId, string address)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Address = @Address, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -744,7 +745,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentAge(int studentId, int age)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Age = @Age, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -764,7 +765,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentParentName(int studentId, string parentName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET ParentName = @ParentName, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -784,7 +785,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentPersonalId(int studentId, long personalId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Id_Numb = @Id_Numb, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -804,7 +805,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentStatus(int studentId, string status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Status = @Status, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -824,7 +825,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentCode(int studentId, string studentCode)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET StudentCode = @StudentCode, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -844,7 +845,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentInfo(int studentId, string info)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Info = @Info, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -864,7 +865,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentIdCardPath(int studentId, string path)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET IdCardPath = @IdCardPath, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -884,7 +885,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentAdditionalDocsPath(int studentId, string path)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET AdditionalDocsPath = @AdditionalDocsPath, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -908,7 +909,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentBalance(int studentId, decimal balance)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Balance = @Balance, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -928,7 +929,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool IncrementStudentBalance(int studentId, decimal amount)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Balance = Balance + @Amount, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -948,7 +949,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DecrementStudentBalance(int studentId, decimal amount)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET Balance = Balance - @Amount, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -972,7 +973,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DeleteStudent(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET IsDeleted = 1, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -991,7 +992,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool RestoreStudent(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET IsDeleted = 0, UpdatedAt = @UpdatedAt WHERE Id = @StudentId";
@@ -1011,7 +1012,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool HardDeleteStudent(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "DELETE FROM Students WHERE Id = @StudentId";
@@ -1033,7 +1034,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetStudentCountByGroup()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT g.Name AS GroupName, COUNT(sg.StudentId) AS StudentCount
@@ -1057,7 +1058,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetStudentsByMonth()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT DATE_FORMAT(RegistrationDate, '%Y-%m') AS Month, COUNT(*) AS StudentCount
@@ -1085,7 +1086,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable FilterStudents(string name, int? groupId, int? subGroupId, DateTime? startDate, DateTime? endDate)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT DISTINCT s.Id, s.FirstName, s.LastName, s.PhoneNumber, s.Address, 
@@ -1138,7 +1139,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Student> SearchStudentsByNameAndGroup(string text, int groupId)
         {
             var students = new List<Student>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT s.* FROM Students s
@@ -1170,7 +1171,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Student> SearchStudentsByNameAcrossAllGroups(string name)
         {
             var students = new List<Student>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT DISTINCT s.* FROM Students s
@@ -1206,7 +1207,7 @@ namespace BCCStudents.Infrastructure.Repositories
             if (!allowedFields.Contains(fieldName))
                 return result;
 
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
 
@@ -1276,7 +1277,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Student> GetAllStudentsWithGroups()
         {
             var students = new List<Student>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT s.Id, s.FirstName, s.LastName, s.Age, s.ParentName, s.PhoneNumber, 
@@ -1312,7 +1313,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<(int Id, string FullName)> GetStudentNames()
         {
             var names = new List<(int Id, string FullName)>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Id, CONCAT(FirstName, ' ', LastName) AS FullName FROM Students WHERE IsDeleted = 0 ORDER BY LastName, FirstName";
@@ -1334,7 +1335,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetUnassignedStudents()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT s.Id, s.FirstName, s.LastName, s.PhoneNumber, s.Address, s.RegistrationDate, s.StudentCode
@@ -1357,7 +1358,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetAllStudentsFor()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT s.Id, s.FirstName, s.LastName, s.PhoneNumber, s.Address, 
@@ -1381,7 +1382,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<StudentViewDto> GetAllStudentsSomeInfo()
         {
             var students = new List<StudentViewDto>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 // GROUP BY და GROUP_CONCAT გამოყენება - მოსწავლე მხოლოდ ერთხელ ჩანს
@@ -1429,7 +1430,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Student> GetStudentsByGroupId(int groupId)
         {
             var students = new List<Student>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT s.* FROM Students s
@@ -1458,7 +1459,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Student GetStudentDetailsById(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 
@@ -1538,7 +1539,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public string GetStudentName(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT CONCAT(FirstName, ' ', LastName) AS FullName FROM Students WHERE Id = @StudentId";
@@ -1561,7 +1562,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool ExistsByName(string firstName, string lastName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(*) FROM Students WHERE FirstName = @FirstName AND LastName = @LastName AND IsDeleted = 0";
@@ -1580,7 +1581,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool ExistsByNameParentAddress(string firstName, string lastName, string parentName, string address)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(*) FROM Students 
@@ -1603,7 +1604,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int CountByAddress(string address)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(*) FROM Students WHERE Address = @Address AND IsDeleted = 0";
@@ -1625,7 +1626,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool StudentGroupExists(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(*) FROM StudentGroups 
@@ -1646,7 +1647,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentStatus(int studentId, int groupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups SET Status = @Status, UpdatedAt = @UpdatedAt 
@@ -1668,7 +1669,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public void UpdateStudentGroupFields(StudentGroups original, StudentGroups updated)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups SET 
@@ -1695,7 +1696,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentGroupId(int studentId, int newGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups SET GroupId = @NewGroupId, UpdatedAt = @UpdatedAt 
@@ -1716,7 +1717,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public void RemoveStudentFromGroups(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 
@@ -1747,7 +1748,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public void RemoveStudentFromGroup(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 
@@ -1784,7 +1785,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DeleteStudent(int studentId, int userId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE Students SET IsDeleted = 1, Status = 'Inactive', UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -1822,7 +1823,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var keys = new List<StudentKey>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Id, FirstName, LastName, Id_Numb, Address, StudentCode FROM Students WHERE IsDeleted = 0";

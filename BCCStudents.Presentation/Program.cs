@@ -94,7 +94,7 @@ namespace BCCStudents.Presentation
 
                 var configService = serviceProvider.GetRequiredService<IConfigurationService>();
 
-                var userService = serviceProvider.GetRequiredService<UserService>();
+                var userService = serviceProvider.GetRequiredService<IUserService>();
                 var upStreamManager = serviceProvider.GetRequiredService<IUpStreamSyncManager>();
                 var downStreamManager = serviceProvider.GetRequiredService<IDownStreamSyncManager>();
                 upStreamManager.Start();
@@ -140,8 +140,20 @@ namespace BCCStudents.Presentation
             // Configuration Service - საჭიროა DB კავშირის სტრიქონის მისაღებად
             services.AddSingleton<IConfigurationService, ConfigurationService>();
 
-            // Database Helper - გამოიყენება ConnectionStatusService-ში კავშირის შესამოწმებლად
+            // Database Helper - გამოიყენება ConnectionStatusService-ში და DatabaseConnectionChecker-ში კავშირის შესამოწმებლად
             services.AddSingleton<DatabaseHelper>();
+
+            // Database Connection Checker - Clean Architecture-ის დაცვით
+            services.AddSingleton<BCCStudents.Application.Interfaces.IDatabaseConnectionChecker, BCCStudents.Infrastructure.Services.DatabaseConnectionChecker>();
+
+            // Database Connection Provider - Clean Architecture-ის დაცვით
+            services.AddSingleton<BCCStudents.Application.Interfaces.IDatabaseConnectionProvider, BCCStudents.Infrastructure.Services.DatabaseConnectionProvider>();
+
+            // SMS Service - Clean Architecture-ის დაცვით
+            services.AddScoped<BCCStudents.Application.Interfaces.ISmsService, BCCStudents.Infrastructure.Services.SmsService>();
+
+            // Student JSON Service - Clean Architecture-ის დაცვით
+            services.AddScoped<BCCStudents.Application.Interfaces.IStudentJsonService, BCCStudents.Infrastructure.Services.StudentJsonService>();
 
             // Connection Status Service (Singleton - მთელი აპლიკაციისთვის ერთი ინსტანსი)
             services.AddSingleton<IConnectionStatusService, BCCStudents.Infrastructure.Services.ConnectionStatusService>();
@@ -151,6 +163,9 @@ namespace BCCStudents.Presentation
 
             // Backup Manager (Singleton)
             services.AddSingleton<BCCStudents.Infrastructure.Services.BackupManager>();
+
+            // Admin Code Manager (Singleton)
+            services.AddSingleton<BCCStudents.Infrastructure.Services.AdminCodeManager>();
 
 
             // --- 2. Repositories (Persistence) ---
@@ -258,130 +273,6 @@ namespace BCCStudents.Presentation
             services.AddTransient<UpdateProgressForm>();
             services.AddTransient<PaymentTestForm>();
         }
-        /*private static void ConfigureServices(IServiceCollection services)
-        {
-            // 1. ConnectionStatus Service (ახალი)
-            // სერვისი იღებს DatabaseHelper-ს კონსტრუქტორით, ამიტომ DI-ს შეუძლია მისი ინიციალიზება
-            services.AddSingleton<IConnectionStatusService, BCCStudents.Infrastructure.Services.ConnectionStatusService>();
-
-            // Configuration Service
-            services.AddSingleton<IConfigurationService, ConfigurationService>();
-            
-            // Database helper
-            services.AddSingleton<DatabaseHelper>();
-
-            // Repositories
-            services.AddScoped<IStudentRepository, StudentRepository>();
-            services.AddScoped<IGroupRepository, GroupRepository>();
-            services.AddScoped<IStudentGroupRepository, StudentGroupRepository>();
-            services.AddScoped<IStudentSubGroupRepository, StudentSubGroupRepository>();
-            services.AddScoped<IPaymentRepository, PaymentRepository>();
-            services.AddScoped<IBalanceRepository, BalanceRepository>();
-            services.AddScoped<ILoggerRepository, LoggerRepository>();
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<ISubGroupRepository, SubGroupRepository>();
-            services.AddScoped<ICleanupRepository, CleanupRepository>();
-            services.AddScoped<IImportService, ImportService>();
-            services.AddScoped<IPendingStudentRepository, PendingStudentRepository>();
-            services.AddScoped<IPendingStudentService, PendingStudentService>();
-            services.AddScoped<IPendingStudentGroupRepository, PendingStudentGroupRepository>();
-            services.AddScoped<IExcelPaymentImportService, ExcelPaymentImportService>();
-            services.AddScoped<IFileTrackingRepository, FileTrackingRepository>();
-
-            // Sync services
-            services.AddSingleton<ISyncLogger, SyncLogger>();
-            
-            // Connection Monitor Service (Singleton - მთელი აპლიკაციისთვის ერთი ინსტანსი)
-            // პროგრესული მცდელობები: 5, 20, 40, 90, 180 წამი
-            services.AddSingleton<ConnectionMonitorService>();
-            
-            // Backup Manager (Singleton - მთელი აპლიკაციისთვის ერთი ინსტანსი)
-            services.AddSingleton<BCCStudents.Infrastructure.Services.BackupManager>();
-            services.AddScoped<IUpStreamSyncRepository, UpStreamSyncRepository>();
-            services.AddScoped<IUpStreamSyncService, UpStreamSyncService>();
-            services.AddScoped<UpStreamPayloadBuilder>();
-            services.AddScoped<UpStreamChangeTracker>();
-            services.AddSingleton<UpStreamSyncManager>();
-
-            services.AddScoped<DownStreamSyncRepository>();
-            services.AddScoped<DownStreamDataFetcher>();
-            services.AddScoped<DownStreamConflictResolver>();
-            services.AddScoped<IDownStreamSyncService, DownStreamSyncService>();
-            services.AddSingleton<DownStreamSyncManager>();
-            
-            // AutoFileDetection კონფიგურაცია
-            services.AddSingleton<AutoFileDetectionConfig>(provider => 
-            {
-                return AutoFileDetectionConfig.LoadFromConfig();
-            });
-            
-            services.AddScoped<AutoFileDetectionService>(provider =>
-            {
-                var fileTrackingRepo = provider.GetRequiredService<IFileTrackingRepository>();
-                var config = provider.GetRequiredService<AutoFileDetectionConfig>();
-                return new AutoFileDetectionService(fileTrackingRepo, config);
-            });
-            
-            services.AddScoped<AutoFileDetectionManager>();
-
-
-
-
-            // Services
-            /*services.AddScoped<UserService>();
-            services.AddScoped<PaymentService>();
-            services.AddScoped<ConnectionService>();
-            services.AddScoped<StatisticsService>();
-            services.AddScoped<PaymentDateService>();
-            services.AddScoped<PaymentDescriptionAnalyzer>();
-            services.AddScoped<StudentCodeGenerator>();
-            services.AddScoped<CleanupService>();
-            services.AddScoped<ImportService>();
-            services.AddScoped<StudentExportService>();
-            services.AddSingleton<UpdateService>();
-
-
-
-        Forms
-        services.AddTransient<LoginForm>();
-            services.AddTransient<RegisterForm>();
-            services.AddTransient<MainForm>();
-            services.AddTransient<StudentManagementForm>();
-            services.AddTransient<PaymentForm>();
-            services.AddTransient<AdminPanelForm>();
-            services.AddTransient<GroupManagementForm>();
-            services.AddTransient<GroupsEdit>();
-            services.AddTransient<ImportForm>();
-            services.AddTransient<PendingStudentsForm>();
-            services.AddTransient<SetStudyStartDateForm>();
-            services.AddTransient<StudentsEditForm>();
-            services.AddTransient<PaymentsImportForm>();
-            services.AddTransient<StudyStartDateManager>();
-            services.AddTransient<PaymentImportHistoryForm>();
-            services.AddTransient<FinanceManagementForm>();
-            services.AddTransient<UnmatchedPaymentsForm>();
-            services.AddTransient<LogViewerForm>();
-            services.AddTransient<ImportTestForm>();
-            services.AddTransient<UpdateProgressForm>();
-            services.AddTransient<PaymentTestForm>();
-
-
-            // Logger (თუ Logger კლასია)
-            services.AddSingleton<ILoggerRepository, LoggerRepository>();
-            services.AddSingleton<DocumentService>(provider =>
-            {
-                var service = new DocumentService();
-
-                var config = DocumentConfig.Load();
-                service.DownloadBaseFolder = config.DownloadPath;
-                service.FileServerBaseUrl = config.FileUrl;
-
-                return service;
-            });
-
-        }*/
-
     }
 }
 

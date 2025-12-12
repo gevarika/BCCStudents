@@ -10,8 +10,9 @@ using System.Windows.Forms;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.DataBase;
+//using BCCStudents.Infrastructure.DataBase;
 using BCCStudents.Application.Services;
+using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
@@ -21,13 +22,15 @@ namespace BCCStudents.Presentation
         private readonly StudentService _studentSvc;
         private readonly GroupService _groupService;
         private readonly SubGroupService _subGroupService;
-        public StudentsEditForm(IStudentRepository studentService, GroupService groupService, SubGroupService subGroupService, StudentService studentSvc)
+        private readonly BackupManager _backupManager;
+        public StudentsEditForm(IStudentRepository studentService, GroupService groupService, SubGroupService subGroupService, StudentService studentSvc, BackupManager backupManager)
         {
             InitializeComponent();
             _studentService = studentService;
             _studentSvc = studentSvc;
             _groupService = groupService;
             _subGroupService = subGroupService;
+            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "მოსწავლის ინფორმაციის რედაქტირება");
             else FormTitleHelper.SetTitle(this, "მოსწავლის ინფორმაციის რედაქტირება - სატესტო რეჟიმი");
@@ -511,7 +514,7 @@ namespace BCCStudents.Presentation
 
                 // 6. წარმატების შეტყობინება
                 MessageBox.Show("ცვლილებები წარმატებით შეინახა.", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                BackupManager.DbChangedSinceLastBackup = true;
+                _backupManager.DbChangedSinceLastBackup = true;
 
                 // 7. მონაცემების და UI-ს სრული განახლება
                 RefreshAfterSave();
@@ -1198,7 +1201,7 @@ namespace BCCStudents.Presentation
                 txtPaymentDate.Enabled = true;
                 txtStatus.Enabled = true;
                 txtPaymentStatus.Enabled = true;
-                BackupManager.DbChangedSinceLastBackup = true;
+                _backupManager.DbChangedSinceLastBackup = true;
 
             }
         }

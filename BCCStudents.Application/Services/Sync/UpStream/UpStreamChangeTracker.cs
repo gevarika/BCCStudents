@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
 using BCCStudents;
 using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.UpStream
 {
     /// <summary>
     /// áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ¤áƒ˜áƒ¥áƒ¡áƒ˜áƒ áƒ”áƒ‘áƒ áƒ“áƒ áƒ“áƒáƒ£áƒ§áƒáƒ•áƒœáƒ”áƒ‘áƒšáƒ˜áƒ•áƒ˜/áƒ’áƒáƒ“áƒáƒ•áƒáƒ“áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ’áƒ–áƒáƒ•áƒœáƒ áƒ¡áƒ”áƒ áƒ•áƒ”áƒ áƒ–áƒ”.
     /// </summary>
-    public class UpStreamChangeTracker
+    public class UpStreamChangeTracker : IUpStreamChangeTracker
     {
         private readonly IUpStreamPayloadBuilder _payloadBuilder;
         private readonly IUpStreamSyncService _syncService;

@@ -208,5 +208,64 @@ namespace BCCStudents.Presentation.Services
                 return null;
             }
         }
+
+        /// <summary>
+        /// წაიკითხავს კავშირის სტრიქონს App.config-დან
+        /// </summary>
+        public string GetConnectionString(string connectionStringName)
+        {
+            try
+            {
+                var connectionString = ConfigurationManager.ConnectionStrings[connectionStringName];
+                return connectionString?.ConnectionString;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reading connection string '{connectionStringName}': {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// ინახავს კავშირის სტრიქონს App.config-ში
+        /// </summary>
+        public void SaveConnectionString(string connectionStringName, string connectionString)
+        {
+            try
+            {
+                // მივიღოთ config ფაილის path ConfigurationManager-ის მეშვეობით
+                var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                string configPath = config.FilePath;
+                
+                System.Xml.XmlDocument xmlDoc = new System.Xml.XmlDocument();
+                xmlDoc.Load(configPath);
+
+                System.Xml.XmlNode node = xmlDoc.SelectSingleNode($"//connectionStrings/add[@name='{connectionStringName}']");
+                if (node != null)
+                {
+                    node.Attributes["connectionString"].Value = connectionString;
+                }
+                else
+                {
+                    // თუ კვანძი არ არსებობს, შევქმნათ ახალი
+                    System.Xml.XmlNode connectionStringsNode = xmlDoc.SelectSingleNode("//connectionStrings");
+                    if (connectionStringsNode != null)
+                    {
+                        System.Xml.XmlElement newElement = xmlDoc.CreateElement("add");
+                        newElement.SetAttribute("name", connectionStringName);
+                        newElement.SetAttribute("connectionString", connectionString);
+                        connectionStringsNode.AppendChild(newElement);
+                    }
+                }
+
+                xmlDoc.Save(configPath);
+                ConfigurationManager.RefreshSection("connectionStrings");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving connection string '{connectionStringName}': {ex.Message}");
+                throw;
+            }
+        }
     }
 }

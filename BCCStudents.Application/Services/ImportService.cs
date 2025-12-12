@@ -13,7 +13,6 @@ using BCCStudents.Application.Services.Sync;
 using BCCStudents.Application.Interfaces;
 using ClosedXML.Excel;
 using MySql.Data.MySqlClient;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Application.Services
 {
@@ -28,7 +27,7 @@ namespace BCCStudents.Application.Services
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly IStudentSubGroupRepository _studentSubGroupRepository;
         private readonly IPaymentRepository _paymentRepository;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly StudentCodeGenerator _studentCodeGenerator;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
@@ -40,7 +39,7 @@ namespace BCCStudents.Application.Services
             IStudentSubGroupRepository studentSubGroupRepository,
             IPaymentRepository paymentRepository,
             StudentCodeGenerator studentCodeGenerator,
-            DatabaseHelper dbHelper,
+            IDatabaseConnectionProvider connectionProvider,
             IUpStreamChangeTracker upStreamChangeTracker)
         {
             _studentRepository = studentRepository;
@@ -50,7 +49,7 @@ namespace BCCStudents.Application.Services
             _studentSubGroupRepository = studentSubGroupRepository;
             _paymentRepository = paymentRepository;
             _studentCodeGenerator = studentCodeGenerator;
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _upStreamChangeTracker = upStreamChangeTracker;
         }
 
@@ -334,7 +333,7 @@ namespace BCCStudents.Application.Services
                 var updatedGroupIds = new HashSet<int>(); // განახლებული Groups-ის ID-ები
                 var updatedSubGroupIds = new HashSet<int>(); // განახლებული SubGroups-ის ID-ები
 
-                using (var connection = _dbHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
 

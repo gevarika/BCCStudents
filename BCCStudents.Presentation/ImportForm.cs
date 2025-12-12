@@ -1008,7 +1008,7 @@ namespace BCCStudents.Presentation
                 // ლოგის შენახვა
                 try
                 {
-                    var logDirectory = Path.Combine(Application.StartupPath, "ImportLogs");
+                    var logDirectory = Path.Combine(System.Windows.Forms.Application.StartupPath, "ImportLogs");
                     if (!Directory.Exists(logDirectory))
                     {
                         Directory.CreateDirectory(logDirectory);

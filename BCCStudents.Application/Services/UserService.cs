@@ -5,7 +5,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services

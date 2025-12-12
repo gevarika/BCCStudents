@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Services.Sync.UpStream;
 using BCCStudents.Application.Services.Sync;
 
@@ -18,13 +17,13 @@ namespace BCCStudents.Application.Services
     public class SubGroupService : ISubGroupService
     {
         private readonly ISubGroupRepository _subGroupRepository;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public SubGroupService(ISubGroupRepository subGroupRepository, DatabaseHelper dbHelper, IUpStreamChangeTracker upStreamChangeTracker)
+        public SubGroupService(ISubGroupRepository subGroupRepository, IDatabaseConnectionProvider connectionProvider, IUpStreamChangeTracker upStreamChangeTracker)
         {
             _subGroupRepository = subGroupRepository;
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
         
@@ -128,7 +127,7 @@ namespace BCCStudents.Application.Services
             var subGroupIds = new List<int>();
             try
             {
-                using (var conn = _dbHelper.GetLocalConnection())
+                using (var conn = _connectionProvider.GetLocalConnection())
                 {
                     conn.Open();
                     // ვიღებთ SubGroupIds-ს soft delete-ის წინ
@@ -265,7 +264,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var connection = _dbHelper.GetMySqlConnection()) 
+                using (var connection = _connectionProvider.GetMySqlConnection()) 
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
@@ -312,7 +311,7 @@ namespace BCCStudents.Application.Services
             var snapshots = new List<StudentSubGroups>();
             try
             {
-                using (var connection = _dbHelper.GetMySqlConnection())
+                using (var connection = _connectionProvider.GetMySqlConnection())
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt

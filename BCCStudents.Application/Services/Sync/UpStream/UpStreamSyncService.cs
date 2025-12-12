@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BCCStudents.Infrastructure.Data;
 using MySql.Data.MySqlClient;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Domain.Entities;
 
@@ -16,12 +16,12 @@ namespace BCCStudents.Application.Services.Sync.UpStream
     /// </summary>
     public class UpStreamSyncService : IUpStreamSyncService
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
 
-        public UpStreamSyncService(DatabaseHelper databaseHelper, ISyncLogger logger)
+        public UpStreamSyncService(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -70,7 +70,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             sql.Append($"INSERT INTO {EscapeTable(payload.TableName)} ({columnList}) VALUES ({parameterList}) ");
             sql.Append($"ON DUPLICATE KEY UPDATE {updateList};");
 
-            using (var connection = _databaseHelper.GetServerConnection())
+            using (var connection = _connectionProvider.GetServerConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand(sql.ToString(), connection))
@@ -88,7 +88,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
         private void ExecuteDelete(SyncChangePayload payload)
         {
-            using (var connection = _databaseHelper.GetServerConnection())
+            using (var connection = _connectionProvider.GetServerConnection())
             {
                 connection.Open();
 

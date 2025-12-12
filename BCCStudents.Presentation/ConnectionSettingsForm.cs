@@ -9,18 +9,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Configuration;
 using System.Xml;
-using BCCStudents.Application.Services;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Presentation.Services;
 
 namespace BCCStudents.Presentation
 {
     public partial class ConnectionSettingsForm : Form
     {
-        private readonly ConfigurationService _configService;
+        private readonly IConfigurationService _configService;
 
-        public ConnectionSettingsForm(ConfigurationService configService)
+        public ConnectionSettingsForm(IConfigurationService configService)
         {
             InitializeComponent();
-            _configService = configService;
+            _configService = configService ?? throw new ArgumentNullException(nameof(configService));
 
             //txtConnectionString.Text = _configService.GetConnectionString("MySQLConnection");
         }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Services.Sync.UpStream;
 using BCCStudents.Application.Services.Sync;
 using BCCStudents.Application.Interfaces;
@@ -15,16 +14,16 @@ namespace BCCStudents.Application.Services {
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly StudentService _studentService;
         private readonly SubGroupService _subGroupService;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public GroupService(DatabaseHelper dbHelper, IGroupRepository groupRepository, IStudentGroupRepository studentGroupRepository, StudentService studentService, SubGroupService subGroupService, IUpStreamChangeTracker upStreamChangeTracker)
+        public GroupService(IDatabaseConnectionProvider connectionProvider, IGroupRepository groupRepository, IStudentGroupRepository studentGroupRepository, StudentService studentService, SubGroupService subGroupService, IUpStreamChangeTracker upStreamChangeTracker)
         {
             _groupRepository = groupRepository;
             _studentGroupRepository = studentGroupRepository;
             _studentService = studentService;
             _subGroupService = subGroupService;
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
 

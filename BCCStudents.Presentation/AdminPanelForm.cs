@@ -16,6 +16,8 @@ using System.IO;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services.Update;
+using Microsoft.Office.Interop.Word;
+using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
@@ -29,6 +31,8 @@ namespace BCCStudents.Presentation
         private readonly IGroupRepository _groupRepository;
         private readonly DatabaseHelper _dbHelper;
         private readonly IConnectionStatusService _connectionStatusService;
+        private readonly BackupManager _backupManager;
+        private readonly AdminCodeManager _adminCodeManager;
         private DocumentConfig _config;
         private MainForm _mainForm;
         private TextBox txtAdminCode;
@@ -36,8 +40,8 @@ namespace BCCStudents.Presentation
         private TabPage tabLogs;
         private Panel panelLogs;
         private LogViewerForm logViewerForm;
-        private CheckBox chkUseLocalDb;
-        private CheckBox chkTestMode;
+        private System.Windows.Forms.CheckBox chkUseLocalDb;
+        private System.Windows.Forms.CheckBox chkTestMode;
         private Button btnTestLocal;
         private Button btnTestServer;
         private Button btnSaveDbSettings;
@@ -48,12 +52,12 @@ namespace BCCStudents.Presentation
         private TextBox txtServerConnectionString;
         private Label lblLocalConnString;
         private Label lblServerConnString;
-        private CheckBox chkAutoDownstream;
-        private CheckBox chkAutoUpstream;
-        private CheckBox chkAutoUpdate;
-        private CheckBox chkUseFullBalance;
+        private System.Windows.Forms.CheckBox chkAutoDownstream;
+        private System.Windows.Forms.CheckBox chkAutoUpstream;
+        private System.Windows.Forms.CheckBox chkAutoUpdate;
+        private System.Windows.Forms.CheckBox chkUseFullBalance;
         private Button btnCheckUpdates;
-        public AdminPanelForm(DatabaseHelper dbHelper, IGroupRepository groupRepository, StudentService studentService, CleanupService cleanupService, UserService userService, DocumentService documentService, IServiceProvider serviceProvider, IConnectionStatusService connectionStatusService)
+        public AdminPanelForm(DatabaseHelper dbHelper, IGroupRepository groupRepository, StudentService studentService, CleanupService cleanupService, UserService userService, DocumentService documentService, IServiceProvider serviceProvider, IConnectionStatusService connectionStatusService, BackupManager backupManager, AdminCodeManager adminCodeManager)
         {
             InitializeComponent();
             _studentService = studentService;
@@ -64,6 +68,8 @@ namespace BCCStudents.Presentation
             _groupRepository = groupRepository;
             _dbHelper = dbHelper;
             _connectionStatusService = connectionStatusService ?? throw new ArgumentNullException(nameof(connectionStatusService));
+            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
+            _adminCodeManager = adminCodeManager ?? throw new ArgumentNullException(nameof(adminCodeManager));
             if (Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "პროგრამის პარამეტრები - სატესტო რეჟიმი");
             else
@@ -109,10 +115,10 @@ namespace BCCStudents.Presentation
 
             // DB mode controls - positioned below existing controls in groupBox1
             lblTestMode = new Label { Text = "ტესტ რეჟიმი:", AutoSize = true, Location = new System.Drawing.Point(20, 320) };
-            chkTestMode = new CheckBox { Text = "ტესტ ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 320) };
+            chkTestMode = new System.Windows.Forms.CheckBox { Text = "ტესტ ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 320) };
             
             lblLocalDb = new Label { Text = "ლოკალური ბაზა:", AutoSize = true, Location = new System.Drawing.Point(20, 350) };
-            chkUseLocalDb = new CheckBox { Text = "ლოკალური ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 350) };
+            chkUseLocalDb = new System.Windows.Forms.CheckBox { Text = "ლოკალური ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 350) };
             
             btnTestLocal = new Button { Text = "ტესტი", Location = new System.Drawing.Point(350, 380), Width = 80 };
             
@@ -131,10 +137,10 @@ namespace BCCStudents.Presentation
             // Set initial values from settings
             chkTestMode.Checked = Settings.Default.IsTestDb;
             chkUseLocalDb.Checked = Settings.Default.UseLocalDb;
-            chkAutoDownstream = new CheckBox { Text = "Downstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 20) };
-            chkAutoUpstream = new CheckBox { Text = "Upstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 50) };
-            chkAutoUpdate = new CheckBox { Text = "ავტომატური განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 80) };
-            chkUseFullBalance = new CheckBox { Text = "სრული ბალანსის გამოყენება (რამდენ თვესაც ფარავს)", AutoSize = true, Location = new System.Drawing.Point(20, 110) };
+            chkAutoDownstream = new System.Windows.Forms.CheckBox { Text = "Downstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 20) };
+            chkAutoUpstream = new System.Windows.Forms.CheckBox { Text = "Upstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 50) };
+            chkAutoUpdate = new System.Windows.Forms.CheckBox { Text = "ავტომატური განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 80) };
+            chkUseFullBalance = new System.Windows.Forms.CheckBox { Text = "სრული ბალანსის გამოყენება (რამდენ თვესაც ფარავს)", AutoSize = true, Location = new System.Drawing.Point(20, 110) };
             btnCheckUpdates = new Button { Text = "პროგრამის განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 140) };
             chkAutoDownstream.Checked = Settings.Default.AutoDownstreamSyncEnabled;
             chkAutoUpstream.Checked = Settings.Default.AutoUpstreamSyncEnabled;
@@ -189,7 +195,7 @@ namespace BCCStudents.Presentation
                         return;
                     }
                     var current = svc.GetCurrentVersion();
-                    var latest = new Version(manifest.latestVersion);
+                    var latest = new System.Version(manifest.latestVersion);
                     if (!svc.IsNewer(latest, current))
                     {
                         MessageBox.Show("უკვე ბოლო ვერსია გაქვთ.");
@@ -436,7 +442,7 @@ namespace BCCStudents.Presentation
 
         private async void btnTest_Click(object sender, EventArgs e)
         {
-            var smsService = new SmsService();
+            var smsService = _serviceProvider.GetRequiredService<ISmsService>();
             var smsresult = await smsService.SendSmsAsync(tbTestNumber.Text, "სატესტო შეტყობინება");
             if (smsresult.Success)
             {
@@ -766,7 +772,7 @@ namespace BCCStudents.Presentation
                     });
                 }
 
-                await Task.Run(() => config.Save(ConfigurationSaveMode.Modified));
+                await System.Threading.Tasks.Task.Run(() => config.Save(ConfigurationSaveMode.Modified));
                 ConfigurationManager.RefreshSection("connectionStrings");
 
                 MessageBox.Show("კავშირის პარამეტრები შენახულია", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -801,7 +807,7 @@ namespace BCCStudents.Presentation
                 : "✅ გადაერთე სამუშაო ბაზაზე!");
 
             // სურვილისამებრ, თუ გინდა პირდაპირ ახალ კავშირებს გამოჩნდეს ეფექტი, რესტარტი ყველაზე მარტივია
-            Application.Restart();
+            System.Windows.Forms.Application.Restart();
         }
 
         private void btnSaveApiKey_Click_1(object sender, EventArgs e)
@@ -814,12 +820,12 @@ namespace BCCStudents.Presentation
 
         private void btnBackup_Click(object sender, EventArgs e)
         {
-            BackupManager.ManualBackup("SchoolManagement.db");
+            _backupManager.ManualBackup("SchoolManagement.db");
         }
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-            BackupManager.ManualRestore("SchoolManagement.db");
+            _backupManager.ManualRestore("SchoolManagement.db");
         }
 
         private void btnRegisterUser_Click(object sender, EventArgs e)
@@ -839,7 +845,7 @@ namespace BCCStudents.Presentation
             btnSetAdminCode = new Button { Text = "კოდის შეცვლა", Width = 100 };
             btnSetAdminCode.Click += (s, e) =>
             {
-                AdminCodeManager.SetAdminCode(txtAdminCode.Text);
+                _adminCodeManager.SetAdminCode(txtAdminCode.Text);
                 MessageBox.Show("ადმინისტრატორის კოდი განახლდა.");
                 txtAdminCode.Text = string.Empty;
             };

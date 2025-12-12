@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using BCCStudents.Infrastructure.Data;
 using BCCStudents.Infrastructure.Data.JSON;
 using BCCStudents.Application.Services;
+using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {

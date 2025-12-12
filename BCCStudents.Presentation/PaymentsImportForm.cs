@@ -11,6 +11,8 @@ using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Services;
 using ClosedXML.Excel;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -40,18 +42,18 @@ namespace BCCStudents.Presentation
         private string _selectedFilePath;
         private DataTable _previewData;
         private readonly string _defaultImportPath;
-        private readonly PaymentDescriptionAnalyzer _descriptionAnalyzer;
+        private readonly IPaymentDescriptionAnalyzer _descriptionAnalyzer;
         
         /// <summary>
         /// ფორმის დაბრუნების სტატუსი
         /// </summary>
         public ImportFormResult Result { get; private set; } = ImportFormResult.Cancelled;
 
-        public PaymentsImportForm(IExcelPaymentImportService importService, PaymentDescriptionAnalyzer descriptionAnalyzer)
+        public PaymentsImportForm(IExcelPaymentImportService importService, IPaymentDescriptionAnalyzer descriptionAnalyzer)
         {
             InitializeComponent();
             _importService = importService;
-            _defaultImportPath = Path.Combine(Application.StartupPath, "Students");
+            _defaultImportPath = Path.Combine(System.Windows.Forms.Application.StartupPath, "Students");
             _descriptionAnalyzer = descriptionAnalyzer;
             
             InitializeForm();
@@ -403,7 +405,7 @@ namespace BCCStudents.Presentation
                 progressBar.Value = 0;
                 progressBar.Maximum = lastRow.RowNumber() - firstRow.RowNumber();
                 lblStatus.Text = "მიმდინარეობს აღწერების ანალიზი...";
-                Application.DoEvents();
+                System.Windows.Forms.Application.DoEvents();
 
                 for (int row = firstRow.RowNumber() + 1; row <= lastRow.RowNumber(); row++)
                 {
@@ -488,7 +490,7 @@ namespace BCCStudents.Presentation
                         // განვაახლოთ პროგრეს ბარი
                         progressBar.Value = row - firstRow.RowNumber();
                         lblStatus.Text = $"მიმდინარეობს აღწერების ანალიზი... {progressBar.Value}/{progressBar.Maximum}";
-                        Application.DoEvents();
+                        System.Windows.Forms.Application.DoEvents();
                     }
                     catch (Exception ex)
                     {
@@ -510,7 +512,7 @@ namespace BCCStudents.Presentation
                         // განვაახლოთ პროგრეს ბარი შეცდომის შემთხვევაშიც
                         progressBar.Value = row - firstRow.RowNumber();
                         lblStatus.Text = $"მიმდინარეობს აღწერების ანალიზი... {progressBar.Value}/{progressBar.Maximum}";
-                        Application.DoEvents();
+                        System.Windows.Forms.Application.DoEvents();
                     }
                 }
 
@@ -553,13 +555,13 @@ namespace BCCStudents.Presentation
                 {
                     progressBar.Value = current;
                     lblStatus.Text = $"იმპორტი მიმდინარეობს... {current}/{total}";
-                    Application.DoEvents();
+                    System.Windows.Forms.Application.DoEvents();
                 });
                 
                 if (importResult.Success)
                 {
                     Result = ImportFormResult.Success;
-                    MessageBox.Show($"იმპორტი დასრულდა!\nწარმატებით იმპორტირებული: {importResult.ProcessedCount}\nშეცდომებით: {importResult.FailedRows.Count}", 
+                    MessageBox.Show($"იმპორტი დასრულდა!\nწარმატებით იმპორტირებული: {importResult.ImportedCount}\nშეცდომებით: {importResult.FailedRows.Count}", 
                         "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     
                     /*if (importResult.FailedRows.Any())

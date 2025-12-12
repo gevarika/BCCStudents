@@ -1,6 +1,7 @@
 ﻿using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Services;
+using BCCStudents.Infrastructure.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,6 +18,7 @@ namespace BCCStudents.Presentation
     {
         private readonly GroupService _groupService;
         private readonly SubGroupService _subGroupService;
+        private readonly BackupManager _backupManager;
         
         // UI Components
         private DataGridView dgvGroups;
@@ -49,28 +51,26 @@ namespace BCCStudents.Presentation
         private Group _selectedGroup;
         private SubGroup _selectedSubGroup;
         
-        public GroupsEdit(GroupService groupService, SubGroupService subGroupService)
+        public GroupsEdit(GroupService groupService, SubGroupService subGroupService, BackupManager backupManager)
         {
             InitializeComponent();
             _groupService = groupService;
             _subGroupService = subGroupService;
+            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             
             // Set form properties
             try
             {
-                this.Icon = Properties.Resources.AppIcon;
+                // Try to load icon from file
+                string iconPath = System.IO.Path.Combine(System.Windows.Forms.Application.StartupPath, "logo-new-32x32.ico");
+                if (System.IO.File.Exists(iconPath))
+                {
+                    this.Icon = new Icon(iconPath);
+                }
             }
             catch
             {
-                // If icon not found in resources, try direct file
-                try
-                {
-                    this.Icon = new Icon("logo-new-32x32.ico");
-                }
-                catch
-                {
-                    // If icon file not found, continue without icon
-                }
+                // If icon file not found, continue without icon
             }
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -406,7 +406,7 @@ namespace BCCStudents.Presentation
                 {
                     MessageBox.Show("ჯგუფი წარმატებით განახლდა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadGroups();
-                    BackupManager.DbChangedSinceLastBackup = true;
+                    _backupManager.DbChangedSinceLastBackup = true;
                 }
                 else
                 {
@@ -450,7 +450,7 @@ namespace BCCStudents.Presentation
                     {
                         LoadSubGroups(_selectedGroup.Id);
                     }
-                    BackupManager.DbChangedSinceLastBackup = true;
+                    _backupManager.DbChangedSinceLastBackup = true;
                 }
                 else
                 {
@@ -486,7 +486,7 @@ namespace BCCStudents.Presentation
                         {
                             LoadSubGroups(_selectedGroup.Id);
                         }
-                        BackupManager.DbChangedSinceLastBackup = true;
+                        _backupManager.DbChangedSinceLastBackup = true;
                     }
                     else
                     {

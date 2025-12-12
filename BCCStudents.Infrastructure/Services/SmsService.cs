@@ -2,14 +2,17 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Infrastructure.Services
 {
-    
-
-    public class SmsService
+    /// <summary>
+    /// SMS სერვისის იმპლემენტაცია
+    /// იმპლემენტირებს ISmsService ინტერფეისს
+    /// </summary>
+    public class SmsService : ISmsService
     {
         public string _sender { get; set; } = "test";
         private readonly HttpClient _httpClient = new HttpClient();

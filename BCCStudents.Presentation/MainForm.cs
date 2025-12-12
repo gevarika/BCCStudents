@@ -24,9 +24,9 @@ namespace BCCStudents.Presentation
     public partial class MainForm : Form
     {
         private readonly StudyStartDateManager _studyStartDateManager;
-        private readonly PaymentService _paymentService;
+        private readonly IPaymentService _paymentService;
         private readonly ILoggerRepository _loggerRepository;
-        private readonly StatisticsService _statisticService;
+        private readonly IStatisticsService _statisticService;
         private readonly IServiceProvider _serviceProvider;
         private readonly AutoFileDetectionManager _autoDetectionManager;
         private readonly IDownStreamSyncService _downStreamSyncService;
@@ -36,28 +36,24 @@ namespace BCCStudents.Presentation
         private readonly BCCStudents.Infrastructure.Services.BackupManager _backupManager;
         private readonly IConnectionStatusService _connectionStatusService;
         private readonly IConfigurationService _configurationService;
+        private readonly IPaymentDescriptionAnalyzer _paymentDescriptionAnalyzer;
         private SyncStatusControl _syncStatusControl;
         private bool _allowClose;
-        public MainForm( PaymentService paymentService, 
+        public MainForm( IPaymentService paymentService, 
             IServiceProvider serviceProvider, 
             ILoggerRepository loggerRepository, 
-            StatisticsService statisticsService, 
+            IStatisticsService statisticsService, 
             AutoFileDetectionManager autoDetectionManager,
             IDownStreamSyncService downStreamSyncService,
             IDownStreamSyncManager downStreamSyncManager,
             IUpStreamSyncManager upStreamSyncManager,
             ConnectionMonitorService connectionMonitorService,
             BCCStudents.Infrastructure.Services.BackupManager backupManager,
+            IPaymentDescriptionAnalyzer paymentDescriptionAnalyzer,
             IConnectionStatusService connectionstatusservice)
         {
             InitializeComponent();
-            var configService = _serviceProvider.GetRequiredService<IConfigurationService>();
-            if (configService.IsTestDb)
-                FormTitleHelper.SetTitle(this, "სტუდენტების მართვა - საცდელი ბაზა");
-            else
-                FormTitleHelper.SetTitle(this, "სტუდენტების მართვა");
-
-
+            
             //_connectionService = connectionService;
             _loggerRepository = loggerRepository;
             _statisticService = statisticsService;
@@ -71,8 +67,12 @@ namespace BCCStudents.Presentation
             _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _connectionStatusService = connectionstatusservice ?? throw new ArgumentNullException(nameof(connectionstatusservice));
             _studyStartDateManager = _serviceProvider.GetRequiredService<StudyStartDateManager>();
-            //_studentService = studentService;
-            //_excelPaymentImportService
+            
+            var configService = _serviceProvider.GetRequiredService<IConfigurationService>();
+            if (configService.IsTestDb)
+                FormTitleHelper.SetTitle(this, "სტუდენტების მართვა - საცდელი ბაზა");
+            else
+                FormTitleHelper.SetTitle(this, "სტუდენტების მართვა");
             
             // გამოვიწეროთ ConnectionStatusChanged ივენთი
             _connectionStatusService.ConnectionStatusChanged += ConnectionStatusService_ConnectionStatusChanged;
@@ -361,7 +361,7 @@ namespace BCCStudents.Presentation
         private void SetStudyStartDate()
         {
             // ვამოწმებთ არსებულ სტუდენტებს, თუ არის მაშინ არ გამოვაჩენთ დიალოგს
-            var studentService = _serviceProvider.GetRequiredService<StudentService>();
+            var studentService = _serviceProvider.GetRequiredService<IStudentService>();
             var existingStudentsCount = studentService.GetAllStudents().Count;
             
             if (existingStudentsCount > 0)
@@ -700,7 +700,7 @@ namespace BCCStudents.Presentation
         
         private void ბექაპისმართვაToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var backupForm = new BackupManagementForm();
+            var backupForm = _serviceProvider.GetRequiredService<BackupManagementForm>();
             backupForm.Show();
         }
 

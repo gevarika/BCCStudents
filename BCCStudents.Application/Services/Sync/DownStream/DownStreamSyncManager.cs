@@ -63,7 +63,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                 return;
             }
 
-            SyncResult result = null;
+            BCCStudents.Domain.Entities.SyncResult result = null;
             try
             {
                 result = await _downStreamSyncService.SyncFromServerAsync().ConfigureAwait(false);
@@ -71,7 +71,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             catch (Exception ex)
             {
                 _logger.Error("DownStream periodic sync failed.", ex);
-                result = new SyncResult();
+                result = new BCCStudents.Domain.Entities.SyncResult();
                 result.AddError(ex.Message);
             }
             finally

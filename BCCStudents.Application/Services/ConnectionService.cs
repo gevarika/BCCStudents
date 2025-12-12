@@ -1,16 +1,15 @@
-﻿using BCCStudents.Infrastructure.Data;
-using BCCStudents.Application.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Application.Services
 {
     public class ConnectionService : IConnectionService
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public ConnectionService(DatabaseHelper dbHelper)
+        public ConnectionService(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider ?? throw new System.ArgumentNullException(nameof(connectionProvider));
         }
 
         /*public SQLiteConnection GetConnection()
@@ -20,7 +19,7 @@ namespace BCCStudents.Application.Services
 
         public MySqlConnection GetLocalConnection()
         {
-            return _dbHelper.GetLocalConnection();
+            return _connectionProvider.GetLocalConnection();
         }
 
         public bool CheckConnection(out string message)

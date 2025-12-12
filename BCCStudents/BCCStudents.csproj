@@ -7,17 +7,17 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
-    <AssemblyName>BCCStudents</AssemblyName>
-    <RootNamespace>BCCStudents</RootNamespace>
-    <StartupObject>BCCStudents.Program</StartupObject>
+    <AssemblyName>BCCStudents.Presentation</AssemblyName>
+    <RootNamespace>BCCStudents.Presentation</RootNamespace>
+    <StartupObject>BCCStudents.Presentation.Program</StartupObject>
     <Platforms>AnyCPU;x64</Platforms>
     <RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Version>1.0.2.4</Version>
     <AssemblyVersion>1.0.2.4</AssemblyVersion>
     <FileVersion>1.0.2.4</FileVersion>
-    <Company>SetLook</Company>
-    <Product>BCCStudents</Product>
+    <Company>ბოლნისის კულტურის ცენტრი</Company>
+    <Product>Student Management</Product>
     <Copyright>Copyright ©  2025</Copyright>
     <Description>მოსწავლეთა მართვის ელექტრონული პროგრამა</Description>
   </PropertyGroup>

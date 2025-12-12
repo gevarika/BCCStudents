@@ -6,6 +6,8 @@ using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Application.Services.AutoFileDetection;
 using static BCCStudents.Domain.Entities.UserSession;
+using BCCStudents.Application.Services;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -19,13 +21,13 @@ namespace BCCStudents.Presentation
         private readonly AutoFileDetectionService _detectionService;
         private readonly IUserService _userService;
         private readonly IExcelPaymentImportService _importService;
-        private readonly PaymentDescriptionAnalyzer _descriptionAnalyzer;
+        private readonly IPaymentDescriptionAnalyzer _descriptionAnalyzer;
 
         public AutoFileDetectionManager(
             AutoFileDetectionService detectionService,
             IUserService userService,
             IExcelPaymentImportService importService,
-            PaymentDescriptionAnalyzer descriptionAnalyzer)
+            IPaymentDescriptionAnalyzer descriptionAnalyzer)
         {
             _detectionService = detectionService;
             _userService = userService;

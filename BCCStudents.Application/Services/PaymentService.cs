@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Infrastructure.Services;
 using Core.Models;
 
 using BCCStudents.Application.Interfaces;
@@ -19,8 +17,7 @@ namespace BCCStudents.Application.Services {
         private readonly IStudentGroupRepository _studentGroupRepo;
         private readonly IStudentSubGroupRepository _studentSubGroupRepo;
         private readonly ILoggerRepository _loggerRepository;
-        private readonly DatabaseHelper _dbHelper;
-        private readonly SmsService _smsService;
+        private readonly ISmsService _smsService;
 
         public PaymentService(
             IPaymentRepository paymentRepo,
@@ -29,8 +26,7 @@ namespace BCCStudents.Application.Services {
             IStudentGroupRepository studentGroupRepo,
             IStudentSubGroupRepository studentSubGroupRepo,
             ILoggerRepository loggerRepository,
-            DatabaseHelper dbHelper,
-            IConfigurationService configurationService)
+            ISmsService smsService)
         {
             _paymentRepo = paymentRepo;
             _studentRepo = studentRepo;
@@ -38,8 +34,7 @@ namespace BCCStudents.Application.Services {
             _studentGroupRepo = studentGroupRepo;
             _studentSubGroupRepo = studentSubGroupRepo;
             _loggerRepository = loggerRepository;
-            _dbHelper = dbHelper;
-            _smsService = new SmsService(configurationService);
+            _smsService = smsService ?? throw new ArgumentNullException(nameof(smsService));
         }
 
         /// <summary>
