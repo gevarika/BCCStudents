@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BCCStudents.Domain.Interfaces;
 using System.Data;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services;
-using BCCStudents;
 
 namespace BCCStudents.Presentation
 {
@@ -61,12 +55,12 @@ namespace BCCStudents.Presentation
             {
                 var row = dgvFailedPayments.SelectedRows[0];
                 txtDetails.Text =
-                    $"áƒ¡áƒ¢áƒ áƒ˜áƒ¥áƒáƒœáƒ˜: {row.Cells["RowNumber"].Value}\n" +
-                    $"áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {row.Cells["PaymentDate"].Value}\n" +
-                    $"áƒ—áƒáƒœáƒ®áƒ: {row.Cells["Amount"].Value}\n" +
-                    $"áƒžáƒ˜áƒ áƒáƒ“áƒ˜ áƒœáƒáƒ›áƒ”áƒ áƒ˜: {row.Cells["PersonalId"].Value}\n" +
-                    $"áƒáƒ¦áƒ¬áƒ”áƒ áƒ: {row.Cells["Description"].Value}\n" +
-                    $"áƒ›áƒ˜áƒ–áƒ”áƒ–áƒ˜: {row.Cells["Reason"].Value}";
+                    $"სტრიქონი: {row.Cells["RowNumber"].Value}\n" +
+                    $"თარიღი: {row.Cells["PaymentDate"].Value}\n" +
+                    $"თანხა: {row.Cells["Amount"].Value}\n" +
+                    $"პირადი ნომერი: {row.Cells["PersonalId"].Value}\n" +
+                    $"აღწერა: {row.Cells["Description"].Value}\n" +
+                    $"მიზეზი: {row.Cells["Reason"].Value}";
             }
             else
             {
@@ -78,14 +72,14 @@ namespace BCCStudents.Presentation
         {
             if (dgvFailedPayments.SelectedRows.Count == 0)
             {
-                MessageBox.Show("áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ!", "áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("აირჩიეთ გადახდა!", "გაფრთხილება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             var row = dgvFailedPayments.SelectedRows[0];
             string description = row.Cells["Description"].Value?.ToString() ?? string.Empty;
             decimal amount = row.Cells["Amount"].Value != null ? Convert.ToDecimal(row.Cells["Amount"].Value) : 0;
 
-            // áƒ›áƒáƒ«áƒ”áƒ‘áƒœáƒáƒ¡ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ”áƒ‘áƒ˜ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ—, áƒ’áƒ•áƒáƒ áƒ˜áƒ— áƒáƒœ áƒ—áƒáƒœáƒ®áƒ˜áƒ— áƒ›áƒ¡áƒ’áƒáƒ•áƒ¡áƒáƒ“
+            // მოძებნოს სტუდენტები სახელით, გვარით ან თანხით მსგავსად
             var students = _studentRepository.GetAllStudents();
             var similarStudents = students.Where(s =>
                     (!string.IsNullOrEmpty(s.FirstName) && description.IndexOf(s.FirstName, StringComparison.OrdinalIgnoreCase) >= 0) ||
@@ -97,11 +91,11 @@ namespace BCCStudents.Presentation
             lstSimilarStudents.Items.Clear();
             foreach (var s in similarStudents)
             {
-                lstSimilarStudents.Items.Add($"{s.FirstName} {s.LastName} | áƒžáƒ˜áƒ áƒáƒ“áƒ˜: {s.Id_Numb} | áƒ’áƒáƒ“áƒáƒ¡áƒáƒ®áƒáƒ“áƒ˜: {s.TuitionFee}");
+                lstSimilarStudents.Items.Add($"{s.FirstName} {s.LastName} | პირადი: {s.Id_Numb} | გადასახადი: {s.TuitionFee}");
             }
             if (similarStudents.Count == 0)
             {
-                lstSimilarStudents.Items.Add("áƒ›áƒ¡áƒ’áƒáƒ•áƒ¡áƒ˜ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ");
+                lstSimilarStudents.Items.Add("მსგავსი სტუდენტი ვერ მოიძებნა");
             }
         }
 
@@ -109,35 +103,35 @@ namespace BCCStudents.Presentation
         {
             if (dgvFailedPayments.SelectedRows.Count == 0 || lstSimilarStudents.SelectedIndex == -1)
             {
-                MessageBox.Show("áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ“áƒ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜!", "áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("აირჩიეთ გადახდა და სტუდენტი!", "გაფრთხილება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             var row = dgvFailedPayments.SelectedRows[0];
             var studentInfo = lstSimilarStudents.SelectedItem.ToString();
-            // áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒžáƒ˜áƒ áƒáƒ“áƒ˜ áƒœáƒáƒ›áƒ áƒ˜áƒ¡ áƒáƒ›áƒáƒ¦áƒ”áƒ‘áƒ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ“áƒáƒœ
-            var idPart = studentInfo.Split('|').FirstOrDefault(x => x.Trim().StartsWith("áƒžáƒ˜áƒ áƒáƒ“áƒ˜:"));
+            // სტუდენტის პირადი ნომრის ამოღება ტექსტიდან
+            var idPart = studentInfo.Split('|').FirstOrDefault(x => x.Trim().StartsWith("პირადი:"));
             if (idPart == null)
             {
-                MessageBox.Show("áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒ˜áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¤áƒ˜áƒ™áƒáƒªáƒ˜áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("სტუდენტის იდენტიფიკაცია ვერ მოხერხდა!", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            var personalId = Convert.ToInt64(idPart.Replace("áƒžáƒ˜áƒ áƒáƒ“áƒ˜:", "").Trim());
+            var personalId = Convert.ToInt64(idPart.Replace("პირადი:", "").Trim());
             var student = _studentRepository.GetStudentByPersonalId(personalId);
             if (student == null)
             {
-                MessageBox.Show("áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("სტუდენტი ვერ მოიძებნა!", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            // áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ–áƒ” áƒáƒ¡áƒáƒ®áƒ•áƒ
+            // გადახდის ბალანსზე ასახვა
             decimal amount = row.Cells["Amount"].Value != null ? Convert.ToDecimal(row.Cells["Amount"].Value) : 0;
             _studentRepository.UpdateStudentBalance(student.Id, amount);
-            // áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ FailedPayments-áƒ“áƒáƒœ
+            // ჩანაწერის წაშლა FailedPayments-დან
             DateTime paymentDate = (DateTime)row.Cells["PaymentDate"].Value;
             //long? personalId = row.Cells["PersonalId"].Value != null ? Convert.ToInt64(row.Cells["PersonalId"].Value) : (long?)null;
             string description = row.Cells["Description"].Value?.ToString();
             _paymentRepository.DeleteFailedPayment(paymentDate, amount, personalId, description);
-            MessageBox.Show("áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ›áƒ˜áƒ”áƒœáƒ˜áƒ­áƒ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ¡ áƒ“áƒ áƒ¬áƒáƒ˜áƒ¨áƒáƒšáƒ áƒ“áƒáƒ£áƒ“áƒáƒ¡áƒ¢áƒ£áƒ áƒ”áƒ‘áƒ”áƒš áƒ¡áƒ˜áƒ˜áƒ“áƒáƒœ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("გადახდა წარმატებით მიენიჭა სტუდენტს და წაიშალა დაუდასტურებელ სიიდან!", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
             LoadFailedPayments();
         }
     }
-} 
+}

@@ -1,30 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Presentation.Properties;
-using BCCStudents.Application.Services;
-
-using Microsoft.Extensions.DependencyInjection;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Presentation.Properties;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BCCStudents.Presentation
 {
     public partial class FinanceManagementForm : Form
     {
-        private readonly PaymentService _paymentService;
+        private readonly IPaymentService _paymentService;
+        private readonly ISystemConfigurationService _systemConfigService;
         private readonly IServiceProvider _serviceProvider;
-        public FinanceManagementForm(PaymentService paymentService, IServiceProvider serviceProvider)
+        private readonly IUserContext _userContext;
+
+        public FinanceManagementForm(IPaymentService paymentService, ISystemConfigurationService systemConfigService, IServiceProvider serviceProvider, IUserContext userContext)
         {
             InitializeComponent();
             _paymentService = paymentService;
+            _systemConfigService = systemConfigService ?? throw new ArgumentNullException(nameof(systemConfigService));
             _serviceProvider = serviceProvider;
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             if (!Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "ფინანსების მენეჯერი");
             else FormTitleHelper.SetTitle(this, "ფინანსური მენეჯერი - სატესტო რეჟიმი");
@@ -34,6 +28,31 @@ namespace BCCStudents.Presentation
         private void FinanceManagementForm_Load(object sender, EventArgs e)
         {
             LoadPaymentsData();
+            ApplySecurityChecks();
+        }
+
+        private void ApplySecurityChecks()
+        {
+            // btnRefresh - CanManagePayments permission (viewing payment data)
+            if (btnRefresh != null)
+            {
+                btnRefresh.Tag = $"Permission_{Permission.CanManagePayments}";
+                btnRefresh.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+            }
+
+            // გადახდებისისტორიაToolStripMenuItem - CanViewReports or CanManagePayments
+            if (გადახდებისისტორიაToolStripMenuItem != null)
+            {
+                გადახდებისისტორიაToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
+                გადახდებისისტორიაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+            }
+
+            // დაუდასტურებელიგადახდებიToolStripMenuItem - CanManagePayments
+            if (დაუდასტურებელიგადახდებიToolStripMenuItem != null)
+            {
+                დაუდასტურებელიგადახდებიToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
+                დაუდასტურებელიგადახდებიToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+            }
         }
         private void SetupDataGridView()
         {
@@ -49,7 +68,7 @@ namespace BCCStudents.Presentation
             dgvPayments.Columns.Add("DaysRemaining", "დარჩენილი/გადაცილებული დღეები");
         }
 
-        private void ApplyPaymentRowColor( DataGridViewRow row, PaymentSummary payment)
+        private void ApplyPaymentRowColor(DataGridViewRow row, PaymentSummary payment)
         {
             TimeSpan? remainingDays = payment.NextPaymentDate - DateTime.Today;
 
@@ -68,64 +87,30 @@ namespace BCCStudents.Presentation
         }
         private void LoadPaymentsData()
         {
-            /*var payments = _paymentService.GetPendingPayments();
-            dgvPayments.Rows.Clear();
 
-            var studyStartDate = StudyStartDateManager.GetStudyStartDate();
-            // დავახარისხოთ გადაუხდელები თავში
-            var sortedPayments = payments
-                .OrderByDescending(p => p.AmountDue > 0)  // ჯერ ვისაც გადაუხდელი აქვს
-                .ThenBy(p => p.NextPaymentDate ?? studyStartDate?.AddMonths(1))            // და შემდეგ თარიღის მიხედვით
-                .ToList();
-
-            foreach (var payment in sortedPayments)
-            {
-                int rowIndex = dgvPayments.Rows.Add();
-                DataGridViewRow row = dgvPayments.Rows[rowIndex];
-
-                row.Cells["StudentID"].Value = payment.StudentID;
-                row.Cells["FirstName"].Value = payment.FirstName;
-                row.Cells["LastName"].Value = payment.LastName;
-                row.Cells["GroupName"].Value = payment.GroupName;
-                row.Cells["TuitionFee"].Value = payment.TuitionFee;
-                row.Cells["TotalPaid"].Value = payment.TotalPaid;
-                row.Cells["AmountDue"].Value = payment.AmountDue;
-
-                DateTime nextPaymentDate;
-
-                if (payment.NextPaymentDate.HasValue)
-                {
-                    nextPaymentDate = payment.NextPaymentDate.Value;
-                }
-                else if (studyStartDate.HasValue)
-                {
-                    nextPaymentDate = studyStartDate.Value.AddMonths(1);
-                }
-                else
-                {
-                    nextPaymentDate = DateTime.Today.AddMonths(1); // fallback უსაფრთხოებისთვის
-                }
-
-                row.Cells["NextPaymentDate"].Value = payment.NextPaymentDate?.ToString("yyyy-MM-dd");
-
-                // დარჩენილი ან გადაცილებული დღეები
-                int daysRemaining = (nextPaymentDate.Date - DateTime.Today).Days;
-                if (daysRemaining >= 0)
-                    row.Cells["DaysRemaining"].Value = $"დარჩენილი: {daysRemaining} დღე";
-                else
-                    row.Cells["DaysRemaining"].Value = $"გადაცილებული: {Math.Abs(daysRemaining)} დღე";
-
-                ApplyPaymentRowColor(row, payment);
-            }*/
         }
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             LoadPaymentsData();
         }
 
         private void გადახდებისისტორიაToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             using (var form = _serviceProvider.GetRequiredService<PaymentImportHistoryForm>())
             {
                 form.ShowDialog(this);
@@ -134,6 +119,13 @@ namespace BCCStudents.Presentation
 
         private void დაუდასტურებელიგადახდებიToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var unmatchedPaymentsForm = _serviceProvider.GetRequiredService<UnmatchedPaymentsForm>();
             unmatchedPaymentsForm.Show();
         }

@@ -1,27 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services.Sync.UpStream;
-using BCCStudents.Application.Services.Sync;
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
+using System.Data;
 
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class GroupService : IGroupService
     {
         private readonly IGroupRepository _groupRepository;
-        private readonly IStudentGroupRepository _studentGroupRepository;
-        private readonly StudentService _studentService;
-        private readonly SubGroupService _subGroupService;
+        private readonly IStudentGroupsService _studentGroupsService;
+        //private readonly IStudentService _studentService;
+        private readonly ISubGroupService _subGroupService;
         private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public GroupService(IDatabaseConnectionProvider connectionProvider, IGroupRepository groupRepository, IStudentGroupRepository studentGroupRepository, StudentService studentService, SubGroupService subGroupService, IUpStreamChangeTracker upStreamChangeTracker)
+        public GroupService(IDatabaseConnectionProvider connectionProvider, IGroupRepository groupRepository, IStudentGroupsService studentGroupsService, ISubGroupService subGroupService, IUpStreamChangeTracker upStreamChangeTracker)
         {
             _groupRepository = groupRepository;
-            _studentGroupRepository = studentGroupRepository;
-            _studentService = studentService;
+            _studentGroupsService = studentGroupsService;
+            //_studentService = studentService;
             _subGroupService = subGroupService;
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
@@ -82,7 +80,6 @@ namespace BCCStudents.Application.Services {
         }
 
         #endregion
-
         #region ==================== SELECT - ჯგუფის მიღება ====================
 
         /// <summary>
@@ -138,7 +135,7 @@ namespace BCCStudents.Application.Services {
         /// </summary>
         public decimal GetGroupPrice(int groupId)
         {
-            return _groupRepository.GetGroupPriceById(groupId);
+            return _groupRepository.GetGroupPrice(groupId);
         }
 
         /// <summary>
@@ -181,49 +178,7 @@ namespace BCCStudents.Application.Services {
             return _groupRepository.IsGroupsTableEmpty();
         }
 
-        /// <summary>
-        /// მოსწავლის ჯგუფების მიღება StudentId-ით (StudentGroups ცხრილიდან)
-        /// </summary>
-        public List<StudentGroups> GetStudentGroupsByStudentId(int studentId)
-        {
-            return _studentGroupRepository.GetActiveByStudentId(studentId);
-        }
-
         #endregion
-
-        #region ==================== UPDATE - ჯგუფის განახლება (სრული) ====================
-
-        /// <summary>
-        /// ჯგუფის სრული განახლება
-        /// </summary>
-        public bool UpdateGroup(Group group)
-        {
-            try
-            {
-                // შევამოწმოთ სტატუსი შეიცვალა თუ არა
-                var currentGroup = _groupRepository.GetGroupById(group.Id);
-                bool statusChanged = currentGroup != null && currentGroup.Status != group.Status;
-
-                // განვაახლოთ ჯგუფი
-                var result = _groupRepository.UpdateGroup(group);
-
-                // თუ სტატუსი შეიცვალა, განვაახლოთ ქვეჯგუფებიც
-                if (statusChanged)
-                {
-                    _subGroupService.UpdateSubGroupsStatusByGroupId(group.Id, group.Status);
-                }
-
-                SyncGroupSnapshot(group.Id, SyncOperationType.Update);
-                return result;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        #endregion
-
         #region ==================== UPDATE - ჯგუფის ცალკეული ველების განახლება ====================
 
         /// <summary>
@@ -265,7 +220,7 @@ namespace BCCStudents.Application.Services {
             if (result)
             {
                 // ქვეჯგუფების სტატუსიც განვაახლოთ
-                _subGroupService.UpdateSubGroupsStatusByGroupId(groupId, newStatus);
+                //_subGroupService.UpdateSubGroupsStatusByGroupId(groupId, newStatus);
                 SyncGroupSnapshot(groupId, SyncOperationType.Update);
             }
             return result;
@@ -292,7 +247,38 @@ namespace BCCStudents.Application.Services {
         }
 
         #endregion
+        #region ==================== UPDATE - ჯგუფის განახლება (სრული) ====================
 
+        /// <summary>
+        /// ჯგუფის სრული განახლება
+        /// </summary>
+        public bool UpdateGroup(Group group)
+        {
+            try
+            {
+                // შევამოწმოთ სტატუსი შეიცვალა თუ არა
+                var currentGroup = _groupRepository.GetGroupById(group.Id);
+                bool statusChanged = currentGroup != null && currentGroup.Status != group.Status;
+
+                // განვაახლოთ ჯგუფი
+                var result = _groupRepository.UpdateGroup(group);
+
+                // თუ სტატუსი შეიცვალა, განვაახლოთ ქვეჯგუფებიც
+                if (statusChanged)
+                {
+                    _subGroupService.UpdateSubGroupsStatusByGroupId(group.Id, group.Status);
+                }
+
+                SyncGroupSnapshot(group.Id, SyncOperationType.Update);
+                return result;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
         #region ==================== UPDATE - მოსწავლეთა რაოდენობის მართვა ====================
 
         /// <summary>
@@ -339,6 +325,98 @@ namespace BCCStudents.Application.Services {
             SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
 
+        public bool RecalculateStudentCount(int groupId, MySqlConnection externalConnection, MySqlTransaction externalTransaction)
+        {
+            // ბიზნეს ლოგიკა (ვალიდაცია, ნებართვები) აქ დაემატება.
+            // შემდეგ, დაუყოვნებლივ გადაეცემა Repository-ს:
+            return _groupRepository.RecalculateStudentCount(groupId, externalConnection, externalTransaction);
+        }
+        #endregion
+
+        #region ==================== VALIDATION - მოსწავლეების რაოდენობის ვალიდაცია ====================
+
+        /// <summary>
+        /// შეამოწმებს შეიძლება თუ არა ჯგუფში მოსწავლის დამატება
+        /// </summary>
+        public bool CanAddStudentToGroup(int groupId)
+        {
+            var group = _groupRepository.GetGroupById(groupId);
+            if (group == null)
+                return false;
+
+            // თუ MaxStudents = 0, ნიშნავს რომ შეზღუდვა არ არის
+            if (group.MaxStudents == 0)
+                return true;
+
+            return group.StudentCount < group.MaxStudents;
+        }
+
+        /// <summary>
+        /// შეამოწმებს შეიძლება თუ არა ქვეჯგუფში მოსწავლის დამატება
+        /// </summary>
+        public bool CanAddStudentToSubGroup(int subGroupId)
+        {
+            var subGroup = _subGroupService.GetSubGroupById(subGroupId);
+            if (subGroup == null)
+                return false;
+
+            // თუ MaxStudents = 0, ნიშნავს რომ შეზღუდვა არ არის
+            if (subGroup.MaxStudents == 0)
+                return true;
+
+            return subGroup.StudentCount < subGroup.MaxStudents;
+        }
+
+        /// <summary>
+        /// შეამოწმებს შეიძლება თუ არა ჯგუფში MaxStudents-ის შეცვლა
+        /// </summary>
+        public bool CanUpdateGroupMaxStudents(int groupId, int newMaxStudents)
+        {
+            var group = _groupRepository.GetGroupById(groupId);
+            if (group == null)
+                return false;
+
+            // თუ newMaxStudents = 0, ნიშნავს რომ შეზღუდვა არ არის - ყოველთვის შეიძლება
+            if (newMaxStudents == 0)
+                return true;
+
+            // ახალი მაქსიმუმი არ უნდა იყოს ნაკლები არსებულ მოსწავლეების რაოდენობაზე
+            return newMaxStudents >= group.StudentCount;
+        }
+
+        /// <summary>
+        /// შეამოწმებს შეიძლება თუ არა ქვეჯგუფში MaxStudents-ის შეცვლა
+        /// </summary>
+        public bool CanUpdateSubGroupMaxStudents(int subGroupId, int newMaxStudents)
+        {
+            var subGroup = _subGroupService.GetSubGroupById(subGroupId);
+            if (subGroup == null)
+                return false;
+
+            // თუ newMaxStudents = 0, ნიშნავს რომ შეზღუდვა არ არის - ყოველთვის შეიძლება
+            if (newMaxStudents == 0)
+                return true;
+
+            // ახალი მაქსიმუმი არ უნდა იყოს ნაკლები არსებულ მოსწავლეების რაოდენობაზე
+            return newMaxStudents >= subGroup.StudentCount;
+        }
+
+        /// <summary>
+        /// შეამოწმებს შეიძლება თუ არა ჯგუფის ქვეჯგუფების მოსწავლეების საერთო რაოდენობა გადააჭარბოს ჯგუფის MaxStudents-ს
+        /// </summary>
+        public bool CanGroupAccommodateTotalStudents(int groupId, int newTotalStudents)
+        {
+            var group = _groupRepository.GetGroupById(groupId);
+            if (group == null)
+                return false;
+
+            // თუ MaxStudents = 0, ნიშნავს რომ შეზღუდვა არ არის
+            if (group.MaxStudents == 0)
+                return true;
+
+            return newTotalStudents <= group.MaxStudents;
+        }
+
         #endregion
 
         #region ==================== DELETE - ჯგუფის წაშლა ====================
@@ -372,57 +450,6 @@ namespace BCCStudents.Application.Services {
         }
 
         #endregion
-
-        #region ==================== მოსწავლეებთან დაკავშირებული ====================
-
-        /// <summary>
-        /// ჯგუფის მოსწავლეების მიღება
-        /// </summary>
-        public List<Student> GetStudentsByGroupId(int groupId)
-        {
-            return _studentService.GetStudentsByGroupId(groupId);
-        }
-
-        /// <summary>
-        /// მოსწავლის სხვა ჯგუფში გადატანა
-        /// </summary>
-        public void MigrateStudentToGroup(int studentId, int oldGroupId, int newGroupId)
-        {
-            // ძველი ჯგუფიდან დეაქტივაცია
-            _studentService.UpdateStudentStatus(studentId, oldGroupId, false);
-            DecrementGroupStudentCount(oldGroupId);
-
-            // ახალ ჯგუფში დამატება
-            _studentService.AddStudentToGroup(studentId, newGroupId, true);
-            IncrementGroupStudentCount(newGroupId);
-
-            // ახალ ჯგუფის პირველ ქვეჯგუფში დამატება
-            try
-            {
-                var subGroup = _subGroupService.GetFirstSubGroupByGroupId(newGroupId);
-                if (subGroup != null)
-                {
-                    _studentService.AddStudentToSubGroup(studentId, newGroupId, subGroup.Id, "Pending", null, 0, 0, true);
-                }
-            }
-            catch { }
-
-            // ძველი ჯგუფის ქვეჯგუფებიდან წაშლა
-            _subGroupService.RemoveStudentFromAllSubGroups(studentId, oldGroupId);
-        }
-
-        /// <summary>
-        /// მოსწავლის ჯგუფიდან არქივირება
-        /// </summary>
-        public void ArchiveStudentFromGroup(int studentId, int groupId)
-        {
-            _studentService.UpdateStudentStatus(studentId, groupId, false);
-            _subGroupService.RemoveStudentFromAllSubGroups(studentId, groupId);
-            DecrementGroupStudentCount(groupId);
-        }
-
-        #endregion
-
         #region ==================== Sync Helpers ====================
 
         /// <summary>

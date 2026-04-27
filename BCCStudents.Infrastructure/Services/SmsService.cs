@@ -1,10 +1,7 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Text.Json;
-using BCCStudents.Application.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using System.Text.Json;
 
 namespace BCCStudents.Infrastructure.Services
 {
@@ -23,7 +20,7 @@ namespace BCCStudents.Infrastructure.Services
             _httpClient = new HttpClient();
             _config = config ?? throw new ArgumentNullException(nameof(config));
         }
-        
+
         public async Task<SmsSendResult> SendSmsAsync(string phoneNumber, string message)
         {
             if (_config.SmsEnabled)
@@ -77,6 +74,6 @@ namespace BCCStudents.Infrastructure.Services
             else return new SmsSendResult { Success = false, Status = "SMS სერვისი გამორთულია", };
         }
     }
-    
+
 }
 

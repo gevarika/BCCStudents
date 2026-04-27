@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Data;
-using ClosedXML.Excel;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using System.Threading.Tasks;
-using System.Globalization;
-using BCCStudents.Application.Services.Sync.UpStream;
-using BCCStudents.Application.Services.Sync;
-using BCCStudents.Application.Interfaces;
+using ClosedXML.Excel;
+using System.Data;
+using System.Text.RegularExpressions;
 
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class ExcelPaymentImportService : IExcelPaymentImportService
     {
         private readonly IPaymentRepository _paymentRepository;
@@ -24,8 +18,8 @@ namespace BCCStudents.Application.Services {
         private readonly List<FailedPayment> _failedPayments = new List<FailedPayment>();
 
         public ExcelPaymentImportService(
-            IPaymentRepository paymentRepository, 
-            IBalanceRepository balanceManager, 
+            IPaymentRepository paymentRepository,
+            IBalanceRepository balanceManager,
             ILoggerRepository loggerRepository,
             IStudentRepository studentRepository,
             IGroupRepository groupRepository,
@@ -37,7 +31,7 @@ namespace BCCStudents.Application.Services {
             _studentRepository = studentRepository;
             _upStreamChangeTracker = upStreamChangeTracker;
             _descriptionAnalyzer = new PaymentDescriptionAnalyzer(studentRepository, groupRepository, loggerRepository);
-            
+
             // გავასუფთაოთ ძველი ვერ წარმატებული გადახდები
             //_paymentRepository.ClearFailedPayments();
         }
@@ -115,7 +109,7 @@ namespace BCCStudents.Application.Services {
                             };
                             _failedPayments.Add(failedPayment);
                             var failedPaymentId = _paymentRepository.SaveFailedPayment(failedPayment);
-                            
+
                             // ==================== სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -131,7 +125,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId}): {syncEx.Message}", "System");
                             }
-                            
+
                             failedRows.Add(new FailedRow
                             {
                                 RowNumber = row.RowNumber(),
@@ -141,6 +135,17 @@ namespace BCCStudents.Application.Services {
                         }
 
                         // ==================== 3. სტუდენტის იდენტიფიცირება ====================
+                        var multiCodeResult = await TryProcessMultiStudentCodesAsync(
+                            description, amount, paymentDate, personalId, filePath, row.RowNumber(), failedRows);
+                        if (multiCodeResult.Handled)
+                        {
+                            if (multiCodeResult.Success)
+                            {
+                                // წარმატებით დამუშავდა მრავალკოდიანი გადახდა
+                            }
+                            continue;
+                        }
+
                         var analysis = await _descriptionAnalyzer.AnalyzeDescription(description, personalId);
 
                         if (analysis.IsValid && !analysis.RequiresReview && analysis.StudentId.HasValue)
@@ -149,7 +154,7 @@ namespace BCCStudents.Application.Services {
                             // ⚠️ მნიშვნელოვანი: IncrementStudentBalance იყენებს Balance = Balance + @Amount
                             // ეს უზრუნველყოფს რომ არსებული ბალანსი არ დაიკარგება
                             var balanceUpdated = _studentRepository.IncrementStudentBalance(analysis.StudentId.Value, amount);
-                            
+
                             if (!balanceUpdated)
                             {
                                 _loggerRepository?.LogImportAction("ბალანსის განახლება", "Error", $"ბალანსის განახლება ვერ მოხერხდა: StudentId={analysis.StudentId.Value}, Amount={amount}", "System");
@@ -158,7 +163,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("ბალანსის განახლება", "Success", $"ბალანსი განახლდა: StudentId={analysis.StudentId.Value}, Amount={amount}", "System");
                             }
-                            
+
                             // ==================== 4.1. სერვერზე სინქრონიზაცია ====================
                             if (balanceUpdated)
                             {
@@ -166,7 +171,7 @@ namespace BCCStudents.Application.Services {
                                 {
                                     // მცირე დაყოვნება, რათა დავრწმუნდეთ რომ ბაზაში ცვლილება დაფიქსირდა
                                     await Task.Delay(100);
-                                    
+
                                     var student = _studentRepository.GetStudentById(analysis.StudentId.Value);
                                     if (student != null)
                                     {
@@ -185,10 +190,10 @@ namespace BCCStudents.Application.Services {
                                     _loggerRepository?.LogImportAction("სერვერზე სინქრონიზაცია", "Error", $"შეცდომა სტუდენტის სერვერზე სინქრონიზაციისას (ID: {analysis.StudentId.Value}): {syncEx.Message}", "System");
                                 }
                             }
-                            
+
                             // ==================== 5. იმპორტის ლოგირება ====================
                             var importedPaymentLogId = _paymentRepository.AddImportedPaymentLog(paymentDate, amount, personalId, description, filePath);
-                            
+
                             // ==================== 5.1. სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -220,7 +225,7 @@ namespace BCCStudents.Application.Services {
                             };
                             _failedPayments.Add(failedPayment);
                             var failedPaymentId2 = _paymentRepository.SaveFailedPayment(failedPayment);
-                            
+
                             // ==================== სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -236,7 +241,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId2}): {syncEx.Message}", "System");
                             }
-                            
+
                             failedRows.Add(new FailedRow
                             {
                                 RowNumber = row.RowNumber(),
@@ -313,7 +318,7 @@ namespace BCCStudents.Application.Services {
                             };
                             _failedPayments.Add(failedPayment);
                             var failedPaymentId3 = _paymentRepository.SaveFailedPayment(failedPayment);
-                            
+
                             // ==================== სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -329,7 +334,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId3}): {syncEx.Message}", "System");
                             }
-                            
+
                             failedRows.Add(new FailedRow
                             {
                                 RowNumber = rowNumber,
@@ -339,6 +344,17 @@ namespace BCCStudents.Application.Services {
                         }
 
                         // ==================== 2.2. სტუდენტის იდენტიფიცირება ====================
+                        var multiCodeResult = await TryProcessMultiStudentCodesAsync(
+                            description, amount, paymentDate, personalId, filePath, rowNumber, failedRows);
+                        if (multiCodeResult.Handled)
+                        {
+                            if (multiCodeResult.Success)
+                            {
+                                processedCount++;
+                            }
+                            continue;
+                        }
+
                         var analysis = await _descriptionAnalyzer.AnalyzeDescription(description, personalId);
                         if (analysis.IsValid && !analysis.RequiresReview && analysis.StudentId.HasValue)
                         {
@@ -346,7 +362,7 @@ namespace BCCStudents.Application.Services {
                             // ⚠️ მნიშვნელოვანი: IncrementStudentBalance იყენებს Balance = Balance + @Amount
                             // ეს უზრუნველყოფს რომ არსებული ბალანსი არ დაიკარგება
                             var balanceUpdated = _studentRepository.IncrementStudentBalance(analysis.StudentId.Value, amount);
-                            
+
                             if (!balanceUpdated)
                             {
                                 _loggerRepository?.LogImportAction("ბალანსის განახლება", "Error", $"ბალანსის განახლება ვერ მოხერხდა: StudentId={analysis.StudentId.Value}, Amount={amount}", "System");
@@ -355,7 +371,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("ბალანსის განახლება", "Success", $"ბალანსი განახლდა: StudentId={analysis.StudentId.Value}, Amount={amount}", "System");
                             }
-                            
+
                             // ==================== 2.3.1. სერვერზე სინქრონიზაცია ====================
                             if (balanceUpdated)
                             {
@@ -363,7 +379,7 @@ namespace BCCStudents.Application.Services {
                                 {
                                     // მცირე დაყოვნება, რათა დავრწმუნდეთ რომ ბაზაში ცვლილება დაფიქსირდა
                                     await Task.Delay(100);
-                                    
+
                                     var student = _studentRepository.GetStudentById(analysis.StudentId.Value);
                                     if (student != null)
                                     {
@@ -382,10 +398,10 @@ namespace BCCStudents.Application.Services {
                                     _loggerRepository?.LogImportAction("სერვერზე სინქრონიზაცია", "Error", $"შეცდომა სტუდენტის სერვერზე სინქრონიზაციისას (ID: {analysis.StudentId.Value}): {syncEx.Message}", "System");
                                 }
                             }
-                            
+
                             // ==================== 2.4. იმპორტის ლოგირება ====================
                             var importedPaymentLogId2 = _paymentRepository.AddImportedPaymentLog(paymentDate, amount, personalId, description, filePath);
-                            
+
                             // ==================== 2.4.1. სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -401,7 +417,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("ImportedPaymentsLog სერვერზე სინქრონიზაცია", "Error", $"შეცდომა ImportedPaymentLog სერვერზე სინქრონიზაციისას (ID: {importedPaymentLogId2}): {syncEx.Message}", "System");
                             }
-                            
+
                             processedCount++;
                         }
                         else
@@ -420,7 +436,7 @@ namespace BCCStudents.Application.Services {
                             };
                             _failedPayments.Add(failedPayment);
                             var failedPaymentId4 = _paymentRepository.SaveFailedPayment(failedPayment);
-                            
+
                             // ==================== სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -436,7 +452,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId4}): {syncEx.Message}", "System");
                             }
-                            
+
                             failedRows.Add(new FailedRow
                             {
                                 RowNumber = rowNumber,
@@ -460,7 +476,7 @@ namespace BCCStudents.Application.Services {
                         };
                         _failedPayments.Add(failedPayment);
                         var failedPaymentId5 = _paymentRepository.SaveFailedPayment(failedPayment);
-                        
+
                         // ==================== სერვერზე სინქრონიზაცია ====================
                         try
                         {
@@ -476,7 +492,7 @@ namespace BCCStudents.Application.Services {
                         {
                             _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId5}): {syncEx.Message}", "System");
                         }
-                        
+
                         failedRows.Add(new FailedRow
                         {
                             RowNumber = rowNumber,
@@ -500,7 +516,7 @@ namespace BCCStudents.Application.Services {
                             };
                             _failedPayments.Add(failedPayment);
                             var failedPaymentId6 = _paymentRepository.SaveFailedPayment(failedPayment);
-                            
+
                             // ==================== სერვერზე სინქრონიზაცია ====================
                             try
                             {
@@ -516,7 +532,7 @@ namespace BCCStudents.Application.Services {
                             {
                                 _loggerRepository?.LogImportAction("FailedPayments სერვერზე სინქრონიზაცია", "Error", $"შეცდომა FailedPayment სერვერზე სინქრონიზაციისას (ID: {failedPaymentId6}): {syncEx.Message}", "System");
                             }
-                            
+
                             failedRows.Add(new FailedRow
                             {
                                 RowNumber = rowNumber,
@@ -558,7 +574,7 @@ namespace BCCStudents.Application.Services {
             };
             _failedPayments.Add(failedPayment);
             var failedPaymentId = _paymentRepository.SaveFailedPayment(failedPayment);
-            
+
             // ==================== სერვერზე სინქრონიზაცია ====================
             try
             {
@@ -579,6 +595,144 @@ namespace BCCStudents.Application.Services {
         public IEnumerable<FailedPayment> GetFailedPayments()
         {
             return _paymentRepository.GetFailedPayments();
+        }
+
+        private static List<string> ExtractStudentCodes(string description)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                return new List<string>();
+            }
+
+            var matches = Regex.Matches(description, @"B\d{4}", RegexOptions.IgnoreCase);
+            return matches
+                .Select(m => m.Value.ToUpperInvariant())
+                .Distinct()
+                .ToList();
+        }
+
+        private async Task<(bool Handled, bool Success)> TryProcessMultiStudentCodesAsync(
+            string description,
+            decimal amount,
+            DateTime paymentDate,
+            long? personalId,
+            string filePath,
+            int rowNumber,
+            List<FailedRow> failedRows)
+        {
+            var codes = ExtractStudentCodes(description);
+            if (codes.Count < 2)
+            {
+                return (false, false);
+            }
+
+            _loggerRepository?.LogImportAction(
+                "მრავალსტუდენტიანი გადახდა",
+                "Info",
+                $"აღწერა შეიცავს {codes.Count} სტუდენტის კოდს: {string.Join(", ", codes)}",
+                "System");
+
+            var students = new List<Student>();
+            foreach (var code in codes)
+            {
+                var student = _studentRepository.GetStudentByCode(code);
+                if (student == null)
+                {
+                    var reason = $"მრავალკოდიანი გადახდა: ვერ მოიძებნა სტუდენტი კოდით {code}";
+                    await AddFailedPayment(rowNumber, paymentDate, amount, personalId, description, reason);
+                    failedRows.Add(new FailedRow { RowNumber = rowNumber, Reason = reason });
+                    return (true, false);
+                }
+                students.Add(student);
+            }
+
+            var perStudentAmount = Math.Round(amount / students.Count, 2, MidpointRounding.AwayFromZero);
+            var lastAmount = amount - (perStudentAmount * (students.Count - 1));
+
+            for (int i = 0; i < students.Count; i++)
+            {
+                var student = students[i];
+                var splitAmount = i == students.Count - 1 ? lastAmount : perStudentAmount;
+
+                var balanceUpdated = _studentRepository.IncrementStudentBalance(student.Id, splitAmount);
+                if (!balanceUpdated)
+                {
+                    _loggerRepository?.LogImportAction(
+                        "ბალანსის განახლება",
+                        "Error",
+                        $"ბალანსის განახლება ვერ მოხერხდა: StudentId={student.Id}, Amount={splitAmount}",
+                        "System");
+                    continue;
+                }
+
+                _loggerRepository?.LogImportAction(
+                    "ბალანსის განახლება",
+                    "Success",
+                    $"ბალანსი განახლდა: StudentId={student.Id}, Amount={splitAmount}",
+                    "System");
+
+                try
+                {
+                    await Task.Delay(100);
+                    var updatedStudent = _studentRepository.GetStudentById(student.Id);
+                    if (updatedStudent != null)
+                    {
+                        _loggerRepository?.LogImportAction(
+                            "სერვერზე სინქრონიზაცია",
+                            "Info",
+                            $"სტუდენტის სერვერზე სინქრონიზაცია: ID={student.Id}, Balance={updatedStudent.Balance}",
+                            "System");
+                        await _upStreamChangeTracker.TrackStudentChangeAsync(student.Id, SyncOperationType.Update, updatedStudent);
+                        _loggerRepository?.LogImportAction(
+                            "სერვერზე სინქრონიზაცია",
+                            "Success",
+                            $"სტუდენტის სერვერზე სინქრონიზაცია დასრულდა: ID={student.Id}",
+                            "System");
+                    }
+                    else
+                    {
+                        _loggerRepository?.LogImportAction(
+                            "სერვერზე სინქრონიზაცია",
+                            "Error",
+                            $"სტუდენტი ვერ მოიძებნა სინქრონიზაციისთვის: ID={student.Id}",
+                            "System");
+                    }
+                }
+                catch (Exception syncEx)
+                {
+                    _loggerRepository?.LogImportAction(
+                        "სერვერზე სინქრონიზაცია",
+                        "Error",
+                        $"შეცდომა სტუდენტის სერვერზე სინქრონიზაციისას (ID: {student.Id}): {syncEx.Message}",
+                        "System");
+                }
+            }
+
+            var importedPaymentLogId = _paymentRepository.AddImportedPaymentLog(paymentDate, amount, personalId, description, filePath);
+            try
+            {
+                await Task.Delay(50);
+                var importedPaymentLog = _paymentRepository.GetImportedPaymentLogById(importedPaymentLogId);
+                if (importedPaymentLog != null)
+                {
+                    await _upStreamChangeTracker.TrackImportedPaymentLogChangeAsync(importedPaymentLogId, SyncOperationType.Insert, importedPaymentLog);
+                    _loggerRepository?.LogImportAction(
+                        "ImportedPaymentsLog სერვერზე სინქრონიზაცია",
+                        "Success",
+                        $"ImportedPaymentLog ID={importedPaymentLogId} სერვერზე გაიგზავნა",
+                        "System");
+                }
+            }
+            catch (Exception syncEx)
+            {
+                _loggerRepository?.LogImportAction(
+                    "ImportedPaymentsLog სერვერზე სინქრონიზაცია",
+                    "Error",
+                    $"შეცდომა ImportedPaymentLog სერვერზე სინქრონიზაციისას (ID: {importedPaymentLogId}): {syncEx.Message}",
+                    "System");
+            }
+
+            return (true, true);
         }
     }
 }

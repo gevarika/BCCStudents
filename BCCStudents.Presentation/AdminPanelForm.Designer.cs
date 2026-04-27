@@ -29,897 +29,1174 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AdminPanelForm));
-            this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.DatabaseSettings = new System.Windows.Forms.TabPage();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.btnAddStudentToGroup = new System.Windows.Forms.Button();
-            this.btnRestore = new System.Windows.Forms.Button();
-            this.btnSync = new System.Windows.Forms.Button();
-            this.btnBackup = new System.Windows.Forms.Button();
-            this.btnCheckStudents = new System.Windows.Forms.Button();
-            this.dGVUnassignedStudents = new System.Windows.Forms.DataGridView();
-            this.btnResetData = new System.Windows.Forms.Button();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.label14 = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
-            this.label12 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.lblDbMode = new System.Windows.Forms.Label();
-            this.btnSwitchToTestDB = new System.Windows.Forms.Button();
-            this.lblConnectionStatus = new System.Windows.Forms.Label();
-            this.btnSaveConnection = new System.Windows.Forms.Button();
-            this.btnTestConnection = new System.Windows.Forms.Button();
-            this.txtPassword = new System.Windows.Forms.TextBox();
-            this.txtUsername = new System.Windows.Forms.TextBox();
-            this.txtDatabase = new System.Windows.Forms.TextBox();
-            this.txtPort = new System.Windows.Forms.TextBox();
-            this.txtServer = new System.Windows.Forms.TextBox();
-            this.UserManagement = new System.Windows.Forms.TabPage();
-            this.lblusersInfo = new System.Windows.Forms.Label();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.dgvRegisteredUsers = new System.Windows.Forms.DataGridView();
-            this.btnRegisterUser = new System.Windows.Forms.Button();
-            this.PaymentsFinance = new System.Windows.Forms.TabPage();
-            this.btnSetStudyStartDate = new System.Windows.Forms.Button();
-            this.SystemOperations = new System.Windows.Forms.TabPage();
-            this.label3 = new System.Windows.Forms.Label();
-            this.btnSaveDocPath = new System.Windows.Forms.Button();
-            this.dgvGroups = new System.Windows.Forms.DataGridView();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.btnSave = new System.Windows.Forms.Button();
-            this.btnChooseDir = new System.Windows.Forms.Button();
-            this.txtBaseUrl = new System.Windows.Forms.TextBox();
-            this.txtDownloadFolder = new System.Windows.Forms.TextBox();
-            this.SMSServiceSettings = new System.Windows.Forms.TabPage();
-            this.chkSmsEnabled = new System.Windows.Forms.CheckBox();
-            this.btnSaveOverSmsTexts = new System.Windows.Forms.Button();
-            this.btnSaveUpcPaySmsTexts = new System.Windows.Forms.Button();
-            this.btnSavePaySmsTexts = new System.Windows.Forms.Button();
-            this.btnSaveRegSmsTexts = new System.Windows.Forms.Button();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.txtSmsOverdue = new System.Windows.Forms.TextBox();
-            this.txtSmsPayment = new System.Windows.Forms.TextBox();
-            this.txtSmsUpcoming = new System.Windows.Forms.TextBox();
-            this.txtSmsRegistration = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.tbTestNumber = new System.Windows.Forms.TextBox();
-            this.btnTest = new System.Windows.Forms.Button();
-            this.btnSaveApiKey = new System.Windows.Forms.Button();
-            this.txtSmsApiKey = new System.Windows.Forms.TextBox();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.sogBox1 = new System.Windows.Forms.GroupBox();
-            this.sogBox2 = new System.Windows.Forms.GroupBox();
-            this.AutoFileDetectionSettings = new System.Windows.Forms.TabPage();
-            this.groupBoxAutoDetection = new System.Windows.Forms.GroupBox();
-            this.chkAutoDetectionEnabled = new System.Windows.Forms.CheckBox();
-            this.labelWatchDirectory = new System.Windows.Forms.Label();
-            this.txtWatchDirectory = new System.Windows.Forms.TextBox();
-            this.btnSelectDirectory = new System.Windows.Forms.Button();
-            this.labelFileNamePattern = new System.Windows.Forms.Label();
-            this.txtFileNamePattern = new System.Windows.Forms.TextBox();
-            this.btnSaveAutoDetectionSettings = new System.Windows.Forms.Button();
-            this.tabControl1.SuspendLayout();
-            this.DatabaseSettings.SuspendLayout();
-            this.groupBox2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dGVUnassignedStudents)).BeginInit();
-            this.groupBox1.SuspendLayout();
-            this.UserManagement.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRegisteredUsers)).BeginInit();
-            this.PaymentsFinance.SuspendLayout();
-            this.SystemOperations.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroups)).BeginInit();
-            this.SMSServiceSettings.SuspendLayout();
-            this.AutoFileDetectionSettings.SuspendLayout();
-            this.groupBoxAutoDetection.SuspendLayout();
-            this.sogBox1.SuspendLayout();
-            this.SuspendLayout();
+            tabControl1 = new TabControl();
+            DatabaseSettings = new TabPage();
+            groupBox2 = new GroupBox();
+            btnAddStudentToGroup = new Button();
+            btnRestore = new Button();
+            btnSync = new Button();
+            btnBackup = new Button();
+            btnCheckStudents = new Button();
+            dGVUnassignedStudents = new DataGridView();
+            btnResetData = new Button();
+            groupBox1 = new GroupBox();
+            groupBox4 = new GroupBox();
+            serverConnStatus = new Label();
+            serverHost = new TextBox();
+            label21 = new Label();
+            serverPort = new TextBox();
+            label20 = new Label();
+            saveServerConn = new Button();
+            serverDbName = new TextBox();
+            label19 = new Label();
+            testSrvConn = new Button();
+            serverUsrName = new TextBox();
+            label17 = new Label();
+            label18 = new Label();
+            serverUsrPass = new TextBox();
+            groupBox3 = new GroupBox();
+            localHost = new TextBox();
+            label14 = new Label();
+            LocalPort = new TextBox();
+            label13 = new Label();
+            localDbName = new TextBox();
+            label12 = new Label();
+            localUsrName = new TextBox();
+            label11 = new Label();
+            localUsrPass = new TextBox();
+            label10 = new Label();
+            testLocalConn = new Button();
+            lblDbMode = new Label();
+            saveLocalConn = new Button();
+            btnSwitchToTestDB = new Button();
+            localConnStatus = new Label();
+            UserManagement = new TabPage();
+            lblusersInfo = new Label();
+            toolStrip1 = new ToolStrip();
+            dgvRegisteredUsers = new DataGridView();
+            btnRegisterUser = new Button();
+            PaymentsFinance = new TabPage();
+            btnSetPaymentDate = new Button();
+            btnSetStudyStartDate = new Button();
+            SystemOperations = new TabPage();
+            sogBox2 = new GroupBox();
+            sogBox1 = new GroupBox();
+            btnSaveDocPath = new Button();
+            label3 = new Label();
+            txtDownloadFolder = new TextBox();
+            txtBaseUrl = new TextBox();
+            dgvGroups = new DataGridView();
+            btnChooseDir = new Button();
+            label2 = new Label();
+            btnSave = new Button();
+            label1 = new Label();
+            SMSServiceSettings = new TabPage();
+            chkSmsEnabled = new CheckBox();
+            btnSaveOverSmsTexts = new Button();
+            btnSaveUpcPaySmsTexts = new Button();
+            btnSavePaySmsTexts = new Button();
+            btnSaveRegSmsTexts = new Button();
+            label9 = new Label();
+            label8 = new Label();
+            label7 = new Label();
+            label6 = new Label();
+            txtSmsOverdue = new TextBox();
+            txtSmsPayment = new TextBox();
+            txtSmsUpcoming = new TextBox();
+            txtSmsRegistration = new TextBox();
+            label5 = new Label();
+            label4 = new Label();
+            tbTestNumber = new TextBox();
+            btnTest = new Button();
+            btnSaveApiKey = new Button();
+            txtSmsApiKey = new TextBox();
+            AutoFileDetectionSettings = new TabPage();
+            groupBoxAutoDetection = new GroupBox();
+            btnSaveAutoDetectionSettings = new Button();
+            btnSelectDirectory = new Button();
+            txtFileNamePattern = new TextBox();
+            txtWatchDirectory = new TextBox();
+            labelFileNamePattern = new Label();
+            labelWatchDirectory = new Label();
+            chkAutoDetectionEnabled = new CheckBox();
+            menuStrip1 = new MenuStrip();
+            tabControl1.SuspendLayout();
+            DatabaseSettings.SuspendLayout();
+            groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dGVUnassignedStudents).BeginInit();
+            groupBox1.SuspendLayout();
+            groupBox4.SuspendLayout();
+            groupBox3.SuspendLayout();
+            UserManagement.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRegisteredUsers).BeginInit();
+            PaymentsFinance.SuspendLayout();
+            SystemOperations.SuspendLayout();
+            sogBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvGroups).BeginInit();
+            SMSServiceSettings.SuspendLayout();
+            AutoFileDetectionSettings.SuspendLayout();
+            groupBoxAutoDetection.SuspendLayout();
+            SuspendLayout();
             // 
             // tabControl1
             // 
-            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tabControl1.Controls.Add(this.DatabaseSettings);
-            this.tabControl1.Controls.Add(this.UserManagement);
-            this.tabControl1.Controls.Add(this.PaymentsFinance);
-            this.tabControl1.Controls.Add(this.SystemOperations);
-            this.tabControl1.Controls.Add(this.SMSServiceSettings);
-            this.tabControl1.Controls.Add(this.AutoFileDetectionSettings);
-            this.tabControl1.Location = new System.Drawing.Point(12, 27);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1515, 891);
-            this.tabControl1.TabIndex = 0;
+            tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tabControl1.Controls.Add(DatabaseSettings);
+            tabControl1.Controls.Add(UserManagement);
+            tabControl1.Controls.Add(PaymentsFinance);
+            tabControl1.Controls.Add(SystemOperations);
+            tabControl1.Controls.Add(SMSServiceSettings);
+            tabControl1.Controls.Add(AutoFileDetectionSettings);
+            tabControl1.Location = new Point(14, 31);
+            tabControl1.Margin = new Padding(4, 3, 4, 3);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(1768, 1028);
+            tabControl1.TabIndex = 0;
             // 
             // DatabaseSettings
             // 
-            this.DatabaseSettings.Controls.Add(this.groupBox2);
-            this.DatabaseSettings.Controls.Add(this.groupBox1);
-            this.DatabaseSettings.Location = new System.Drawing.Point(4, 22);
-            this.DatabaseSettings.Name = "DatabaseSettings";
-            this.DatabaseSettings.Padding = new System.Windows.Forms.Padding(3);
-            this.DatabaseSettings.Size = new System.Drawing.Size(1507, 865);
-            this.DatabaseSettings.TabIndex = 0;
-            this.DatabaseSettings.Text = "Database Settings";
-            this.DatabaseSettings.UseVisualStyleBackColor = true;
+            DatabaseSettings.Controls.Add(groupBox2);
+            DatabaseSettings.Controls.Add(groupBox1);
+            DatabaseSettings.Location = new Point(4, 24);
+            DatabaseSettings.Margin = new Padding(4, 3, 4, 3);
+            DatabaseSettings.Name = "DatabaseSettings";
+            DatabaseSettings.Padding = new Padding(4, 3, 4, 3);
+            DatabaseSettings.Size = new Size(1760, 1000);
+            DatabaseSettings.TabIndex = 0;
+            DatabaseSettings.Text = "Database Settings";
+            DatabaseSettings.UseVisualStyleBackColor = true;
             // 
             // groupBox2
             // 
-            this.groupBox2.Controls.Add(this.btnAddStudentToGroup);
-            this.groupBox2.Controls.Add(this.btnRestore);
-            this.groupBox2.Controls.Add(this.btnSync);
-            this.groupBox2.Controls.Add(this.btnBackup);
-            this.groupBox2.Controls.Add(this.btnCheckStudents);
-            this.groupBox2.Controls.Add(this.dGVUnassignedStudents);
-            this.groupBox2.Controls.Add(this.btnResetData);
-            this.groupBox2.Location = new System.Drawing.Point(810, 37);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(691, 811);
-            this.groupBox2.TabIndex = 7;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "groupBox2";
+            groupBox2.Controls.Add(btnAddStudentToGroup);
+            groupBox2.Controls.Add(btnRestore);
+            groupBox2.Controls.Add(btnSync);
+            groupBox2.Controls.Add(btnBackup);
+            groupBox2.Controls.Add(btnCheckStudents);
+            groupBox2.Controls.Add(dGVUnassignedStudents);
+            groupBox2.Controls.Add(btnResetData);
+            groupBox2.Location = new Point(945, 43);
+            groupBox2.Margin = new Padding(4, 3, 4, 3);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Padding = new Padding(4, 3, 4, 3);
+            groupBox2.Size = new Size(806, 936);
+            groupBox2.TabIndex = 7;
+            groupBox2.TabStop = false;
+            groupBox2.Text = "groupBox2";
             // 
             // btnAddStudentToGroup
             // 
-            this.btnAddStudentToGroup.Location = new System.Drawing.Point(156, 40);
-            this.btnAddStudentToGroup.Name = "btnAddStudentToGroup";
-            this.btnAddStudentToGroup.Size = new System.Drawing.Size(212, 63);
-            this.btnAddStudentToGroup.TabIndex = 5;
-            this.btnAddStudentToGroup.Text = "მოსწავლეების ჯგუფებთან და ქვეჯგუფებთან კავშირის შემოწმება";
-            this.btnAddStudentToGroup.UseVisualStyleBackColor = true;
-            this.btnAddStudentToGroup.Click += new System.EventHandler(this.btnAddStudentToGroup_Click);
+            btnAddStudentToGroup.Location = new Point(182, 46);
+            btnAddStudentToGroup.Margin = new Padding(4, 3, 4, 3);
+            btnAddStudentToGroup.Name = "btnAddStudentToGroup";
+            btnAddStudentToGroup.Size = new Size(247, 73);
+            btnAddStudentToGroup.TabIndex = 5;
+            btnAddStudentToGroup.Text = "მოსწავლეების ჯგუფებთან და ქვეჯგუფებთან კავშირის შემოწმება";
+            btnAddStudentToGroup.UseVisualStyleBackColor = true;
+            btnAddStudentToGroup.Click += btnAddStudentToGroup_Click;
             // 
             // btnRestore
             // 
-            this.btnRestore.Location = new System.Drawing.Point(156, 173);
-            this.btnRestore.Name = "btnRestore";
-            this.btnRestore.Size = new System.Drawing.Size(151, 39);
-            this.btnRestore.TabIndex = 6;
-            this.btnRestore.Text = "სარეზერვი კოპირების აღდგენა";
-            this.btnRestore.UseVisualStyleBackColor = true;
-            this.btnRestore.Click += new System.EventHandler(this.btnRestore_Click);
+            btnRestore.Location = new Point(182, 200);
+            btnRestore.Margin = new Padding(4, 3, 4, 3);
+            btnRestore.Name = "btnRestore";
+            btnRestore.Size = new Size(176, 45);
+            btnRestore.TabIndex = 6;
+            btnRestore.Text = "სარეზერვი კოპირების აღდგენა";
+            btnRestore.UseVisualStyleBackColor = true;
+            btnRestore.Click += btnRestore_Click;
             // 
             // btnSync
             // 
-            this.btnSync.Location = new System.Drawing.Point(374, 40);
-            this.btnSync.Name = "btnSync";
-            this.btnSync.Size = new System.Drawing.Size(135, 55);
-            this.btnSync.TabIndex = 0;
-            this.btnSync.Text = "მონაცემების გადატანა";
-            this.btnSync.UseVisualStyleBackColor = true;
-            this.btnSync.Click += new System.EventHandler(this.btnSync_Click);
+            btnSync.Location = new Point(436, 46);
+            btnSync.Margin = new Padding(4, 3, 4, 3);
+            btnSync.Name = "btnSync";
+            btnSync.Size = new Size(158, 63);
+            btnSync.TabIndex = 0;
+            btnSync.Text = "მონაცემების გადატანა";
+            btnSync.UseVisualStyleBackColor = true;
+            btnSync.Click += btnSync_Click;
             // 
             // btnBackup
             // 
-            this.btnBackup.Location = new System.Drawing.Point(156, 117);
-            this.btnBackup.Name = "btnBackup";
-            this.btnBackup.Size = new System.Drawing.Size(151, 39);
-            this.btnBackup.TabIndex = 6;
-            this.btnBackup.Text = "სარეზერვი კოპირება";
-            this.btnBackup.UseVisualStyleBackColor = true;
-            this.btnBackup.Click += new System.EventHandler(this.btnBackup_Click);
+            btnBackup.Location = new Point(182, 135);
+            btnBackup.Margin = new Padding(4, 3, 4, 3);
+            btnBackup.Name = "btnBackup";
+            btnBackup.Size = new Size(176, 45);
+            btnBackup.TabIndex = 6;
+            btnBackup.Text = "სარეზერვი კოპირება";
+            btnBackup.UseVisualStyleBackColor = true;
+            btnBackup.Click += btnBackup_Click;
             // 
             // btnCheckStudents
             // 
-            this.btnCheckStudents.Location = new System.Drawing.Point(374, 101);
-            this.btnCheckStudents.Name = "btnCheckStudents";
-            this.btnCheckStudents.Size = new System.Drawing.Size(135, 55);
-            this.btnCheckStudents.TabIndex = 1;
-            this.btnCheckStudents.Text = "მოსწავლეების ჯგუფთან კავშირის შემოწმება";
-            this.btnCheckStudents.UseVisualStyleBackColor = true;
-            this.btnCheckStudents.Click += new System.EventHandler(this.btnCheckStudents_Click);
+            btnCheckStudents.Location = new Point(436, 117);
+            btnCheckStudents.Margin = new Padding(4, 3, 4, 3);
+            btnCheckStudents.Name = "btnCheckStudents";
+            btnCheckStudents.Size = new Size(158, 63);
+            btnCheckStudents.TabIndex = 1;
+            btnCheckStudents.Text = "მოსწავლეების ჯგუფთან კავშირის შემოწმება";
+            btnCheckStudents.UseVisualStyleBackColor = true;
+            btnCheckStudents.Click += btnCheckStudents_Click;
             // 
             // dGVUnassignedStudents
             // 
-            this.dGVUnassignedStudents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dGVUnassignedStudents.Location = new System.Drawing.Point(67, 278);
-            this.dGVUnassignedStudents.Name = "dGVUnassignedStudents";
-            this.dGVUnassignedStudents.Size = new System.Drawing.Size(551, 283);
-            this.dGVUnassignedStudents.TabIndex = 2;
+            dGVUnassignedStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dGVUnassignedStudents.Location = new Point(78, 321);
+            dGVUnassignedStudents.Margin = new Padding(4, 3, 4, 3);
+            dGVUnassignedStudents.Name = "dGVUnassignedStudents";
+            dGVUnassignedStudents.Size = new Size(643, 327);
+            dGVUnassignedStudents.TabIndex = 2;
             // 
             // btnResetData
             // 
-            this.btnResetData.Location = new System.Drawing.Point(374, 162);
-            this.btnResetData.Name = "btnResetData";
-            this.btnResetData.Size = new System.Drawing.Size(135, 50);
-            this.btnResetData.TabIndex = 3;
-            this.btnResetData.Text = "ყველა ჩანაწერის გასუფთავება";
-            this.btnResetData.UseVisualStyleBackColor = true;
-            this.btnResetData.Click += new System.EventHandler(this.btnResetData_Click);
+            btnResetData.Location = new Point(436, 187);
+            btnResetData.Margin = new Padding(4, 3, 4, 3);
+            btnResetData.Name = "btnResetData";
+            btnResetData.Size = new Size(158, 58);
+            btnResetData.TabIndex = 3;
+            btnResetData.Text = "ყველა ჩანაწერის გასუფთავება";
+            btnResetData.UseVisualStyleBackColor = true;
+            btnResetData.Click += btnResetData_Click;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.label14);
-            this.groupBox1.Controls.Add(this.label13);
-            this.groupBox1.Controls.Add(this.label12);
-            this.groupBox1.Controls.Add(this.label11);
-            this.groupBox1.Controls.Add(this.label10);
-            this.groupBox1.Controls.Add(this.lblDbMode);
-            this.groupBox1.Controls.Add(this.btnSwitchToTestDB);
-            this.groupBox1.Controls.Add(this.lblConnectionStatus);
-            this.groupBox1.Controls.Add(this.btnSaveConnection);
-            this.groupBox1.Controls.Add(this.btnTestConnection);
-            this.groupBox1.Controls.Add(this.txtPassword);
-            this.groupBox1.Controls.Add(this.txtUsername);
-            this.groupBox1.Controls.Add(this.txtDatabase);
-            this.groupBox1.Controls.Add(this.txtPort);
-            this.groupBox1.Controls.Add(this.txtServer);
-            this.groupBox1.Location = new System.Drawing.Point(35, 37);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(769, 811);
-            this.groupBox1.TabIndex = 4;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "ბაზასთან კავშირი";
+            groupBox1.Controls.Add(groupBox4);
+            groupBox1.Controls.Add(groupBox3);
+            groupBox1.Location = new Point(41, 43);
+            groupBox1.Margin = new Padding(4, 3, 4, 3);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(4, 3, 4, 3);
+            groupBox1.Size = new Size(897, 936);
+            groupBox1.TabIndex = 4;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "ბაზასთან კავშირი";
+            // 
+            // groupBox4
+            // 
+            groupBox4.Controls.Add(serverConnStatus);
+            groupBox4.Controls.Add(serverHost);
+            groupBox4.Controls.Add(label21);
+            groupBox4.Controls.Add(serverPort);
+            groupBox4.Controls.Add(label20);
+            groupBox4.Controls.Add(saveServerConn);
+            groupBox4.Controls.Add(serverDbName);
+            groupBox4.Controls.Add(label19);
+            groupBox4.Controls.Add(testSrvConn);
+            groupBox4.Controls.Add(serverUsrName);
+            groupBox4.Controls.Add(label17);
+            groupBox4.Controls.Add(label18);
+            groupBox4.Controls.Add(serverUsrPass);
+            groupBox4.Location = new Point(32, 414);
+            groupBox4.Name = "groupBox4";
+            groupBox4.Size = new Size(657, 335);
+            groupBox4.TabIndex = 8;
+            groupBox4.TabStop = false;
+            groupBox4.Text = "სერვერის მონაცემთა ბაზა";
+            // 
+            // serverConnStatus
+            // 
+            serverConnStatus.AutoSize = true;
+            serverConnStatus.Location = new Point(574, 246);
+            serverConnStatus.Name = "serverConnStatus";
+            serverConnStatus.Size = new Size(44, 15);
+            serverConnStatus.TabIndex = 7;
+            serverConnStatus.Text = "label22";
+            // 
+            // serverHost
+            // 
+            serverHost.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            serverHost.Location = new Point(144, 57);
+            serverHost.Margin = new Padding(4, 3, 4, 3);
+            serverHost.Multiline = true;
+            serverHost.Name = "serverHost";
+            serverHost.Size = new Size(231, 34);
+            serverHost.TabIndex = 0;
+            // 
+            // label21
+            // 
+            label21.AutoSize = true;
+            label21.Location = new Point(34, 190);
+            label21.Margin = new Padding(4, 0, 4, 0);
+            label21.Name = "label21";
+            label21.Size = new Size(98, 15);
+            label21.TabIndex = 6;
+            label21.Text = "მომხმარებელი";
+            // 
+            // serverPort
+            // 
+            serverPort.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            serverPort.Location = new Point(144, 99);
+            serverPort.Margin = new Padding(4, 3, 4, 3);
+            serverPort.Multiline = true;
+            serverPort.Name = "serverPort";
+            serverPort.Size = new Size(231, 34);
+            serverPort.TabIndex = 0;
+            // 
+            // label20
+            // 
+            label20.AutoSize = true;
+            label20.Location = new Point(77, 233);
+            label20.Margin = new Padding(4, 0, 4, 0);
+            label20.Name = "label20";
+            label20.Size = new Size(57, 15);
+            label20.TabIndex = 6;
+            label20.Text = "პაროლი";
+            // 
+            // saveServerConn
+            // 
+            saveServerConn.Location = new Point(251, 282);
+            saveServerConn.Margin = new Padding(4, 3, 4, 3);
+            saveServerConn.Name = "saveServerConn";
+            saveServerConn.Size = new Size(126, 35);
+            saveServerConn.TabIndex = 2;
+            saveServerConn.Text = "შენახვა";
+            saveServerConn.UseVisualStyleBackColor = true;
+            saveServerConn.Click += saveServerConn_Click;
+            // 
+            // serverDbName
+            // 
+            serverDbName.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            serverDbName.Location = new Point(144, 140);
+            serverDbName.Margin = new Padding(4, 3, 4, 3);
+            serverDbName.Multiline = true;
+            serverDbName.Name = "serverDbName";
+            serverDbName.Size = new Size(231, 34);
+            serverDbName.TabIndex = 0;
+            // 
+            // label19
+            // 
+            label19.AutoSize = true;
+            label19.Location = new Point(40, 148);
+            label19.Margin = new Padding(4, 0, 4, 0);
+            label19.Name = "label19";
+            label19.Size = new Size(92, 15);
+            label19.TabIndex = 6;
+            label19.Text = "ბაზის სახელი";
+            // 
+            // testSrvConn
+            // 
+            testSrvConn.Location = new Point(405, 233);
+            testSrvConn.Margin = new Padding(4, 3, 4, 3);
+            testSrvConn.Name = "testSrvConn";
+            testSrvConn.Size = new Size(147, 27);
+            testSrvConn.TabIndex = 1;
+            testSrvConn.Text = "კავშირის შემოწმება";
+            testSrvConn.UseVisualStyleBackColor = true;
+            testSrvConn.Click += testSrvConn_Click;
+            // 
+            // serverUsrName
+            // 
+            serverUsrName.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            serverUsrName.Location = new Point(144, 182);
+            serverUsrName.Margin = new Padding(4, 3, 4, 3);
+            serverUsrName.Multiline = true;
+            serverUsrName.Name = "serverUsrName";
+            serverUsrName.Size = new Size(231, 34);
+            serverUsrName.TabIndex = 0;
+            // 
+            // label17
+            // 
+            label17.AutoSize = true;
+            label17.Location = new Point(104, 65);
+            label17.Margin = new Padding(4, 0, 4, 0);
+            label17.Name = "label17";
+            label17.Size = new Size(32, 15);
+            label17.TabIndex = 6;
+            label17.Text = "Host";
+            // 
+            // label18
+            // 
+            label18.AutoSize = true;
+            label18.Location = new Point(88, 108);
+            label18.Margin = new Padding(4, 0, 4, 0);
+            label18.Name = "label18";
+            label18.Size = new Size(47, 15);
+            label18.TabIndex = 6;
+            label18.Text = "პორტი";
+            // 
+            // serverUsrPass
+            // 
+            serverUsrPass.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            serverUsrPass.Location = new Point(144, 223);
+            serverUsrPass.Margin = new Padding(4, 3, 4, 3);
+            serverUsrPass.Multiline = true;
+            serverUsrPass.Name = "serverUsrPass";
+            serverUsrPass.Size = new Size(231, 34);
+            serverUsrPass.TabIndex = 0;
+            // 
+            // groupBox3
+            // 
+            groupBox3.Controls.Add(localHost);
+            groupBox3.Controls.Add(label14);
+            groupBox3.Controls.Add(LocalPort);
+            groupBox3.Controls.Add(label13);
+            groupBox3.Controls.Add(localDbName);
+            groupBox3.Controls.Add(label12);
+            groupBox3.Controls.Add(localUsrName);
+            groupBox3.Controls.Add(label11);
+            groupBox3.Controls.Add(localUsrPass);
+            groupBox3.Controls.Add(label10);
+            groupBox3.Controls.Add(testLocalConn);
+            groupBox3.Controls.Add(lblDbMode);
+            groupBox3.Controls.Add(saveLocalConn);
+            groupBox3.Controls.Add(btnSwitchToTestDB);
+            groupBox3.Controls.Add(localConnStatus);
+            groupBox3.Location = new Point(32, 46);
+            groupBox3.Name = "groupBox3";
+            groupBox3.Size = new Size(657, 342);
+            groupBox3.TabIndex = 7;
+            groupBox3.TabStop = false;
+            groupBox3.Text = "ლოკალური მონაცემთა ბაზა";
+            // 
+            // localHost
+            // 
+            localHost.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            localHost.Location = new Point(142, 53);
+            localHost.Margin = new Padding(4, 3, 4, 3);
+            localHost.Multiline = true;
+            localHost.Name = "localHost";
+            localHost.Size = new Size(231, 34);
+            localHost.TabIndex = 0;
             // 
             // label14
             // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(34, 169);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(89, 13);
-            this.label14.TabIndex = 6;
-            this.label14.Text = "მომხმარებელი";
+            label14.AutoSize = true;
+            label14.Location = new Point(32, 186);
+            label14.Margin = new Padding(4, 0, 4, 0);
+            label14.Name = "label14";
+            label14.Size = new Size(98, 15);
+            label14.TabIndex = 6;
+            label14.Text = "მომხმარებელი";
+            // 
+            // LocalPort
+            // 
+            LocalPort.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            LocalPort.Location = new Point(142, 95);
+            LocalPort.Margin = new Padding(4, 3, 4, 3);
+            LocalPort.Multiline = true;
+            LocalPort.Name = "LocalPort";
+            LocalPort.Size = new Size(231, 34);
+            LocalPort.TabIndex = 0;
             // 
             // label13
             // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(71, 206);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(52, 13);
-            this.label13.TabIndex = 6;
-            this.label13.Text = "პაროლი";
+            label13.AutoSize = true;
+            label13.Location = new Point(75, 229);
+            label13.Margin = new Padding(4, 0, 4, 0);
+            label13.Name = "label13";
+            label13.Size = new Size(57, 15);
+            label13.TabIndex = 6;
+            label13.Text = "პაროლი";
+            // 
+            // localDbName
+            // 
+            localDbName.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            localDbName.Location = new Point(142, 136);
+            localDbName.Margin = new Padding(4, 3, 4, 3);
+            localDbName.Multiline = true;
+            localDbName.Name = "localDbName";
+            localDbName.Size = new Size(231, 34);
+            localDbName.TabIndex = 0;
             // 
             // label12
             // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(39, 133);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(84, 13);
-            this.label12.TabIndex = 6;
-            this.label12.Text = "ბაზის სახელი";
+            label12.AutoSize = true;
+            label12.Location = new Point(38, 144);
+            label12.Margin = new Padding(4, 0, 4, 0);
+            label12.Name = "label12";
+            label12.Size = new Size(92, 15);
+            label12.TabIndex = 6;
+            label12.Text = "ბაზის სახელი";
+            // 
+            // localUsrName
+            // 
+            localUsrName.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            localUsrName.Location = new Point(142, 178);
+            localUsrName.Margin = new Padding(4, 3, 4, 3);
+            localUsrName.Multiline = true;
+            localUsrName.Name = "localUsrName";
+            localUsrName.Size = new Size(231, 34);
+            localUsrName.TabIndex = 0;
             // 
             // label11
             // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(81, 98);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(42, 13);
-            this.label11.TabIndex = 6;
-            this.label11.Text = "პორტი";
+            label11.AutoSize = true;
+            label11.Location = new Point(86, 104);
+            label11.Margin = new Padding(4, 0, 4, 0);
+            label11.Name = "label11";
+            label11.Size = new Size(47, 15);
+            label11.TabIndex = 6;
+            label11.Text = "პორტი";
+            // 
+            // localUsrPass
+            // 
+            localUsrPass.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            localUsrPass.Location = new Point(142, 219);
+            localUsrPass.Margin = new Padding(4, 3, 4, 3);
+            localUsrPass.Multiline = true;
+            localUsrPass.Name = "localUsrPass";
+            localUsrPass.Size = new Size(231, 34);
+            localUsrPass.TabIndex = 0;
             // 
             // label10
             // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(94, 61);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(29, 13);
-            this.label10.TabIndex = 6;
-            this.label10.Text = "Host";
+            label10.AutoSize = true;
+            label10.Location = new Point(102, 61);
+            label10.Margin = new Padding(4, 0, 4, 0);
+            label10.Name = "label10";
+            label10.Size = new Size(32, 15);
+            label10.TabIndex = 6;
+            label10.Text = "Host";
+            // 
+            // testLocalConn
+            // 
+            testLocalConn.Location = new Point(403, 229);
+            testLocalConn.Margin = new Padding(4, 3, 4, 3);
+            testLocalConn.Name = "testLocalConn";
+            testLocalConn.Size = new Size(147, 27);
+            testLocalConn.TabIndex = 1;
+            testLocalConn.Text = "კავშირის შემოწმება";
+            testLocalConn.UseVisualStyleBackColor = true;
+            testLocalConn.Click += testLocalConn_Click;
             // 
             // lblDbMode
             // 
-            this.lblDbMode.AutoSize = true;
-            this.lblDbMode.Location = new System.Drawing.Point(407, 90);
-            this.lblDbMode.Name = "lblDbMode";
-            this.lblDbMode.Size = new System.Drawing.Size(41, 13);
-            this.lblDbMode.TabIndex = 5;
-            this.lblDbMode.Text = "label10";
+            lblDbMode.AutoSize = true;
+            lblDbMode.Location = new Point(467, 95);
+            lblDbMode.Margin = new Padding(4, 0, 4, 0);
+            lblDbMode.Name = "lblDbMode";
+            lblDbMode.Size = new Size(44, 15);
+            lblDbMode.TabIndex = 5;
+            lblDbMode.Text = "label10";
+            // 
+            // saveLocalConn
+            // 
+            saveLocalConn.Location = new Point(249, 278);
+            saveLocalConn.Margin = new Padding(4, 3, 4, 3);
+            saveLocalConn.Name = "saveLocalConn";
+            saveLocalConn.Size = new Size(126, 35);
+            saveLocalConn.TabIndex = 2;
+            saveLocalConn.Text = "შენახვა";
+            saveLocalConn.UseVisualStyleBackColor = true;
+            saveLocalConn.Click += saveLocalConn_Click;
             // 
             // btnSwitchToTestDB
             // 
-            this.btnSwitchToTestDB.Location = new System.Drawing.Point(401, 56);
-            this.btnSwitchToTestDB.Name = "btnSwitchToTestDB";
-            this.btnSwitchToTestDB.Size = new System.Drawing.Size(108, 23);
-            this.btnSwitchToTestDB.TabIndex = 4;
-            this.btnSwitchToTestDB.Text = "გადართვა";
-            this.btnSwitchToTestDB.UseVisualStyleBackColor = true;
-            this.btnSwitchToTestDB.Click += new System.EventHandler(this.btnSwitchToTestDB_Click);
+            btnSwitchToTestDB.Location = new Point(460, 56);
+            btnSwitchToTestDB.Margin = new Padding(4, 3, 4, 3);
+            btnSwitchToTestDB.Name = "btnSwitchToTestDB";
+            btnSwitchToTestDB.Size = new Size(126, 27);
+            btnSwitchToTestDB.TabIndex = 4;
+            btnSwitchToTestDB.Text = "გადართვა";
+            btnSwitchToTestDB.UseVisualStyleBackColor = true;
+            btnSwitchToTestDB.Click += btnSwitchToTestDB_Click;
             // 
-            // lblConnectionStatus
+            // localConnStatus
             // 
-            this.lblConnectionStatus.AutoSize = true;
-            this.lblConnectionStatus.Location = new System.Drawing.Point(484, 211);
-            this.lblConnectionStatus.Name = "lblConnectionStatus";
-            this.lblConnectionStatus.Size = new System.Drawing.Size(55, 13);
-            this.lblConnectionStatus.TabIndex = 3;
-            this.lblConnectionStatus.Text = "სტატუსი";
-            // 
-            // btnSaveConnection
-            // 
-            this.btnSaveConnection.Location = new System.Drawing.Point(220, 249);
-            this.btnSaveConnection.Name = "btnSaveConnection";
-            this.btnSaveConnection.Size = new System.Drawing.Size(108, 30);
-            this.btnSaveConnection.TabIndex = 2;
-            this.btnSaveConnection.Text = "შენახვა";
-            this.btnSaveConnection.UseVisualStyleBackColor = true;
-            this.btnSaveConnection.Click += new System.EventHandler(this.btnSaveConnection_Click);
-            // 
-            // btnTestConnection
-            // 
-            this.btnTestConnection.Location = new System.Drawing.Point(352, 206);
-            this.btnTestConnection.Name = "btnTestConnection";
-            this.btnTestConnection.Size = new System.Drawing.Size(126, 23);
-            this.btnTestConnection.TabIndex = 1;
-            this.btnTestConnection.Text = "კავშირის შემოწმება";
-            this.btnTestConnection.UseVisualStyleBackColor = true;
-            this.btnTestConnection.Click += new System.EventHandler(this.btnTestConnection_Click);
-            // 
-            // txtPassword
-            // 
-            this.txtPassword.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPassword.Location = new System.Drawing.Point(129, 198);
-            this.txtPassword.Multiline = true;
-            this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(199, 30);
-            this.txtPassword.TabIndex = 0;
-            // 
-            // txtUsername
-            // 
-            this.txtUsername.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtUsername.Location = new System.Drawing.Point(129, 162);
-            this.txtUsername.Multiline = true;
-            this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new System.Drawing.Size(199, 30);
-            this.txtUsername.TabIndex = 0;
-            // 
-            // txtDatabase
-            // 
-            this.txtDatabase.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtDatabase.Location = new System.Drawing.Point(129, 126);
-            this.txtDatabase.Multiline = true;
-            this.txtDatabase.Name = "txtDatabase";
-            this.txtDatabase.Size = new System.Drawing.Size(199, 30);
-            this.txtDatabase.TabIndex = 0;
-            // 
-            // txtPort
-            // 
-            this.txtPort.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPort.Location = new System.Drawing.Point(129, 90);
-            this.txtPort.Multiline = true;
-            this.txtPort.Name = "txtPort";
-            this.txtPort.Size = new System.Drawing.Size(199, 30);
-            this.txtPort.TabIndex = 0;
-            // 
-            // txtServer
-            // 
-            this.txtServer.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtServer.Location = new System.Drawing.Point(129, 54);
-            this.txtServer.Multiline = true;
-            this.txtServer.Name = "txtServer";
-            this.txtServer.Size = new System.Drawing.Size(199, 30);
-            this.txtServer.TabIndex = 0;
+            localConnStatus.AutoSize = true;
+            localConnStatus.Location = new Point(557, 234);
+            localConnStatus.Margin = new Padding(4, 0, 4, 0);
+            localConnStatus.Name = "localConnStatus";
+            localConnStatus.Size = new Size(62, 15);
+            localConnStatus.TabIndex = 3;
+            localConnStatus.Text = "სტატუსი";
             // 
             // UserManagement
             // 
-            this.UserManagement.Controls.Add(this.lblusersInfo);
-            this.UserManagement.Controls.Add(this.toolStrip1);
-            this.UserManagement.Controls.Add(this.dgvRegisteredUsers);
-            this.UserManagement.Controls.Add(this.btnRegisterUser);
-            this.UserManagement.Location = new System.Drawing.Point(4, 22);
-            this.UserManagement.Name = "UserManagement";
-            this.UserManagement.Padding = new System.Windows.Forms.Padding(3);
-            this.UserManagement.Size = new System.Drawing.Size(1507, 865);
-            this.UserManagement.TabIndex = 1;
-            this.UserManagement.Text = "User Management";
-            this.UserManagement.UseVisualStyleBackColor = true;
+            UserManagement.Controls.Add(lblusersInfo);
+            UserManagement.Controls.Add(toolStrip1);
+            UserManagement.Controls.Add(dgvRegisteredUsers);
+            UserManagement.Controls.Add(btnRegisterUser);
+            UserManagement.Location = new Point(4, 24);
+            UserManagement.Margin = new Padding(4, 3, 4, 3);
+            UserManagement.Name = "UserManagement";
+            UserManagement.Padding = new Padding(4, 3, 4, 3);
+            UserManagement.Size = new Size(1760, 1000);
+            UserManagement.TabIndex = 1;
+            UserManagement.Text = "User Management";
+            UserManagement.UseVisualStyleBackColor = true;
             // 
             // lblusersInfo
             // 
-            this.lblusersInfo.AutoSize = true;
-            this.lblusersInfo.Location = new System.Drawing.Point(17, 306);
-            this.lblusersInfo.Name = "lblusersInfo";
-            this.lblusersInfo.Size = new System.Drawing.Size(37, 13);
-            this.lblusersInfo.TabIndex = 3;
-            this.lblusersInfo.Text = "ინფო";
+            lblusersInfo.AutoSize = true;
+            lblusersInfo.Location = new Point(20, 353);
+            lblusersInfo.Margin = new Padding(4, 0, 4, 0);
+            lblusersInfo.Name = "lblusersInfo";
+            lblusersInfo.Size = new Size(41, 15);
+            lblusersInfo.TabIndex = 3;
+            lblusersInfo.Text = "ინფო";
             // 
             // toolStrip1
             // 
-            this.toolStrip1.Location = new System.Drawing.Point(3, 3);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(1501, 25);
-            this.toolStrip1.TabIndex = 2;
-            this.toolStrip1.Text = "toolStrip1";
+            toolStrip1.Location = new Point(4, 3);
+            toolStrip1.Name = "toolStrip1";
+            toolStrip1.Size = new Size(1752, 25);
+            toolStrip1.TabIndex = 2;
+            toolStrip1.Text = "toolStrip1";
             // 
             // dgvRegisteredUsers
             // 
-            this.dgvRegisteredUsers.AllowUserToAddRows = false;
-            this.dgvRegisteredUsers.AllowUserToDeleteRows = false;
-            this.dgvRegisteredUsers.AllowUserToOrderColumns = true;
-            this.dgvRegisteredUsers.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.ColumnHeader;
-            this.dgvRegisteredUsers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvRegisteredUsers.Location = new System.Drawing.Point(20, 72);
-            this.dgvRegisteredUsers.Name = "dgvRegisteredUsers";
-            this.dgvRegisteredUsers.ReadOnly = true;
-            this.dgvRegisteredUsers.Size = new System.Drawing.Size(954, 201);
-            this.dgvRegisteredUsers.TabIndex = 1;
+            dgvRegisteredUsers.AllowUserToAddRows = false;
+            dgvRegisteredUsers.AllowUserToDeleteRows = false;
+            dgvRegisteredUsers.AllowUserToOrderColumns = true;
+            dgvRegisteredUsers.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.ColumnHeader;
+            dgvRegisteredUsers.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvRegisteredUsers.Location = new Point(23, 83);
+            dgvRegisteredUsers.Margin = new Padding(4, 3, 4, 3);
+            dgvRegisteredUsers.Name = "dgvRegisteredUsers";
+            dgvRegisteredUsers.ReadOnly = true;
+            dgvRegisteredUsers.Size = new Size(1113, 232);
+            dgvRegisteredUsers.TabIndex = 1;
             // 
             // btnRegisterUser
             // 
-            this.btnRegisterUser.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnRegisterUser.Location = new System.Drawing.Point(20, 31);
-            this.btnRegisterUser.Name = "btnRegisterUser";
-            this.btnRegisterUser.Size = new System.Drawing.Size(89, 35);
-            this.btnRegisterUser.TabIndex = 0;
-            this.btnRegisterUser.Text = "დამატება";
-            this.btnRegisterUser.UseVisualStyleBackColor = true;
-            this.btnRegisterUser.Click += new System.EventHandler(this.btnRegisterUser_Click);
+            btnRegisterUser.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnRegisterUser.Location = new Point(23, 36);
+            btnRegisterUser.Margin = new Padding(4, 3, 4, 3);
+            btnRegisterUser.Name = "btnRegisterUser";
+            btnRegisterUser.Size = new Size(104, 40);
+            btnRegisterUser.TabIndex = 0;
+            btnRegisterUser.Text = "დამატება";
+            btnRegisterUser.UseVisualStyleBackColor = true;
+            btnRegisterUser.Click += btnRegisterUser_Click;
             // 
             // PaymentsFinance
             // 
-            this.PaymentsFinance.Controls.Add(this.btnSetStudyStartDate);
-            this.PaymentsFinance.Location = new System.Drawing.Point(4, 22);
-            this.PaymentsFinance.Name = "PaymentsFinance";
-            this.PaymentsFinance.Padding = new System.Windows.Forms.Padding(3);
-            this.PaymentsFinance.Size = new System.Drawing.Size(1507, 865);
-            this.PaymentsFinance.TabIndex = 2;
-            this.PaymentsFinance.Text = "Payments & Finance";
-            this.PaymentsFinance.UseVisualStyleBackColor = true;
+            PaymentsFinance.Controls.Add(btnSetPaymentDate);
+            PaymentsFinance.Controls.Add(btnSetStudyStartDate);
+            PaymentsFinance.Location = new Point(4, 24);
+            PaymentsFinance.Margin = new Padding(4, 3, 4, 3);
+            PaymentsFinance.Name = "PaymentsFinance";
+            PaymentsFinance.Padding = new Padding(4, 3, 4, 3);
+            PaymentsFinance.Size = new Size(1760, 1000);
+            PaymentsFinance.TabIndex = 2;
+            PaymentsFinance.Text = "Payments & Finance";
+            PaymentsFinance.UseVisualStyleBackColor = true;
+            // 
+            // btnSetPaymentDate
+            // 
+            btnSetPaymentDate.Location = new Point(30, 71);
+            btnSetPaymentDate.Margin = new Padding(4, 3, 4, 3);
+            btnSetPaymentDate.Name = "btnSetPaymentDate";
+            btnSetPaymentDate.Size = new Size(309, 35);
+            btnSetPaymentDate.TabIndex = 0;
+            btnSetPaymentDate.Tag = "Payment";
+            btnSetPaymentDate.Text = "გადახდის თარიღის დაყენება";
+            btnSetPaymentDate.UseVisualStyleBackColor = true;
+            btnSetPaymentDate.Click += btnSetStudyStartDate_Click;
             // 
             // btnSetStudyStartDate
             // 
-            this.btnSetStudyStartDate.Location = new System.Drawing.Point(26, 26);
-            this.btnSetStudyStartDate.Name = "btnSetStudyStartDate";
-            this.btnSetStudyStartDate.Size = new System.Drawing.Size(265, 30);
-            this.btnSetStudyStartDate.TabIndex = 0;
-            this.btnSetStudyStartDate.Text = "სწავლის დაწყების თარიღის დაყენება";
-            this.btnSetStudyStartDate.UseVisualStyleBackColor = true;
-            this.btnSetStudyStartDate.Click += new System.EventHandler(this.btnSetStudyStartDate_Click);
+            btnSetStudyStartDate.Location = new Point(30, 30);
+            btnSetStudyStartDate.Margin = new Padding(4, 3, 4, 3);
+            btnSetStudyStartDate.Name = "btnSetStudyStartDate";
+            btnSetStudyStartDate.Size = new Size(309, 35);
+            btnSetStudyStartDate.TabIndex = 0;
+            btnSetStudyStartDate.Tag = "Study";
+            btnSetStudyStartDate.Text = "სწავლის დაწყების თარიღის დაყენება";
+            btnSetStudyStartDate.UseVisualStyleBackColor = true;
+            btnSetStudyStartDate.Click += btnSetStudyStartDate_Click;
             // 
             // SystemOperations
             // 
-            this.SystemOperations.Controls.Add(this.sogBox2);
-            this.SystemOperations.Controls.Add(this.sogBox1);
-            this.SystemOperations.Location = new System.Drawing.Point(4, 22);
-            this.SystemOperations.Name = "SystemOperations";
-            this.SystemOperations.Padding = new System.Windows.Forms.Padding(3);
-            this.SystemOperations.Size = new System.Drawing.Size(1507, 865);
-            this.SystemOperations.TabIndex = 3;
-            this.SystemOperations.Text = "System Operations";
-            this.SystemOperations.UseVisualStyleBackColor = true;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(44, 198);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(432, 13);
-            this.label3.TabIndex = 5;
-            this.label3.Text = "ამ ველში უნდა აირჩიოთ ჯგუფისთვის შესაბამისი ხელშეკრულების ფაილები";
-            // 
-            // btnSaveDocPath
-            // 
-            this.btnSaveDocPath.Location = new System.Drawing.Point(674, 374);
-            this.btnSaveDocPath.Name = "btnSaveDocPath";
-            this.btnSaveDocPath.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveDocPath.TabIndex = 4;
-            this.btnSaveDocPath.Text = "შენახვა";
-            this.btnSaveDocPath.UseVisualStyleBackColor = true;
-            this.btnSaveDocPath.Click += new System.EventHandler(this.btnSaveDocPath_Click);
-            // 
-            // dgvGroups
-            // 
-            this.dgvGroups.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvGroups.Location = new System.Drawing.Point(36, 218);
-            this.dgvGroups.Name = "dgvGroups";
-            this.dgvGroups.Size = new System.Drawing.Size(713, 150);
-            this.dgvGroups.TabIndex = 3;
-            this.dgvGroups.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvGroups_CellContentClick);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(21, 125);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(116, 13);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "ფაილები სერვერზე";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(33, 61);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(104, 13);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "შენახვის ადგილი";
-            // 
-            // btnSave
-            // 
-            this.btnSave.Location = new System.Drawing.Point(143, 148);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(75, 23);
-            this.btnSave.TabIndex = 1;
-            this.btnSave.Text = "შენახვა";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
-            // 
-            // btnChooseDir
-            // 
-            this.btnChooseDir.Location = new System.Drawing.Point(354, 58);
-            this.btnChooseDir.Name = "btnChooseDir";
-            this.btnChooseDir.Size = new System.Drawing.Size(75, 23);
-            this.btnChooseDir.TabIndex = 1;
-            this.btnChooseDir.Text = "არჩევა";
-            this.btnChooseDir.UseVisualStyleBackColor = true;
-            this.btnChooseDir.Click += new System.EventHandler(this.btnChooseDir_Click);
-            // 
-            // txtBaseUrl
-            // 
-            this.txtBaseUrl.Location = new System.Drawing.Point(143, 122);
-            this.txtBaseUrl.Name = "txtBaseUrl";
-            this.txtBaseUrl.Size = new System.Drawing.Size(205, 20);
-            this.txtBaseUrl.TabIndex = 0;
-            // 
-            // txtDownloadFolder
-            // 
-            this.txtDownloadFolder.Location = new System.Drawing.Point(143, 58);
-            this.txtDownloadFolder.Name = "txtDownloadFolder";
-            this.txtDownloadFolder.Size = new System.Drawing.Size(205, 20);
-            this.txtDownloadFolder.TabIndex = 0;
-            // 
-            // SMSServiceSettings
-            // 
-            this.SMSServiceSettings.Controls.Add(this.chkSmsEnabled);
-            this.SMSServiceSettings.Controls.Add(this.btnSaveOverSmsTexts);
-            this.SMSServiceSettings.Controls.Add(this.btnSaveUpcPaySmsTexts);
-            this.SMSServiceSettings.Controls.Add(this.btnSavePaySmsTexts);
-            this.SMSServiceSettings.Controls.Add(this.btnSaveRegSmsTexts);
-            this.SMSServiceSettings.Controls.Add(this.label9);
-            this.SMSServiceSettings.Controls.Add(this.label8);
-            this.SMSServiceSettings.Controls.Add(this.label7);
-            this.SMSServiceSettings.Controls.Add(this.label6);
-            this.SMSServiceSettings.Controls.Add(this.txtSmsOverdue);
-            this.SMSServiceSettings.Controls.Add(this.txtSmsPayment);
-            this.SMSServiceSettings.Controls.Add(this.txtSmsUpcoming);
-            this.SMSServiceSettings.Controls.Add(this.txtSmsRegistration);
-            this.SMSServiceSettings.Controls.Add(this.label5);
-            this.SMSServiceSettings.Controls.Add(this.label4);
-            this.SMSServiceSettings.Controls.Add(this.tbTestNumber);
-            this.SMSServiceSettings.Controls.Add(this.btnTest);
-            this.SMSServiceSettings.Controls.Add(this.btnSaveApiKey);
-            this.SMSServiceSettings.Controls.Add(this.txtSmsApiKey);
-            this.SMSServiceSettings.Location = new System.Drawing.Point(4, 22);
-            this.SMSServiceSettings.Name = "SMSServiceSettings";
-            this.SMSServiceSettings.Size = new System.Drawing.Size(1507, 865);
-            this.SMSServiceSettings.TabIndex = 4;
-            this.SMSServiceSettings.Text = "SMS შეტყობინების ფუნქციები";
-            this.SMSServiceSettings.UseVisualStyleBackColor = true;
-            // 
-            // AutoFileDetectionSettings
-            // 
-            this.AutoFileDetectionSettings.Controls.Add(this.groupBoxAutoDetection);
-            this.AutoFileDetectionSettings.Location = new System.Drawing.Point(4, 22);
-            this.AutoFileDetectionSettings.Name = "AutoFileDetectionSettings";
-            this.AutoFileDetectionSettings.Size = new System.Drawing.Size(1507, 865);
-            this.AutoFileDetectionSettings.TabIndex = 5;
-            this.AutoFileDetectionSettings.Text = "ავტომატური ფაილის აღმოჩენა";
-            this.AutoFileDetectionSettings.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxAutoDetection
-            // 
-            this.groupBoxAutoDetection.Controls.Add(this.btnSaveAutoDetectionSettings);
-            this.groupBoxAutoDetection.Controls.Add(this.btnSelectDirectory);
-            this.groupBoxAutoDetection.Controls.Add(this.txtFileNamePattern);
-            this.groupBoxAutoDetection.Controls.Add(this.txtWatchDirectory);
-            this.groupBoxAutoDetection.Controls.Add(this.labelFileNamePattern);
-            this.groupBoxAutoDetection.Controls.Add(this.labelWatchDirectory);
-            this.groupBoxAutoDetection.Controls.Add(this.chkAutoDetectionEnabled);
-            this.groupBoxAutoDetection.Location = new System.Drawing.Point(20, 20);
-            this.groupBoxAutoDetection.Name = "groupBoxAutoDetection";
-            this.groupBoxAutoDetection.Size = new System.Drawing.Size(600, 200);
-            this.groupBoxAutoDetection.TabIndex = 0;
-            this.groupBoxAutoDetection.TabStop = false;
-            this.groupBoxAutoDetection.Text = "ავტომატური ფაილის აღმოჩენის პარამეტრები";
-            // 
-            // chkAutoDetectionEnabled
-            // 
-            this.chkAutoDetectionEnabled.AutoSize = true;
-            this.chkAutoDetectionEnabled.Location = new System.Drawing.Point(20, 30);
-            this.chkAutoDetectionEnabled.Name = "chkAutoDetectionEnabled";
-            this.chkAutoDetectionEnabled.Size = new System.Drawing.Size(200, 17);
-            this.chkAutoDetectionEnabled.TabIndex = 0;
-            this.chkAutoDetectionEnabled.Text = "ავტომატური ფაილის აღმოჩენა ჩართულია";
-            this.chkAutoDetectionEnabled.UseVisualStyleBackColor = true;
-            // 
-            // labelWatchDirectory
-            // 
-            this.labelWatchDirectory.AutoSize = true;
-            this.labelWatchDirectory.Location = new System.Drawing.Point(20, 70);
-            this.labelWatchDirectory.Name = "labelWatchDirectory";
-            this.labelWatchDirectory.Size = new System.Drawing.Size(120, 13);
-            this.labelWatchDirectory.TabIndex = 1;
-            this.labelWatchDirectory.Text = "მონიტორინგის საქაღალდე:";
-            // 
-            // txtWatchDirectory
-            // 
-            this.txtWatchDirectory.Location = new System.Drawing.Point(150, 67);
-            this.txtWatchDirectory.Name = "txtWatchDirectory";
-            this.txtWatchDirectory.Size = new System.Drawing.Size(350, 20);
-            this.txtWatchDirectory.TabIndex = 2;
-            // 
-            // btnSelectDirectory
-            // 
-            this.btnSelectDirectory.Location = new System.Drawing.Point(510, 65);
-            this.btnSelectDirectory.Name = "btnSelectDirectory";
-            this.btnSelectDirectory.Size = new System.Drawing.Size(75, 23);
-            this.btnSelectDirectory.TabIndex = 3;
-            this.btnSelectDirectory.Text = "არჩევა";
-            this.btnSelectDirectory.UseVisualStyleBackColor = true;
-            this.btnSelectDirectory.Click += new System.EventHandler(this.btnSelectDirectory_Click);
-            // 
-            // labelFileNamePattern
-            // 
-            this.labelFileNamePattern.AutoSize = true;
-            this.labelFileNamePattern.Location = new System.Drawing.Point(20, 110);
-            this.labelFileNamePattern.Name = "labelFileNamePattern";
-            this.labelFileNamePattern.Size = new System.Drawing.Size(100, 13);
-            this.labelFileNamePattern.TabIndex = 4;
-            this.labelFileNamePattern.Text = "ფაილის სახელის ნიმუში:";
-            // 
-            // txtFileNamePattern
-            // 
-            this.txtFileNamePattern.Location = new System.Drawing.Point(150, 107);
-            this.txtFileNamePattern.Name = "txtFileNamePattern";
-            this.txtFileNamePattern.Size = new System.Drawing.Size(350, 20);
-            this.txtFileNamePattern.TabIndex = 5;
-            this.txtFileNamePattern.Text = "*.xlsx";
-            // 
-            // btnSaveAutoDetectionSettings
-            // 
-            this.btnSaveAutoDetectionSettings.Location = new System.Drawing.Point(20, 150);
-            this.btnSaveAutoDetectionSettings.Name = "btnSaveAutoDetectionSettings";
-            this.btnSaveAutoDetectionSettings.Size = new System.Drawing.Size(100, 30);
-            this.btnSaveAutoDetectionSettings.TabIndex = 6;
-            this.btnSaveAutoDetectionSettings.Text = "შენახვა";
-            this.btnSaveAutoDetectionSettings.UseVisualStyleBackColor = true;
-            this.btnSaveAutoDetectionSettings.Click += new System.EventHandler(this.btnSaveAutoDetectionSettings_Click);
-            // 
-            // chkSmsEnabled
-            // 
-            this.chkSmsEnabled.AutoSize = true;
-            this.chkSmsEnabled.Location = new System.Drawing.Point(50, 55);
-            this.chkSmsEnabled.Name = "chkSmsEnabled";
-            this.chkSmsEnabled.Size = new System.Drawing.Size(80, 17);
-            this.chkSmsEnabled.TabIndex = 22;
-            this.chkSmsEnabled.Text = "checkBox1";
-            this.chkSmsEnabled.UseVisualStyleBackColor = true;
-            this.chkSmsEnabled.CheckedChanged += new System.EventHandler(this.chkSmsEnabled_CheckedChanged);
-            // 
-            // btnSaveOverSmsTexts
-            // 
-            this.btnSaveOverSmsTexts.Location = new System.Drawing.Point(1093, 370);
-            this.btnSaveOverSmsTexts.Name = "btnSaveOverSmsTexts";
-            this.btnSaveOverSmsTexts.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveOverSmsTexts.TabIndex = 21;
-            this.btnSaveOverSmsTexts.Text = "შენახვა";
-            this.btnSaveOverSmsTexts.UseVisualStyleBackColor = true;
-            this.btnSaveOverSmsTexts.Click += new System.EventHandler(this.btnSaveOverSmsTexts_Click);
-            // 
-            // btnSaveUpcPaySmsTexts
-            // 
-            this.btnSaveUpcPaySmsTexts.Location = new System.Drawing.Point(1093, 251);
-            this.btnSaveUpcPaySmsTexts.Name = "btnSaveUpcPaySmsTexts";
-            this.btnSaveUpcPaySmsTexts.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveUpcPaySmsTexts.TabIndex = 21;
-            this.btnSaveUpcPaySmsTexts.Text = "შენახვა";
-            this.btnSaveUpcPaySmsTexts.UseVisualStyleBackColor = true;
-            this.btnSaveUpcPaySmsTexts.Click += new System.EventHandler(this.btnSaveUpcPaySmsTexts_Click);
-            // 
-            // btnSavePaySmsTexts
-            // 
-            this.btnSavePaySmsTexts.Location = new System.Drawing.Point(469, 508);
-            this.btnSavePaySmsTexts.Name = "btnSavePaySmsTexts";
-            this.btnSavePaySmsTexts.Size = new System.Drawing.Size(75, 23);
-            this.btnSavePaySmsTexts.TabIndex = 21;
-            this.btnSavePaySmsTexts.Text = "შენახვა";
-            this.btnSavePaySmsTexts.UseVisualStyleBackColor = true;
-            this.btnSavePaySmsTexts.Click += new System.EventHandler(this.btnSavePaySmsTexts_Click);
-            // 
-            // btnSaveRegSmsTexts
-            // 
-            this.btnSaveRegSmsTexts.Location = new System.Drawing.Point(469, 389);
-            this.btnSaveRegSmsTexts.Name = "btnSaveRegSmsTexts";
-            this.btnSaveRegSmsTexts.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveRegSmsTexts.TabIndex = 21;
-            this.btnSaveRegSmsTexts.Text = "შენახვა";
-            this.btnSaveRegSmsTexts.UseVisualStyleBackColor = true;
-            this.btnSaveRegSmsTexts.Click += new System.EventHandler(this.btnSaveRegSmsTexts_Click);
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(655, 292);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(215, 13);
-            this.label9.TabIndex = 20;
-            this.label9.Text = "გადახდის გადაცილების შეტყობინება";
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(655, 172);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(229, 13);
-            this.label8.TabIndex = 19;
-            this.label8.Text = "მოახლოვებული გადახდის შეტყობინება";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(33, 430);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(136, 13);
-            this.label7.TabIndex = 18;
-            this.label7.Text = "გადახდის შეტყობინება";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(33, 308);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(158, 13);
-            this.label6.TabIndex = 17;
-            this.label6.Text = "რეგისტრაციის შეტყობინება";
-            // 
-            // txtSmsOverdue
-            // 
-            this.txtSmsOverdue.Location = new System.Drawing.Point(658, 308);
-            this.txtSmsOverdue.Multiline = true;
-            this.txtSmsOverdue.Name = "txtSmsOverdue";
-            this.txtSmsOverdue.Size = new System.Drawing.Size(429, 85);
-            this.txtSmsOverdue.TabIndex = 16;
-            // 
-            // txtSmsPayment
-            // 
-            this.txtSmsPayment.Location = new System.Drawing.Point(34, 446);
-            this.txtSmsPayment.Multiline = true;
-            this.txtSmsPayment.Name = "txtSmsPayment";
-            this.txtSmsPayment.Size = new System.Drawing.Size(429, 85);
-            this.txtSmsPayment.TabIndex = 16;
-            // 
-            // txtSmsUpcoming
-            // 
-            this.txtSmsUpcoming.Location = new System.Drawing.Point(658, 189);
-            this.txtSmsUpcoming.Multiline = true;
-            this.txtSmsUpcoming.Name = "txtSmsUpcoming";
-            this.txtSmsUpcoming.Size = new System.Drawing.Size(429, 85);
-            this.txtSmsUpcoming.TabIndex = 16;
-            // 
-            // txtSmsRegistration
-            // 
-            this.txtSmsRegistration.Location = new System.Drawing.Point(34, 327);
-            this.txtSmsRegistration.Multiline = true;
-            this.txtSmsRegistration.Name = "txtSmsRegistration";
-            this.txtSmsRegistration.Size = new System.Drawing.Size(429, 85);
-            this.txtSmsRegistration.TabIndex = 16;
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(33, 232);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(169, 13);
-            this.label5.TabIndex = 15;
-            this.label5.Text = "სატესტო ტელეფონის ნომერი";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(33, 158);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(51, 13);
-            this.label4.TabIndex = 14;
-            this.label4.Text = "SMS Key";
-            // 
-            // tbTestNumber
-            // 
-            this.tbTestNumber.Location = new System.Drawing.Point(36, 248);
-            this.tbTestNumber.Multiline = true;
-            this.tbTestNumber.Name = "tbTestNumber";
-            this.tbTestNumber.Size = new System.Drawing.Size(144, 26);
-            this.tbTestNumber.TabIndex = 13;
-            // 
-            // btnTest
-            // 
-            this.btnTest.Location = new System.Drawing.Point(186, 251);
-            this.btnTest.Name = "btnTest";
-            this.btnTest.Size = new System.Drawing.Size(75, 23);
-            this.btnTest.TabIndex = 12;
-            this.btnTest.Text = "შემოწმება";
-            this.btnTest.UseVisualStyleBackColor = true;
-            this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
-            // 
-            // btnSaveApiKey
-            // 
-            this.btnSaveApiKey.Location = new System.Drawing.Point(490, 172);
-            this.btnSaveApiKey.Name = "btnSaveApiKey";
-            this.btnSaveApiKey.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveApiKey.TabIndex = 11;
-            this.btnSaveApiKey.Text = "შენახვა";
-            this.btnSaveApiKey.UseVisualStyleBackColor = true;
-            this.btnSaveApiKey.Click += new System.EventHandler(this.btnSaveApiKey_Click_1);
-            // 
-            // txtSmsApiKey
-            // 
-            this.txtSmsApiKey.Location = new System.Drawing.Point(36, 174);
-            this.txtSmsApiKey.Name = "txtSmsApiKey";
-            this.txtSmsApiKey.Size = new System.Drawing.Size(427, 20);
-            this.txtSmsApiKey.TabIndex = 10;
-            // 
-            // menuStrip1
-            // 
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1539, 24);
-            this.menuStrip1.TabIndex = 1;
-            this.menuStrip1.Text = "menuStrip1";
-            // 
-            // sogBox1
-            // 
-            this.sogBox1.Controls.Add(this.btnSaveDocPath);
-            this.sogBox1.Controls.Add(this.label3);
-            this.sogBox1.Controls.Add(this.txtDownloadFolder);
-            this.sogBox1.Controls.Add(this.txtBaseUrl);
-            this.sogBox1.Controls.Add(this.dgvGroups);
-            this.sogBox1.Controls.Add(this.btnChooseDir);
-            this.sogBox1.Controls.Add(this.label2);
-            this.sogBox1.Controls.Add(this.btnSave);
-            this.sogBox1.Controls.Add(this.label1);
-            this.sogBox1.Location = new System.Drawing.Point(6, 6);
-            this.sogBox1.Name = "sogBox1";
-            this.sogBox1.Size = new System.Drawing.Size(764, 627);
-            this.sogBox1.TabIndex = 6;
-            this.sogBox1.TabStop = false;
-            this.sogBox1.Text = "groupBox3";
+            SystemOperations.Controls.Add(sogBox2);
+            SystemOperations.Controls.Add(sogBox1);
+            SystemOperations.Location = new Point(4, 24);
+            SystemOperations.Margin = new Padding(4, 3, 4, 3);
+            SystemOperations.Name = "SystemOperations";
+            SystemOperations.Padding = new Padding(4, 3, 4, 3);
+            SystemOperations.Size = new Size(1760, 1000);
+            SystemOperations.TabIndex = 3;
+            SystemOperations.Text = "System Operations";
+            SystemOperations.UseVisualStyleBackColor = true;
             // 
             // sogBox2
             // 
-            this.sogBox2.Location = new System.Drawing.Point(776, 6);
-            this.sogBox2.Name = "sogBox2";
-            this.sogBox2.Size = new System.Drawing.Size(725, 627);
-            this.sogBox2.TabIndex = 7;
-            this.sogBox2.TabStop = false;
-            this.sogBox2.Text = "სინქრონიზაციის პარამეტრები";
+            sogBox2.Location = new Point(905, 7);
+            sogBox2.Margin = new Padding(4, 3, 4, 3);
+            sogBox2.Name = "sogBox2";
+            sogBox2.Padding = new Padding(4, 3, 4, 3);
+            sogBox2.Size = new Size(846, 723);
+            sogBox2.TabIndex = 7;
+            sogBox2.TabStop = false;
+            sogBox2.Text = "სინქრონიზაციის პარამეტრები";
+            // 
+            // sogBox1
+            // 
+            sogBox1.Controls.Add(btnSaveDocPath);
+            sogBox1.Controls.Add(label3);
+            sogBox1.Controls.Add(txtDownloadFolder);
+            sogBox1.Controls.Add(txtBaseUrl);
+            sogBox1.Controls.Add(dgvGroups);
+            sogBox1.Controls.Add(btnChooseDir);
+            sogBox1.Controls.Add(label2);
+            sogBox1.Controls.Add(btnSave);
+            sogBox1.Controls.Add(label1);
+            sogBox1.Location = new Point(7, 7);
+            sogBox1.Margin = new Padding(4, 3, 4, 3);
+            sogBox1.Name = "sogBox1";
+            sogBox1.Padding = new Padding(4, 3, 4, 3);
+            sogBox1.Size = new Size(891, 723);
+            sogBox1.TabIndex = 6;
+            sogBox1.TabStop = false;
+            sogBox1.Text = "groupBox3";
+            // 
+            // btnSaveDocPath
+            // 
+            btnSaveDocPath.Location = new Point(786, 432);
+            btnSaveDocPath.Margin = new Padding(4, 3, 4, 3);
+            btnSaveDocPath.Name = "btnSaveDocPath";
+            btnSaveDocPath.Size = new Size(88, 27);
+            btnSaveDocPath.TabIndex = 4;
+            btnSaveDocPath.Text = "შენახვა";
+            btnSaveDocPath.UseVisualStyleBackColor = true;
+            btnSaveDocPath.Click += btnSaveDocPath_Click;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(51, 228);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(483, 15);
+            label3.TabIndex = 5;
+            label3.Text = "ამ ველში უნდა აირჩიოთ ჯგუფისთვის შესაბამისი ხელშეკრულების ფაილები";
+            // 
+            // txtDownloadFolder
+            // 
+            txtDownloadFolder.Location = new Point(167, 67);
+            txtDownloadFolder.Margin = new Padding(4, 3, 4, 3);
+            txtDownloadFolder.Name = "txtDownloadFolder";
+            txtDownloadFolder.Size = new Size(238, 23);
+            txtDownloadFolder.TabIndex = 0;
+            // 
+            // txtBaseUrl
+            // 
+            txtBaseUrl.Location = new Point(167, 141);
+            txtBaseUrl.Margin = new Padding(4, 3, 4, 3);
+            txtBaseUrl.Name = "txtBaseUrl";
+            txtBaseUrl.Size = new Size(238, 23);
+            txtBaseUrl.TabIndex = 0;
+            // 
+            // dgvGroups
+            // 
+            dgvGroups.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvGroups.Location = new Point(42, 252);
+            dgvGroups.Margin = new Padding(4, 3, 4, 3);
+            dgvGroups.Name = "dgvGroups";
+            dgvGroups.Size = new Size(832, 173);
+            dgvGroups.TabIndex = 3;
+            dgvGroups.CellContentClick += dgvGroups_CellContentClick;
+            // 
+            // btnChooseDir
+            // 
+            btnChooseDir.Location = new Point(413, 67);
+            btnChooseDir.Margin = new Padding(4, 3, 4, 3);
+            btnChooseDir.Name = "btnChooseDir";
+            btnChooseDir.Size = new Size(88, 27);
+            btnChooseDir.TabIndex = 1;
+            btnChooseDir.Text = "არჩევა";
+            btnChooseDir.UseVisualStyleBackColor = true;
+            btnChooseDir.Click += btnChooseDir_Click;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(24, 144);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(125, 15);
+            label2.TabIndex = 2;
+            label2.Text = "ფაილები სერვერზე";
+            // 
+            // btnSave
+            // 
+            btnSave.Location = new Point(167, 171);
+            btnSave.Margin = new Padding(4, 3, 4, 3);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(88, 27);
+            btnSave.TabIndex = 1;
+            btnSave.Text = "შენახვა";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(38, 70);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(115, 15);
+            label1.TabIndex = 2;
+            label1.Text = "შენახვის ადგილი";
+            // 
+            // SMSServiceSettings
+            // 
+            SMSServiceSettings.Controls.Add(chkSmsEnabled);
+            SMSServiceSettings.Controls.Add(btnSaveOverSmsTexts);
+            SMSServiceSettings.Controls.Add(btnSaveUpcPaySmsTexts);
+            SMSServiceSettings.Controls.Add(btnSavePaySmsTexts);
+            SMSServiceSettings.Controls.Add(btnSaveRegSmsTexts);
+            SMSServiceSettings.Controls.Add(label9);
+            SMSServiceSettings.Controls.Add(label8);
+            SMSServiceSettings.Controls.Add(label7);
+            SMSServiceSettings.Controls.Add(label6);
+            SMSServiceSettings.Controls.Add(txtSmsOverdue);
+            SMSServiceSettings.Controls.Add(txtSmsPayment);
+            SMSServiceSettings.Controls.Add(txtSmsUpcoming);
+            SMSServiceSettings.Controls.Add(txtSmsRegistration);
+            SMSServiceSettings.Controls.Add(label5);
+            SMSServiceSettings.Controls.Add(label4);
+            SMSServiceSettings.Controls.Add(tbTestNumber);
+            SMSServiceSettings.Controls.Add(btnTest);
+            SMSServiceSettings.Controls.Add(btnSaveApiKey);
+            SMSServiceSettings.Controls.Add(txtSmsApiKey);
+            SMSServiceSettings.Location = new Point(4, 24);
+            SMSServiceSettings.Margin = new Padding(4, 3, 4, 3);
+            SMSServiceSettings.Name = "SMSServiceSettings";
+            SMSServiceSettings.Size = new Size(1760, 1000);
+            SMSServiceSettings.TabIndex = 4;
+            SMSServiceSettings.Text = "SMS შეტყობინების ფუნქციები";
+            SMSServiceSettings.UseVisualStyleBackColor = true;
+            // 
+            // chkSmsEnabled
+            // 
+            chkSmsEnabled.AutoSize = true;
+            chkSmsEnabled.Location = new Point(58, 63);
+            chkSmsEnabled.Margin = new Padding(4, 3, 4, 3);
+            chkSmsEnabled.Name = "chkSmsEnabled";
+            chkSmsEnabled.Size = new Size(82, 19);
+            chkSmsEnabled.TabIndex = 22;
+            chkSmsEnabled.Text = "checkBox1";
+            chkSmsEnabled.UseVisualStyleBackColor = true;
+            chkSmsEnabled.CheckedChanged += chkSmsEnabled_CheckedChanged;
+            // 
+            // btnSaveOverSmsTexts
+            // 
+            btnSaveOverSmsTexts.Location = new Point(1275, 427);
+            btnSaveOverSmsTexts.Margin = new Padding(4, 3, 4, 3);
+            btnSaveOverSmsTexts.Name = "btnSaveOverSmsTexts";
+            btnSaveOverSmsTexts.Size = new Size(88, 27);
+            btnSaveOverSmsTexts.TabIndex = 21;
+            btnSaveOverSmsTexts.Text = "შენახვა";
+            btnSaveOverSmsTexts.UseVisualStyleBackColor = true;
+            btnSaveOverSmsTexts.Click += btnSaveOverSmsTexts_Click;
+            // 
+            // btnSaveUpcPaySmsTexts
+            // 
+            btnSaveUpcPaySmsTexts.Location = new Point(1275, 290);
+            btnSaveUpcPaySmsTexts.Margin = new Padding(4, 3, 4, 3);
+            btnSaveUpcPaySmsTexts.Name = "btnSaveUpcPaySmsTexts";
+            btnSaveUpcPaySmsTexts.Size = new Size(88, 27);
+            btnSaveUpcPaySmsTexts.TabIndex = 21;
+            btnSaveUpcPaySmsTexts.Text = "შენახვა";
+            btnSaveUpcPaySmsTexts.UseVisualStyleBackColor = true;
+            btnSaveUpcPaySmsTexts.Click += btnSaveUpcPaySmsTexts_Click;
+            // 
+            // btnSavePaySmsTexts
+            // 
+            btnSavePaySmsTexts.Location = new Point(547, 586);
+            btnSavePaySmsTexts.Margin = new Padding(4, 3, 4, 3);
+            btnSavePaySmsTexts.Name = "btnSavePaySmsTexts";
+            btnSavePaySmsTexts.Size = new Size(88, 27);
+            btnSavePaySmsTexts.TabIndex = 21;
+            btnSavePaySmsTexts.Text = "შენახვა";
+            btnSavePaySmsTexts.UseVisualStyleBackColor = true;
+            btnSavePaySmsTexts.Click += btnSavePaySmsTexts_Click;
+            // 
+            // btnSaveRegSmsTexts
+            // 
+            btnSaveRegSmsTexts.Location = new Point(547, 449);
+            btnSaveRegSmsTexts.Margin = new Padding(4, 3, 4, 3);
+            btnSaveRegSmsTexts.Name = "btnSaveRegSmsTexts";
+            btnSaveRegSmsTexts.Size = new Size(88, 27);
+            btnSaveRegSmsTexts.TabIndex = 21;
+            btnSaveRegSmsTexts.Text = "შენახვა";
+            btnSaveRegSmsTexts.UseVisualStyleBackColor = true;
+            btnSaveRegSmsTexts.Click += btnSaveRegSmsTexts_Click;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(764, 337);
+            label9.Margin = new Padding(4, 0, 4, 0);
+            label9.Name = "label9";
+            label9.Size = new Size(237, 15);
+            label9.TabIndex = 20;
+            label9.Text = "გადახდის გადაცილების შეტყობინება";
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(764, 198);
+            label8.Margin = new Padding(4, 0, 4, 0);
+            label8.Name = "label8";
+            label8.Size = new Size(253, 15);
+            label8.TabIndex = 19;
+            label8.Text = "მოახლოვებული გადახდის შეტყობინება";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(38, 496);
+            label7.Margin = new Padding(4, 0, 4, 0);
+            label7.Name = "label7";
+            label7.Size = new Size(150, 15);
+            label7.TabIndex = 18;
+            label7.Text = "გადახდის შეტყობინება";
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(38, 355);
+            label6.Margin = new Padding(4, 0, 4, 0);
+            label6.Name = "label6";
+            label6.Size = new Size(176, 15);
+            label6.TabIndex = 17;
+            label6.Text = "რეგისტრაციის შეტყობინება";
+            // 
+            // txtSmsOverdue
+            // 
+            txtSmsOverdue.Location = new Point(768, 355);
+            txtSmsOverdue.Margin = new Padding(4, 3, 4, 3);
+            txtSmsOverdue.Multiline = true;
+            txtSmsOverdue.Name = "txtSmsOverdue";
+            txtSmsOverdue.Size = new Size(500, 97);
+            txtSmsOverdue.TabIndex = 16;
+            // 
+            // txtSmsPayment
+            // 
+            txtSmsPayment.Location = new Point(40, 515);
+            txtSmsPayment.Margin = new Padding(4, 3, 4, 3);
+            txtSmsPayment.Multiline = true;
+            txtSmsPayment.Name = "txtSmsPayment";
+            txtSmsPayment.Size = new Size(500, 97);
+            txtSmsPayment.TabIndex = 16;
+            // 
+            // txtSmsUpcoming
+            // 
+            txtSmsUpcoming.Location = new Point(768, 218);
+            txtSmsUpcoming.Margin = new Padding(4, 3, 4, 3);
+            txtSmsUpcoming.Multiline = true;
+            txtSmsUpcoming.Name = "txtSmsUpcoming";
+            txtSmsUpcoming.Size = new Size(500, 97);
+            txtSmsUpcoming.TabIndex = 16;
+            // 
+            // txtSmsRegistration
+            // 
+            txtSmsRegistration.Location = new Point(40, 377);
+            txtSmsRegistration.Margin = new Padding(4, 3, 4, 3);
+            txtSmsRegistration.Multiline = true;
+            txtSmsRegistration.Name = "txtSmsRegistration";
+            txtSmsRegistration.Size = new Size(500, 97);
+            txtSmsRegistration.TabIndex = 16;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(38, 268);
+            label5.Margin = new Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new Size(186, 15);
+            label5.TabIndex = 15;
+            label5.Text = "სატესტო ტელეფონის ნომერი";
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(38, 182);
+            label4.Margin = new Padding(4, 0, 4, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(52, 15);
+            label4.TabIndex = 14;
+            label4.Text = "SMS Key";
+            // 
+            // tbTestNumber
+            // 
+            tbTestNumber.Location = new Point(42, 286);
+            tbTestNumber.Margin = new Padding(4, 3, 4, 3);
+            tbTestNumber.Multiline = true;
+            tbTestNumber.Name = "tbTestNumber";
+            tbTestNumber.Size = new Size(167, 29);
+            tbTestNumber.TabIndex = 13;
+            // 
+            // btnTest
+            // 
+            btnTest.Location = new Point(217, 290);
+            btnTest.Margin = new Padding(4, 3, 4, 3);
+            btnTest.Name = "btnTest";
+            btnTest.Size = new Size(88, 27);
+            btnTest.TabIndex = 12;
+            btnTest.Text = "შემოწმება";
+            btnTest.UseVisualStyleBackColor = true;
+            btnTest.Click += btnTest_Click;
+            // 
+            // btnSaveApiKey
+            // 
+            btnSaveApiKey.Location = new Point(572, 198);
+            btnSaveApiKey.Margin = new Padding(4, 3, 4, 3);
+            btnSaveApiKey.Name = "btnSaveApiKey";
+            btnSaveApiKey.Size = new Size(88, 27);
+            btnSaveApiKey.TabIndex = 11;
+            btnSaveApiKey.Text = "შენახვა";
+            btnSaveApiKey.UseVisualStyleBackColor = true;
+            btnSaveApiKey.Click += btnSaveApiKey_Click_1;
+            // 
+            // txtSmsApiKey
+            // 
+            txtSmsApiKey.Location = new Point(42, 201);
+            txtSmsApiKey.Margin = new Padding(4, 3, 4, 3);
+            txtSmsApiKey.Name = "txtSmsApiKey";
+            txtSmsApiKey.Size = new Size(497, 23);
+            txtSmsApiKey.TabIndex = 10;
+            // 
+            // AutoFileDetectionSettings
+            // 
+            AutoFileDetectionSettings.Controls.Add(groupBoxAutoDetection);
+            AutoFileDetectionSettings.Location = new Point(4, 24);
+            AutoFileDetectionSettings.Margin = new Padding(4, 3, 4, 3);
+            AutoFileDetectionSettings.Name = "AutoFileDetectionSettings";
+            AutoFileDetectionSettings.Size = new Size(1760, 1000);
+            AutoFileDetectionSettings.TabIndex = 5;
+            AutoFileDetectionSettings.Text = "ავტომატური ფაილის აღმოჩენა";
+            AutoFileDetectionSettings.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxAutoDetection
+            // 
+            groupBoxAutoDetection.Controls.Add(btnSaveAutoDetectionSettings);
+            groupBoxAutoDetection.Controls.Add(btnSelectDirectory);
+            groupBoxAutoDetection.Controls.Add(txtFileNamePattern);
+            groupBoxAutoDetection.Controls.Add(txtWatchDirectory);
+            groupBoxAutoDetection.Controls.Add(labelFileNamePattern);
+            groupBoxAutoDetection.Controls.Add(labelWatchDirectory);
+            groupBoxAutoDetection.Controls.Add(chkAutoDetectionEnabled);
+            groupBoxAutoDetection.Location = new Point(23, 23);
+            groupBoxAutoDetection.Margin = new Padding(4, 3, 4, 3);
+            groupBoxAutoDetection.Name = "groupBoxAutoDetection";
+            groupBoxAutoDetection.Padding = new Padding(4, 3, 4, 3);
+            groupBoxAutoDetection.Size = new Size(700, 231);
+            groupBoxAutoDetection.TabIndex = 0;
+            groupBoxAutoDetection.TabStop = false;
+            groupBoxAutoDetection.Text = "ავტომატური ფაილის აღმოჩენის პარამეტრები";
+            // 
+            // btnSaveAutoDetectionSettings
+            // 
+            btnSaveAutoDetectionSettings.Location = new Point(23, 173);
+            btnSaveAutoDetectionSettings.Margin = new Padding(4, 3, 4, 3);
+            btnSaveAutoDetectionSettings.Name = "btnSaveAutoDetectionSettings";
+            btnSaveAutoDetectionSettings.Size = new Size(117, 35);
+            btnSaveAutoDetectionSettings.TabIndex = 6;
+            btnSaveAutoDetectionSettings.Text = "შენახვა";
+            btnSaveAutoDetectionSettings.UseVisualStyleBackColor = true;
+            btnSaveAutoDetectionSettings.Click += btnSaveAutoDetectionSettings_Click;
+            // 
+            // btnSelectDirectory
+            // 
+            btnSelectDirectory.Location = new Point(595, 75);
+            btnSelectDirectory.Margin = new Padding(4, 3, 4, 3);
+            btnSelectDirectory.Name = "btnSelectDirectory";
+            btnSelectDirectory.Size = new Size(88, 27);
+            btnSelectDirectory.TabIndex = 3;
+            btnSelectDirectory.Text = "არჩევა";
+            btnSelectDirectory.UseVisualStyleBackColor = true;
+            btnSelectDirectory.Click += btnSelectDirectory_Click;
+            // 
+            // txtFileNamePattern
+            // 
+            txtFileNamePattern.Location = new Point(175, 123);
+            txtFileNamePattern.Margin = new Padding(4, 3, 4, 3);
+            txtFileNamePattern.Name = "txtFileNamePattern";
+            txtFileNamePattern.Size = new Size(408, 23);
+            txtFileNamePattern.TabIndex = 5;
+            txtFileNamePattern.Text = "*.xlsx";
+            // 
+            // txtWatchDirectory
+            // 
+            txtWatchDirectory.Location = new Point(175, 77);
+            txtWatchDirectory.Margin = new Padding(4, 3, 4, 3);
+            txtWatchDirectory.Name = "txtWatchDirectory";
+            txtWatchDirectory.Size = new Size(408, 23);
+            txtWatchDirectory.TabIndex = 2;
+            // 
+            // labelFileNamePattern
+            // 
+            labelFileNamePattern.AutoSize = true;
+            labelFileNamePattern.Location = new Point(23, 127);
+            labelFileNamePattern.Margin = new Padding(4, 0, 4, 0);
+            labelFileNamePattern.Name = "labelFileNamePattern";
+            labelFileNamePattern.Size = new Size(166, 15);
+            labelFileNamePattern.TabIndex = 4;
+            labelFileNamePattern.Text = "ფაილის სახელის ნიმუში:";
+            // 
+            // labelWatchDirectory
+            // 
+            labelWatchDirectory.AutoSize = true;
+            labelWatchDirectory.Location = new Point(23, 81);
+            labelWatchDirectory.Margin = new Padding(4, 0, 4, 0);
+            labelWatchDirectory.Name = "labelWatchDirectory";
+            labelWatchDirectory.Size = new Size(175, 15);
+            labelWatchDirectory.TabIndex = 1;
+            labelWatchDirectory.Text = "მონიტორინგის საქაღალდე:";
+            // 
+            // chkAutoDetectionEnabled
+            // 
+            chkAutoDetectionEnabled.AutoSize = true;
+            chkAutoDetectionEnabled.Location = new Point(23, 35);
+            chkAutoDetectionEnabled.Margin = new Padding(4, 3, 4, 3);
+            chkAutoDetectionEnabled.Name = "chkAutoDetectionEnabled";
+            chkAutoDetectionEnabled.Size = new Size(290, 19);
+            chkAutoDetectionEnabled.TabIndex = 0;
+            chkAutoDetectionEnabled.Text = "ავტომატური ფაილის აღმოჩენა ჩართულია";
+            chkAutoDetectionEnabled.UseVisualStyleBackColor = true;
+            // 
+            // menuStrip1
+            // 
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Padding = new Padding(7, 2, 0, 2);
+            menuStrip1.Size = new Size(1795, 24);
+            menuStrip1.TabIndex = 1;
+            menuStrip1.Text = "menuStrip1";
             // 
             // AdminPanelForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1539, 930);
-            this.Controls.Add(this.tabControl1);
-            this.Controls.Add(this.menuStrip1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip1;
-            this.Name = "AdminPanelForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Load += new System.EventHandler(this.AdminPanelForm_Load);
-            this.tabControl1.ResumeLayout(false);
-            this.DatabaseSettings.ResumeLayout(false);
-            this.groupBox2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dGVUnassignedStudents)).EndInit();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.UserManagement.ResumeLayout(false);
-            this.UserManagement.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRegisteredUsers)).EndInit();
-            this.PaymentsFinance.ResumeLayout(false);
-            this.SystemOperations.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroups)).EndInit();
-            this.SMSServiceSettings.ResumeLayout(false);
-            this.SMSServiceSettings.PerformLayout();
-            this.AutoFileDetectionSettings.ResumeLayout(false);
-            this.groupBoxAutoDetection.ResumeLayout(false);
-            this.groupBoxAutoDetection.PerformLayout();
-            this.sogBox1.ResumeLayout(false);
-            this.sogBox1.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1795, 1061);
+            Controls.Add(tabControl1);
+            Controls.Add(menuStrip1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MainMenuStrip = menuStrip1;
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "AdminPanelForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Load += AdminPanelForm_Load;
+            tabControl1.ResumeLayout(false);
+            DatabaseSettings.ResumeLayout(false);
+            groupBox2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dGVUnassignedStudents).EndInit();
+            groupBox1.ResumeLayout(false);
+            groupBox4.ResumeLayout(false);
+            groupBox4.PerformLayout();
+            groupBox3.ResumeLayout(false);
+            groupBox3.PerformLayout();
+            UserManagement.ResumeLayout(false);
+            UserManagement.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRegisteredUsers).EndInit();
+            PaymentsFinance.ResumeLayout(false);
+            SystemOperations.ResumeLayout(false);
+            sogBox1.ResumeLayout(false);
+            sogBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvGroups).EndInit();
+            SMSServiceSettings.ResumeLayout(false);
+            SMSServiceSettings.PerformLayout();
+            AutoFileDetectionSettings.ResumeLayout(false);
+            groupBoxAutoDetection.ResumeLayout(false);
+            groupBoxAutoDetection.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
@@ -967,14 +1244,14 @@
         private System.Windows.Forms.Button btnSaveRegSmsTexts;
         private System.Windows.Forms.CheckBox chkSmsEnabled;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.TextBox txtUsername;
-        private System.Windows.Forms.TextBox txtDatabase;
-        private System.Windows.Forms.TextBox txtPort;
-        private System.Windows.Forms.TextBox txtServer;
-        private System.Windows.Forms.Button btnTestConnection;
-        private System.Windows.Forms.Label lblConnectionStatus;
-        private System.Windows.Forms.Button btnSaveConnection;
+        private System.Windows.Forms.TextBox localUsrPass;
+        private System.Windows.Forms.TextBox localUsrName;
+        private System.Windows.Forms.TextBox localDbName;
+        private System.Windows.Forms.TextBox LocalPort;
+        private System.Windows.Forms.TextBox localHost;
+        private System.Windows.Forms.Button testLocalConn;
+        private System.Windows.Forms.Label localConnStatus;
+        private System.Windows.Forms.Button saveLocalConn;
         private System.Windows.Forms.Button btnAddStudentToGroup;
         private System.Windows.Forms.Button btnSwitchToTestDB;
         private System.Windows.Forms.Label lblDbMode;
@@ -1000,5 +1277,24 @@
         private System.Windows.Forms.Label labelFileNamePattern;
         private System.Windows.Forms.TextBox txtFileNamePattern;
         private System.Windows.Forms.Button btnSaveAutoDetectionSettings;
+        private GroupBox groupBox3;
+        private GroupBox groupBox4;
+        private TextBox serverHost;
+        private Label label21;
+        //private Label label15;
+        private TextBox serverPort;
+        //private Button button1;
+        private Label label20;
+        private Button saveServerConn;
+        private TextBox serverDbName;
+        //private Label label16;
+        private Label label19;
+        private Button testSrvConn;
+        private TextBox serverUsrName;
+        private Label label17;
+        private Label label18;
+        private TextBox serverUsrPass;
+        private Label serverConnStatus;
+        private Button btnSetPaymentDate;
     }
 }

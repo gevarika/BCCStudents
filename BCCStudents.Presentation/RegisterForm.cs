@@ -1,18 +1,13 @@
 ﻿using BCCStudents.Application.Services;
-using System;
-using System.Data.SqlClient;
-using System.Security.Cryptography;
-using System.Text;
-using System.Windows.Forms;
-using Microsoft.Extensions.DependencyInjection;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BCCStudents.Presentation
 {
     public partial class RegisterForm : Form
     {
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
         private readonly IServiceProvider _serviceProvider;
 
         public RegisterForm(IServiceProvider serviceProvider, UserService userService)

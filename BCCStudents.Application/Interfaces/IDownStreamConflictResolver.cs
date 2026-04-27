@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using BCCStudents.Application.Services.Sync.DownStream;
 
 namespace BCCStudents.Application.Interfaces

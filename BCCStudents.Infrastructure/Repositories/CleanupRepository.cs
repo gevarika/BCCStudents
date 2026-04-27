@@ -1,27 +1,21 @@
-﻿using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class CleanupRepository : ICleanupRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public CleanupRepository(DatabaseHelper dbHelper)
+        public CleanupRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         public void ResetAllData()
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
 

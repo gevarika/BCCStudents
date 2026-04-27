@@ -1,7 +1,4 @@
-﻿using System;
-using BCCStudents.Domain.Entities;
-
-namespace BCCStudents.Application.Services.Sync.DownStream
+﻿namespace BCCStudents.Application.Services.Sync.DownStream
 {
     public class SyncStateRecord
     {

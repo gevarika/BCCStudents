@@ -1,38 +1,33 @@
-﻿using System;
-using BCCStudents.Domain.Entities;
-using System.Windows.Forms;
-using BCCStudents.Application.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Data;
-using System.Drawing;
-using System.Configuration;
-using BCCStudents.Presentation.Properties;
-using System.Text.RegularExpressions;
-using MySql.Data.MySqlClient;
-using System.Threading.Tasks;
-using System.IO;
-using BCCStudents.Domain.Entities;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services;
 using BCCStudents.Application.Services.Update;
-using Microsoft.Office.Interop.Word;
+using BCCStudents.Domain.Interfaces;
 using BCCStudents.Infrastructure.Services;
+using Microsoft.Extensions.DependencyInjection;
+using MySql.Data.MySqlClient;
+using System.Configuration;
+using System.Text.RegularExpressions;
+using static BCCStudents.Presentation.MainForm;
 
 namespace BCCStudents.Presentation
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public partial class AdminPanelForm : Form
     {
-        private readonly StudentService _studentService;
-        private readonly CleanupService _cleanupService;
-        private readonly UserService _userService;
+        private readonly IStudentService _studentService;
+        private readonly ICleanupService _cleanupService;
+        private readonly IUserService _userService;
         private readonly DocumentService _documentService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IGroupRepository _groupRepository;
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IConnectionStatusService _connectionStatusService;
-        private readonly BackupManager _backupManager;
+        private readonly IConfigurationService _configService;
+        private readonly ISystemConfigurationService _systemConfigService;
+        private readonly BackupService _backupManager;
         private readonly AdminCodeManager _adminCodeManager;
+        private readonly IApplicationStatus _appStatus;
+        private readonly UserManagementFormFactory _userManagementFormFactory;
         private DocumentConfig _config;
         private MainForm _mainForm;
         private TextBox txtAdminCode;
@@ -40,24 +35,30 @@ namespace BCCStudents.Presentation
         private TabPage tabLogs;
         private Panel panelLogs;
         private LogViewerForm logViewerForm;
-        private System.Windows.Forms.CheckBox chkUseLocalDb;
-        private System.Windows.Forms.CheckBox chkTestMode;
-        private Button btnTestLocal;
-        private Button btnTestServer;
-        private Button btnSaveDbSettings;
-        private Label lblLocalDb;
-        private Label lblServerDb;
-        private Label lblTestMode;
-        private TextBox txtLocalConnectionString;
-        private TextBox txtServerConnectionString;
-        private Label lblLocalConnString;
-        private Label lblServerConnString;
         private System.Windows.Forms.CheckBox chkAutoDownstream;
         private System.Windows.Forms.CheckBox chkAutoUpstream;
         private System.Windows.Forms.CheckBox chkAutoUpdate;
         private System.Windows.Forms.CheckBox chkUseFullBalance;
+        private System.Windows.Forms.CheckBox chkAllowPartialPayments;
+        private delegate SetStudyStartDateForm setStudyStartDateFormFactory();
+        private readonly SetStudyStartDateFormFactory _setStudyStartDateFormFactory;
         private Button btnCheckUpdates;
-        public AdminPanelForm(DatabaseHelper dbHelper, IGroupRepository groupRepository, StudentService studentService, CleanupService cleanupService, UserService userService, DocumentService documentService, IServiceProvider serviceProvider, IConnectionStatusService connectionStatusService, BackupManager backupManager, AdminCodeManager adminCodeManager)
+        public AdminPanelForm(IDatabaseConnectionProvider databaseConnectionProvider,
+            IGroupRepository groupRepository,
+            IStudentService studentService,
+            ICleanupService cleanupService,
+            IUserService userService,
+            DocumentService documentService,
+            IServiceProvider serviceProvider,
+            IConnectionStatusService connectionStatusService,
+            IConfigurationService configurationService,
+            BackupService backupManager,
+            AdminCodeManager adminCodeManager,
+            IApplicationStatus appStatus,
+            ISystemConfigurationService systemConfigurationService,
+            SetStudyStartDateFormFactory setStudyStartDateFormFactory,
+            UserManagementFormFactory userManagementFormFactory
+            )
         {
             InitializeComponent();
             _studentService = studentService;
@@ -66,11 +67,16 @@ namespace BCCStudents.Presentation
             _documentService = documentService;
             _serviceProvider = serviceProvider;
             _groupRepository = groupRepository;
-            _dbHelper = dbHelper;
+            _connectionProvider = databaseConnectionProvider;
             _connectionStatusService = connectionStatusService ?? throw new ArgumentNullException(nameof(connectionStatusService));
             _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _adminCodeManager = adminCodeManager ?? throw new ArgumentNullException(nameof(adminCodeManager));
-            if (Settings.Default.IsTestDb)
+            _configService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
+            _systemConfigService = systemConfigurationService;
+            _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
+            _setStudyStartDateFormFactory = setStudyStartDateFormFactory ?? throw new ArgumentNullException(nameof(setStudyStartDateFormFactory));
+            _userManagementFormFactory = userManagementFormFactory ?? throw new ArgumentNullException(nameof(userManagementFormFactory));
+            if (_configService.IsTestDb)
                 FormTitleHelper.SetTitle(this, "პროგრამის პარამეტრები - სატესტო რეჟიმი");
             else
                 FormTitleHelper.SetTitle(this, "პროგრამის პარამეტრები");
@@ -113,74 +119,32 @@ namespace BCCStudents.Presentation
             }
             catch { }
 
-            // DB mode controls - positioned below existing controls in groupBox1
-            lblTestMode = new Label { Text = "ტესტ რეჟიმი:", AutoSize = true, Location = new System.Drawing.Point(20, 320) };
-            chkTestMode = new System.Windows.Forms.CheckBox { Text = "ტესტ ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 320) };
-            
-            lblLocalDb = new Label { Text = "ლოკალური ბაზა:", AutoSize = true, Location = new System.Drawing.Point(20, 350) };
-            chkUseLocalDb = new System.Windows.Forms.CheckBox { Text = "ლოკალური ბაზის გამოყენება", AutoSize = true, Location = new System.Drawing.Point(120, 350) };
-            
-            btnTestLocal = new Button { Text = "ტესტი", Location = new System.Drawing.Point(350, 380), Width = 80 };
-            
-            lblServerDb = new Label { Text = "სერვერის ბაზა:", AutoSize = true, Location = new System.Drawing.Point(20, 410) };
-            btnTestServer = new Button { Text = "ტესტი", Location = new System.Drawing.Point(350, 440), Width = 80 };
-            
-            btnSaveDbSettings = new Button { Text = "შენახვა", Location = new System.Drawing.Point(20, 470), Width = 100 };
-            
-            // Connection string textboxes
-            lblLocalConnString = new Label { Text = "ლოკალური კავშირი:", AutoSize = true, Location = new System.Drawing.Point(20, 500) };
-            txtLocalConnectionString = new TextBox { Location = new System.Drawing.Point(20, 520), Width = 400, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
-            
-            lblServerConnString = new Label { Text = "სერვერის კავშირი:", AutoSize = true, Location = new System.Drawing.Point(20, 590) };
-            txtServerConnectionString = new TextBox { Location = new System.Drawing.Point(20, 610), Width = 400, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
-
-            // Set initial values from settings
-            chkTestMode.Checked = Settings.Default.IsTestDb;
-            chkUseLocalDb.Checked = Settings.Default.UseLocalDb;
             chkAutoDownstream = new System.Windows.Forms.CheckBox { Text = "Downstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 20) };
             chkAutoUpstream = new System.Windows.Forms.CheckBox { Text = "Upstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 50) };
             chkAutoUpdate = new System.Windows.Forms.CheckBox { Text = "ავტომატური განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 80) };
             chkUseFullBalance = new System.Windows.Forms.CheckBox { Text = "სრული ბალანსის გამოყენება (რამდენ თვესაც ფარავს)", AutoSize = true, Location = new System.Drawing.Point(20, 110) };
-            btnCheckUpdates = new Button { Text = "პროგრამის განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 140) };
-            chkAutoDownstream.Checked = Settings.Default.AutoDownstreamSyncEnabled;
-            chkAutoUpstream.Checked = Settings.Default.AutoUpstreamSyncEnabled;
-            chkAutoUpdate.Checked = Settings.Default.AutoUpdateEnabled;
-            chkUseFullBalance.Checked = Settings.Default.UseFullBalanceForAutoPayment; // default = true
-            
+            chkAllowPartialPayments = new System.Windows.Forms.CheckBox { Text = "ნაწილობრივი გადახდის დაშვება", AutoSize = true, Location = new System.Drawing.Point(20, 140) };
+            btnCheckUpdates = new Button { Text = "პროგრამის განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 170) };
+            chkAutoDownstream.Checked = _configService.AutoDownstreamSyncEnabled;
+            chkAutoUpstream.Checked = _configService.AutoUpstreamSyncEnabled;
+            chkAutoUpdate.Checked = _configService.AutoUpdateEnabled;
+            chkUseFullBalance.Checked = _configService.UseFullBalanceForAutoPayment; // default = true
+            chkAllowPartialPayments.Checked = _configService.AllowPartialPayments;
+
             // Load connection strings to fields
             LoadConnectionStringsToFields();
-            
-            // Load connection strings to textboxes
-            LoadConnectionStringsToTextboxes();
 
-            // Event handlers
-            btnTestLocal.Click += (s, e) => TestLocalConnection();
-            btnTestServer.Click += (s, e) => TestServerConnection();
-            btnSaveDbSettings.Click += (s, e) => SaveDbSettings();
-            chkTestMode.CheckedChanged += (s, e) => TestModeChanged();
-            chkUseLocalDb.CheckedChanged += (s, e) => UseLocalChanged();
-            chkAutoDownstream.CheckedChanged += (s, e) => { Settings.Default.AutoDownstreamSyncEnabled = chkAutoDownstream.Checked; Settings.Default.Save(); };
-            chkAutoUpstream.CheckedChanged += (s, e) => { Settings.Default.AutoUpstreamSyncEnabled = chkAutoUpstream.Checked; Settings.Default.Save(); };
-            chkAutoUpdate.CheckedChanged += (s, e) => { Settings.Default.AutoUpdateEnabled = chkAutoUpdate.Checked; Settings.Default.Save(); };
-            chkUseFullBalance.CheckedChanged += (s, e) => { Settings.Default.UseFullBalanceForAutoPayment = chkUseFullBalance.Checked; Settings.Default.Save(); };
+            chkAutoDownstream.CheckedChanged += (s, e) => { _configService.AutoDownstreamSyncEnabled = chkAutoDownstream.Checked; _configService.Save(); };
+            chkAutoUpstream.CheckedChanged += (s, e) => { _configService.AutoUpstreamSyncEnabled = chkAutoUpstream.Checked; _configService.Save(); };
+            chkAutoUpdate.CheckedChanged += (s, e) => { _configService.AutoUpdateEnabled = chkAutoUpdate.Checked; _configService.Save(); };
+            chkUseFullBalance.CheckedChanged += (s, e) => { _configService.UseFullBalanceForAutoPayment = chkUseFullBalance.Checked; _configService.Save(); };
+            chkAllowPartialPayments.CheckedChanged += (s, e) => { _configService.AllowPartialPayments = chkAllowPartialPayments.Checked; _configService.Save(); };
 
-            // Add controls to groupBox1
-            this.groupBox1.Controls.Add(lblTestMode);
-            this.groupBox1.Controls.Add(chkTestMode);
-            this.groupBox1.Controls.Add(lblLocalDb);
-            this.groupBox1.Controls.Add(chkUseLocalDb);
-            this.groupBox1.Controls.Add(btnTestLocal);
-            this.groupBox1.Controls.Add(lblServerDb);
-            this.groupBox1.Controls.Add(btnTestServer);
-            this.groupBox1.Controls.Add(btnSaveDbSettings);
-            this.groupBox1.Controls.Add(lblLocalConnString);
-            this.groupBox1.Controls.Add(txtLocalConnectionString);
-            this.groupBox1.Controls.Add(lblServerConnString);
-            this.groupBox1.Controls.Add(txtServerConnectionString);
             this.sogBox2.Controls.Add(chkAutoDownstream);
             this.sogBox2.Controls.Add(chkAutoUpstream);
             this.sogBox2.Controls.Add(chkAutoUpdate);
             this.sogBox2.Controls.Add(chkUseFullBalance);
+            this.sogBox2.Controls.Add(chkAllowPartialPayments);
             this.sogBox2.Controls.Add(btnCheckUpdates);
 
             btnCheckUpdates.Click += async (s, e) =>
@@ -209,13 +173,13 @@ namespace BCCStudents.Presentation
                                  $"ახალი ვერსია: {latest}\n\n" +
                                  $"{(isRequired ? "განახლება აუცილებელია!" : "გსურთ განახლება?")}";
 
-                    var result = MessageBox.Show(message, "განახლება", 
-                        isRequired ? MessageBoxButtons.OK : MessageBoxButtons.YesNo, 
+                    var result = MessageBox.Show(message, "განახლება",
+                        isRequired ? MessageBoxButtons.OK : MessageBoxButtons.YesNo,
                         MessageBoxIcon.Information);
 
                     if (!isRequired && result != DialogResult.Yes)
                     {
-                        MessageBox.Show("განახლება გადაიდო.", "განახლება გადაიდო", 
+                        MessageBox.Show("განახლება გადაიდო.", "განახლება გადაიდო",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
@@ -248,15 +212,15 @@ namespace BCCStudents.Presentation
         }
         private void btnSync_Click(object sender, EventArgs e)
         {
-            try
+            /*try
             {
-                _studentService.MigrateStudentGroups();
+                 _studentService.MigrateStudentToGroup();
                 MessageBox.Show("მონაცემები წარმატებით სინქრონიზებულია.", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("შეცდომა: " + ex.Message, "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            }*/
         }
 
         private void btnCheckStudents_Click(object sender, EventArgs e)
@@ -333,6 +297,17 @@ namespace BCCStudents.Presentation
         }
         private void AdminPanelForm_Load(object sender, EventArgs e)
         {
+            // Emergency Setup Mode: Offline რეჟიმში მხოლოდ Database Settings ტაბი უნდა იყოს ხელმისაწვდომი
+            if (!_appStatus.IsDatabaseOnline)
+            {
+                foreach (TabPage tab in tabControl1.TabPages)
+                {
+                    if (tab != DatabaseSettings)
+                    {
+                        tab.Enabled = false;
+                    }
+                }
+            }
             if (!_connectionStatusService.IsConnected)
             {
                 MessageBox.Show("ბაზასთან კავშირი ამჟამად მიუწვდომელია. ფორმა გაიხსნება მხოლოდ ნახვისთვის.", "კავშირი", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -342,19 +317,19 @@ namespace BCCStudents.Presentation
                 txtDownloadFolder.Text = _config.DownloadPath;
                 txtBaseUrl.Text = _config.FileUrl;
 
-                txtSmsApiKey.Text = Settings.Default.SmsApiKey;
-                txtSmsRegistration.Text = Settings.Default.SmsText_Registration;
-                txtSmsPayment.Text = Settings.Default.SmsText_Payment;
-                txtSmsUpcoming.Text = Settings.Default.SmsText_UpcomingReminder;
-                txtSmsOverdue.Text = Settings.Default.SmsText_OverdueReminder;
-                chkSmsEnabled.Checked = Settings.Default.SmsEnabled;
+                txtSmsApiKey.Text = _configService.SmsApiKey;
+                txtSmsRegistration.Text = _configService.SmsText_Registration;
+                txtSmsPayment.Text = _configService.SmsText_Payment;
+                txtSmsUpcoming.Text = _configService.SmsText_UpcomingReminder;
+                txtSmsOverdue.Text = _configService.SmsText_OverdueReminder;
+                chkSmsEnabled.Checked = _configService.SmsEnabled;
                 if (chkSmsEnabled.Checked)
                     chkSmsEnabled.Text = "SMS სერვისი ჩართულია";
                 else chkSmsEnabled.Text = "SMS სერვისი გამორთულია";
                 return;
             }
-            lblDbMode.Text = Settings.Default.IsTestDb ? "ტესტ რეჟიმი" : "სამუშაო რეჟიმი";
-            lblDbMode.ForeColor = Settings.Default.IsTestDb ? Color.OrangeRed : Color.DarkGreen;
+            lblDbMode.Text = _configService.IsTestDb ? "ტესტ რეჟიმი" : "სამუშაო რეჟიმი";
+            lblDbMode.ForeColor = _configService.IsTestDb ? Color.OrangeRed : Color.DarkGreen;
 
 
             LoadConnectionSettings();
@@ -363,12 +338,12 @@ namespace BCCStudents.Presentation
             txtDownloadFolder.Text = _config.DownloadPath;
             txtBaseUrl.Text = _config.FileUrl;
 
-            txtSmsApiKey.Text = Settings.Default.SmsApiKey;
-            txtSmsRegistration.Text = Settings.Default.SmsText_Registration;
-            txtSmsPayment.Text = Settings.Default.SmsText_Payment;
-            txtSmsUpcoming.Text = Settings.Default.SmsText_UpcomingReminder;
-            txtSmsOverdue.Text = Settings.Default.SmsText_OverdueReminder;
-            chkSmsEnabled.Checked = Settings.Default.SmsEnabled;
+            txtSmsApiKey.Text = _configService.SmsApiKey;
+            txtSmsRegistration.Text = _configService.SmsText_Registration;
+            txtSmsPayment.Text = _configService.SmsText_Payment;
+            txtSmsUpcoming.Text = _configService.SmsText_UpcomingReminder;
+            txtSmsOverdue.Text = _configService.SmsText_OverdueReminder;
+            chkSmsEnabled.Checked = _configService.SmsEnabled;
             if (chkSmsEnabled.Checked)
                 chkSmsEnabled.Text = "SMS სერვისი ჩართულია";
             else chkSmsEnabled.Text = "SMS სერვისი გამორთულია";
@@ -381,20 +356,30 @@ namespace BCCStudents.Presentation
         {
             var users = _userService.GetAllUsers();
             dgvRegisteredUsers.DataSource = users;
-            lblusersInfo.Text = "სულ - "+users.Count + " რეგისტრირებული მომხმარებელი";
+            lblusersInfo.Text = "სულ - " + users.Count + " რეგისტრირებული მომხმარებელი";
         }
         private void btnSetStudyStartDate_Click(object sender, EventArgs e)
         {
-            var setStudyStartDateForm = _serviceProvider.GetRequiredService<SetStudyStartDateForm>();
+            var btn = (Button)sender;
+            var setStudyStartDateForm = _setStudyStartDateFormFactory.Invoke();
             // მიიღე საჭირო რეპოზიტორიები (DI-დან ან ხელით)
             if (setStudyStartDateForm.ShowDialog() == DialogResult.OK)
             {
                 DateTime selectedDate = setStudyStartDateForm.SelectedDate.Date;
-                var studyStartManager = _serviceProvider.GetRequiredService<StudyStartDateManager>();
-                StudyStartDateManager.SaveStudyStartDate(selectedDate, studyStartManager);
+                switch (btn.Tag?.ToString())
+                {
+                    case "Study":
+                        _systemConfigService.SetStudyStartDate(selectedDate);
+                        break;
+                    case "Payment":
+                        _systemConfigService.SetDefaultPaymentDate(selectedDate);
+                        _mainForm.PaymentNextDateLabel_Update();
+                        break;
+                }
+
                 if (_mainForm != null)
                 {
-                    _mainForm.UpdateStudyStartDateLabel();
+                    _mainForm.StudyStartDateLabel_Update();
                 }
                 MessageBox.Show($"✅ თარიღი შენახულია: {selectedDate:dd-MM-yyyy}",
                             "დადასტურება",
@@ -456,42 +441,42 @@ namespace BCCStudents.Presentation
 
         private void btnSaveRegSmsTexts_Click(object sender, EventArgs e)
         {
-            Settings.Default.SmsText_Registration = txtSmsRegistration.Text.Trim();
+            _configService.SmsText_Registration = txtSmsRegistration.Text.Trim();
 
-            Settings.Default.Save();
+            _configService.Save();
             MessageBox.Show("წარმატებით შეინახა", "დადასტურება");
         }
 
         private void btnSavePaySmsTexts_Click(object sender, EventArgs e)
         {
-            Settings.Default.SmsText_Payment = txtSmsPayment.Text.Trim();
+            _configService.SmsText_Payment = txtSmsPayment.Text.Trim();
 
-            Settings.Default.Save();
+            _configService.Save();
             MessageBox.Show("წარმატებით შეინახა", "დადასტურება");
         }
 
         private void btnSaveUpcPaySmsTexts_Click(object sender, EventArgs e)
         {
-            Settings.Default.SmsText_UpcomingReminder = txtSmsUpcoming.Text.Trim();
+            _configService.SmsText_UpcomingReminder = txtSmsUpcoming.Text.Trim();
 
-            Settings.Default.Save();
+            _configService.Save();
             MessageBox.Show("წარმატებით შეინახა", "დადასტურება");
         }
 
         private void btnSaveOverSmsTexts_Click(object sender, EventArgs e)
         {
-            Settings.Default.SmsText_OverdueReminder = txtSmsOverdue.Text.Trim();
+            _configService.SmsText_OverdueReminder = txtSmsOverdue.Text.Trim();
 
-            Settings.Default.Save();
+            _configService.Save();
             MessageBox.Show("წარმატებით შეინახა", "დადასტურება");
         }
 
         private void chkSmsEnabled_CheckedChanged(object sender, EventArgs e)
         {
             if (chkSmsEnabled.Checked)
-            { chkSmsEnabled.Text = "SMS სერვისი ჩართულია"; Settings.Default.SmsEnabled = true; Settings.Default.Save(); }
+            { chkSmsEnabled.Text = "SMS სერვისი ჩართულია"; _configService.SmsEnabled = true; _configService.Save(); }
             else
-            { chkSmsEnabled.Text = "SMS სერვისი გამორთულია"; Settings.Default.SmsEnabled = false; Settings.Default.Save(); }
+            { chkSmsEnabled.Text = "SMS სერვისი გამორთულია"; _configService.SmsEnabled = false; _configService.Save(); }
         }
         public void LoadConnectionSettings()
         {
@@ -500,44 +485,44 @@ namespace BCCStudents.Presentation
             if (!string.IsNullOrWhiteSpace(connStr))
             {
                 // Regex-ით ამოვიღოთ ძირითადი ველები
-                txtServer.Text = GetValue(connStr, "Server");
-                txtPort.Text = GetValue(connStr, "Port");
-                txtDatabase.Text = GetValue(connStr, "Database");
-                txtUsername.Text = GetValue(connStr, "User");
-                txtPassword.Text = GetValue(connStr, "Password");
+                localHost.Text = GetValue(connStr, "Server");
+                LocalPort.Text = GetValue(connStr, "Port");
+                localDbName.Text = GetValue(connStr, "Database");
+                localUsrName.Text = GetValue(connStr, "User");
+                localUsrPass.Text = GetValue(connStr, "Password");
             }
 
-            lblConnectionStatus.Text = _connectionStatusService.IsConnected ? "✅ კავშირი დამყარებულია" : "❌ კავშირი არ არის";
-            lblConnectionStatus.ForeColor = _connectionStatusService.IsConnected ? Color.Green : Color.Red;
+            localConnStatus.Text = _connectionStatusService.IsConnected ? "✅ კავშირი დამყარებულია" : "❌ კავშირი არ არის";
+            localConnStatus.ForeColor = _connectionStatusService.IsConnected ? Color.Green : Color.Red;
         }
 
         private void LoadConnectionStringsToFields()
         {
             try
             {
-                bool isTest = Settings.Default.IsTestDb;
-                bool useLocal = Settings.Default.UseLocalDb;
+                bool isTest = _configService.IsTestDb;
+                bool useLocal = _configService.UseLocalDb;
 
                 if (isTest)
                 {
                     // Load test connection strings
-                    var localConn = Settings.Default.LocalMySqlConnectionString_Test;
-                    var serverConn = Settings.Default.ServerMySqlConnectionString_Test;
-                    
+                    var localConn = _configService.LocalMySqlConnectionString_Test;
+                    var serverConn = _configService.ServerMySqlConnectionString_Test;
+
                     // Fallback to production if test strings are empty
                     if (string.IsNullOrWhiteSpace(localConn))
-                        localConn = Settings.Default.LocalMySqlConnectionString;
+                        localConn = _configService.LocalMySqlConnectionString;
                     if (string.IsNullOrWhiteSpace(serverConn))
-                        serverConn = Settings.Default.ServerMySqlConnectionString;
-                    
+                        serverConn = _configService.ServerMySqlConnectionString;
+
                     LoadConnectionStringToFields(localConn, serverConn);
                 }
                 else
                 {
                     // Load production connection strings
-                    var localConn = Settings.Default.LocalMySqlConnectionString;
-                    var serverConn = Settings.Default.ServerMySqlConnectionString;
-                    
+                    var localConn = _configService.LocalMySqlConnectionString;
+                    var serverConn = _configService.ServerMySqlConnectionString;
+
                     LoadConnectionStringToFields(localConn, serverConn);
                 }
             }
@@ -551,238 +536,146 @@ namespace BCCStudents.Presentation
         {
             if (!string.IsNullOrWhiteSpace(localConn))
             {
-                txtServer.Text = GetValue(localConn, "Server");
-                txtPort.Text = "3306";
-                txtDatabase.Text = GetValue(localConn, "Database");
-                txtUsername.Text = GetValue(localConn, "User");
-                txtPassword.Text = GetValue(localConn, "Password");
+                localHost.Text = GetValue(localConn, "Server");
+                LocalPort.Text = GetValue(localConn, "Port");
+                localDbName.Text = GetValue(localConn, "Database");
+                localUsrName.Text = GetValue(localConn, "User");
+                localUsrPass.Text = GetValue(localConn, "Password");
             }
-            
+
             if (!string.IsNullOrWhiteSpace(serverConn))
             {
-                // Server connection string will be loaded when needed
-            }
-        }
-        
-        private void LoadConnectionStringsToTextboxes()
-        {
-            try
-            {
-                bool isTest = Settings.Default.IsTestDb;
-                
-                if (isTest)
-                {
-                    txtLocalConnectionString.Text = Settings.Default.LocalMySqlConnectionString_Test ?? "";
-                    txtServerConnectionString.Text = Settings.Default.ServerMySqlConnectionString_Test ?? "";
-                }
-                else
-                {
-                    txtLocalConnectionString.Text = Settings.Default.LocalMySqlConnectionString ?? "";
-                    txtServerConnectionString.Text = Settings.Default.ServerMySqlConnectionString ?? "";
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"შეცდომა კავშირის სტრინგების ჩატვირთვისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                serverHost.Text = GetValue(serverConn, "Server");
+                serverPort.Text = GetValue(serverConn, "Port");
+                serverDbName.Text = GetValue(serverConn, "Database");
+                serverUsrName.Text = GetValue(serverConn, "User");
+                serverUsrPass.Text = GetValue(serverConn, "Password");
             }
         }
 
-        private void TestLocalConnection()
-        {
-            try
-            {
-                string connectionString = $"Server={txtServer.Text.Trim()};Port={txtPort.Text.Trim()};Database={txtDatabase.Text.Trim()};User Id={txtUsername.Text.Trim()};Password={txtPassword.Text};AllowPublicKeyRetrieval=True;SslMode=Preferred;CharSet=utf8mb4;";
-                
-                using (var connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    MessageBox.Show("ლოკალური ბაზასთან კავშირი წარმატებულია!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"ლოკალური ბაზასთან კავშირის შეცდომა:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void TestServerConnection()
-        {
-            try
-            {
-                // For server connection, we'll use the existing connection string from settings
-                string serverConn = Settings.Default.IsTestDb ? 
-                    Settings.Default.ServerMySqlConnectionString_Test : 
-                    Settings.Default.ServerMySqlConnectionString;
-                
-                if (string.IsNullOrWhiteSpace(serverConn))
-                {
-                    MessageBox.Show("სერვერის კავშირის სტრინგი არ არის დაყენებული!", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                
-                using (var connection = new MySqlConnection(serverConn))
-                {
-                    connection.Open();
-                    MessageBox.Show("სერვერის ბაზასთან კავშირი წარმატებულია!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"სერვერის ბაზასთან კავშირის შეცდომა:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void SaveDbSettings()
-        {
-            try
-            {
-                bool isTest = Settings.Default.IsTestDb;
-                bool useLocal = Settings.Default.UseLocalDb;
-
-                // Build local connection string from existing textboxes
-                string localConn = $"Server={txtServer.Text.Trim()};Port={txtPort.Text.Trim()};Database={txtDatabase.Text.Trim()};User Id={txtUsername.Text.Trim()};Password={txtPassword.Text};AllowPublicKeyRetrieval=True;SslMode=Preferred;CharSet=utf8mb4;";
-                
-                // Save connection strings from textboxes
-                if (isTest)
-                {
-                    Settings.Default.LocalMySqlConnectionString_Test = localConn;
-                    Settings.Default.ServerMySqlConnectionString_Test = txtServerConnectionString.Text.Trim();
-                }
-                else
-                {
-                    Settings.Default.LocalMySqlConnectionString = localConn;
-                    Settings.Default.ServerMySqlConnectionString = txtServerConnectionString.Text.Trim();
-                }
-
-                // Save settings
-                Settings.Default.Save();
-                
-                MessageBox.Show("ბაზის პარამეტრები წარმატებით შენახულია!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                
-                // Reload settings to reflect changes
-                LoadConnectionStringsToFields();
-                LoadConnectionStringsToTextboxes();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"შეცდომა ბაზის პარამეტრების შენახვისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void TestModeChanged()
-        {
-            try
-            {
-                Settings.Default.IsTestDb = chkTestMode.Checked;
-                Settings.Default.Save();
-                
-                // Reload connection settings to reflect the new mode
-                LoadConnectionStringsToFields();
-                LoadConnectionStringsToTextboxes();
-                
-                MessageBox.Show($"ტესტ რეჟიმი {(chkTestMode.Checked ? "ჩართულია" : "გამორთულია")}", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"შეცდომა ტესტ რეჟიმის შეცვლისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void UseLocalChanged()
-        {
-            try
-            {
-                Settings.Default.UseLocalDb = chkUseLocalDb.Checked;
-                Settings.Default.Save();
-                
-                // Save local connection string from textbox
-                bool isTest = Settings.Default.IsTestDb;
-                if (isTest)
-                {
-                    Settings.Default.LocalMySqlConnectionString_Test = txtLocalConnectionString.Text.Trim();
-                }
-                else
-                {
-                    Settings.Default.LocalMySqlConnectionString = txtLocalConnectionString.Text.Trim();
-                }
-                Settings.Default.Save();
-                
-                MessageBox.Show($"ლოკალური ბაზის გამოყენება {(chkUseLocalDb.Checked ? "ჩართულია" : "გამორთულია")}", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"შეცდომა ლოკალური ბაზის გამოყენების შეცვლისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
         // ეხმარება კონკრეტული Key=Value წყვილის გამოტანაში
         private string GetValue(string connStr, string key)
         {
             var match = Regex.Match(connStr, $@"{key}\s*=\s*([^;]+)", RegexOptions.IgnoreCase);
             return match.Success ? match.Groups[1].Value : "";
         }
-        private void btnTestConnection_Click(object sender, EventArgs e)
+        private void testLocalConn_Click(object sender, EventArgs e)
         {
-            string server = txtServer.Text.Trim();
-            string port = txtPort.Text.Trim();
-            string database = txtDatabase.Text.Trim();
-            string user = txtUsername.Text.Trim();
-            string password = txtPassword.Text.Trim();
+            string server = localHost.Text.Trim();
+            string port = LocalPort.Text.Trim();
+            string database = localDbName.Text.Trim();
+            string user = localUsrName.Text.Trim();
+            string password = localUsrPass.Text.Trim();
 
-            string connStr = $"Server={server};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;";
+            string localConnStr = $"Server={server};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;";
 
-            using (var conn = new MySqlConnection(connStr))
+            using (var conn = new MySqlConnection(localConnStr))
             {
                 try
                 {
                     conn.Open();
-                    lblConnectionStatus.Text = "✅ კავშირი წარმატებით დამყარდა";
-                    lblConnectionStatus.ForeColor = Color.Green;
+                    localConnStatus.Text = "✅ კავშირი წარმატებით დამყარდა";
+                    localConnStatus.ForeColor = Color.Green;
                 }
                 catch (Exception ex)
                 {
-                    lblConnectionStatus.Text = "❌ კავშირის შეცდომა";
-                    lblConnectionStatus.ForeColor = Color.Red;
+                    localConnStatus.Text = "❌ კავშირის შეცდომა";
+                    localConnStatus.ForeColor = Color.Red;
                     MessageBox.Show("შეცდომა კავშირის დროს:\n" + ex.Message, "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        private async void btnSaveConnection_Click(object sender, EventArgs e)
+        private void testSrvConn_Click(object sender, EventArgs e)
         {
-            try
+            string server = serverHost.Text.Trim();
+            string port = serverPort.Text.Trim();
+            string database = serverDbName.Text.Trim();
+            string user = serverUsrName.Text.Trim();
+            string password = serverUsrPass.Text.Trim();
+
+            string serverConnStr = $"Server={server};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;";
+
+            using (var conn = new MySqlConnection(serverConnStr))
             {
-                var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var section = config.ConnectionStrings;
-
-                string connStr = $"Server={txtServer.Text.Trim()};Port={txtPort.Text.Trim()};" +
-                                 $"Database={txtDatabase.Text.Trim()};User={txtUsername.Text.Trim()};" +
-                                 $"Password={txtPassword.Text.Trim()};SslMode=Preferred;";
-
-                if (section.ConnectionStrings["MySQLConnection"] != null)
+                try
                 {
-                    section.ConnectionStrings["MySQLConnection"].ConnectionString = connStr;
+                    conn.Open();
+                    serverConnStatus.Text = "✅ კავშირი წარმატებით დამყარდა";
+                    serverConnStatus.ForeColor = Color.Green;
                 }
-                else
+                catch (Exception ex)
                 {
-                    section.ConnectionStrings.Add(new ConnectionStringSettings
-                    {
-                        Name = "MySQLConnection",
-                        ConnectionString = connStr,
-                        ProviderName = "MySql.Data.MySqlClient"
-                    });
+                    serverConnStatus.Text = "❌ კავშირის შეცდომა";
+                    serverConnStatus.ForeColor = Color.Red;
+                    MessageBox.Show("შეცდომა კავშირის დროს:\n" + ex.Message, "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-
-                await System.Threading.Tasks.Task.Run(() => config.Save(ConfigurationSaveMode.Modified));
-                ConfigurationManager.RefreshSection("connectionStrings");
-
-                MessageBox.Show("კავშირის პარამეტრები შენახულია", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("შეცდომა შენახვისას:\n" + ex.Message, "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
+        private void saveLocalConn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string server = localHost.Text.Trim();
+                string port = LocalPort.Text.Trim();
+                string database = localDbName.Text.Trim();
+                string user = localUsrName.Text.Trim();
+                string password = localUsrPass.Text.Trim();
+
+                // ავაწყოთ სრული connection string
+                string localConnStr =
+                    $"Server={server};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;CharSet=utf8mb4;";
+
+                // შევინახოთ Settings.settings-ში მთლიანად
+                if (_configService.IsTestDb)
+                    _configService.LocalMySqlConnectionString_Test = localConnStr;
+                else
+                    _configService.LocalMySqlConnectionString = localConnStr;
+
+                _configService.Save();
+
+                MessageBox.Show("ლოკალური კავშირის პარამეტრები შენახულია Settings-ში.", "წარმატება",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"შეცდომა ლოკალური კავშირის შენახვისას: {ex.Message}", "შეცდომა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void saveServerConn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string server = serverHost.Text.Trim();
+                string port = serverPort.Text.Trim();
+                string database = serverDbName.Text.Trim();
+                string user = serverUsrName.Text.Trim();
+                string password = serverUsrPass.Text.Trim();
+
+                // ავაწყოთ სრული connection string
+                string serverConnStr =
+                    $"Server={server};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;CharSet=utf8mb4;";
+
+                // შევინახოთ Settings.settings-ში მთლიანად
+                if (_configService.IsTestDb)
+                    _configService.ServerMySqlConnectionString_Test = serverConnStr;
+                else
+                    _configService.ServerMySqlConnectionString = serverConnStr;
+
+                _configService.Save();
+
+                MessageBox.Show("სერვერის კავშირის პარამეტრები შენახულია Settings-ში.", "წარმატება",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"შეცდომა სერვერის კავშირის შენახვისას: {ex.Message}", "შეცდომა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         private void btnAddStudentToGroup_Click(object sender, EventArgs e)
         {
 
@@ -791,18 +684,18 @@ namespace BCCStudents.Presentation
         private void btnSwitchToTestDB_Click(object sender, EventArgs e)
         {
             // შეცვალე სატესტო/სამუშაო ბაზის რეჟიმი
-            Settings.Default.IsTestDb = !Settings.Default.IsTestDb;
-            Settings.Default.Save();
+            _configService.IsTestDb = !_configService.IsTestDb;
+            _configService.Save();
 
             // ვიზუალური ინდიკატორის განახლება (სურვილისამებრ)
             if (lblDbMode != null)
             {
-                lblDbMode.Text = Settings.Default.IsTestDb ? "ტესტ რეჟიმი" : "სამუშაო რეჟიმი";
-                lblDbMode.ForeColor = Settings.Default.IsTestDb ? Color.OrangeRed : Color.DarkGreen;
+                lblDbMode.Text = _configService.IsTestDb ? "ტესტ რეჟიმი" : "სამუშაო რეჟიმი";
+                lblDbMode.ForeColor = _configService.IsTestDb ? Color.OrangeRed : Color.DarkGreen;
             }
 
             // შეტყობინება
-            MessageBox.Show(Settings.Default.IsTestDb
+            MessageBox.Show(_configService.IsTestDb
                 ? "✅ გადაერთე სატესტო ბაზაზე!"
                 : "✅ გადაერთე სამუშაო ბაზაზე!");
 
@@ -812,8 +705,8 @@ namespace BCCStudents.Presentation
 
         private void btnSaveApiKey_Click_1(object sender, EventArgs e)
         {
-            Settings.Default.SmsApiKey = txtSmsApiKey.Text.Trim();
-            Settings.Default.Save();
+            _configService.SmsApiKey = txtSmsApiKey.Text.Trim();
+            _configService.Save();
 
             MessageBox.Show("✅ API Key წარმატებით შენახულია.", "დადასტურება", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -830,14 +723,9 @@ namespace BCCStudents.Presentation
 
         private void btnRegisterUser_Click(object sender, EventArgs e)
         {
-            if (UserSession.Role == "Administrator")
-            {
-                var registerForm = _serviceProvider.GetRequiredService<RegisterForm>();
-                if (registerForm.ShowDialog() == DialogResult.OK)
-                    this.Close();
-            }
-            else
-                MessageBox.Show("თქვენ არ გაქვთ ამ ფუნქციის გამოყენების უფლება!", "არასწორი მომხმარებელი", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            // იხსნება UserManagementForm-ის ნაცვლად RegisterForm-ის
+            var userManagementForm = _userManagementFormFactory.Invoke();
+            userManagementForm.Show();
         }
         private void InitializeAdminCodeControls()
         {
@@ -898,7 +786,7 @@ namespace BCCStudents.Presentation
             {
                 folderDialog.Description = "აირჩიეთ საქაღალდე ფაილების მონიტორინგისთვის";
                 folderDialog.ShowNewFolderButton = true;
-                
+
                 if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
                     txtWatchDirectory.Text = folderDialog.SelectedPath;
@@ -910,23 +798,19 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // კონფიგურაციის ჩატვირთვა
-                var config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
-                
-                // ახალი მნიშვნელობების დაყენება
-                config.AppSettings.Settings["AutoFileDetection.Enabled"].Value = chkAutoDetectionEnabled.Checked.ToString();
-                config.AppSettings.Settings["AutoFileDetection.WatchFolderPath"].Value = txtWatchDirectory.Text.Trim();
-                config.AppSettings.Settings["AutoFileDetection.FileNamePattern"].Value = txtFileNamePattern.Text.Trim();
-                
-                // კონფიგურაციის შენახვა
-                config.Save(System.Configuration.ConfigurationSaveMode.Modified);
-                System.Configuration.ConfigurationManager.RefreshSection("appSettings");
-                
-                MessageBox.Show("კონფიგურაცია წარმატებით შეინახა!", "შენახვა", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _configService.SaveAutoDetectionSettings(
+                    chkAutoDetectionEnabled.Checked,
+                    txtWatchDirectory.Text.Trim(),
+                    txtFileNamePattern.Text.Trim()
+                );
+
+                MessageBox.Show("კონფიგურაცია წარმატებით შეინახა!", "შენახვა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"შეცდომა კონფიგურაციის შენახვისას: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"შეცდომა: {ex.Message}", "შეცდომა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -934,13 +818,16 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                chkAutoDetectionEnabled.Checked = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["AutoFileDetection.Enabled"] ?? "true");
-                txtWatchDirectory.Text = System.Configuration.ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"] ?? "";
-                txtFileNamePattern.Text = System.Configuration.ConfigurationManager.AppSettings["AutoFileDetection.FileNamePattern"] ?? "*.xlsx";
+                // ფორმა მხოლოდ სერვისს ეკითხება მნიშვნელობებს
+                chkAutoDetectionEnabled.Checked = _configService.IsAutoDetectionEnabled();
+                txtWatchDirectory.Text = _configService.GetWatchFolderPath();
+                txtFileNamePattern.Text = _configService.GetFileNamePattern();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"შეცდომა კონფიგურაციის ჩატვირთვისას: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // შეცდომის დამუშავება რჩება UI დონეზე
+                MessageBox.Show($"შეცდომა კონფიგურაციის ჩატვირთვისას: {ex.Message}",
+                    "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

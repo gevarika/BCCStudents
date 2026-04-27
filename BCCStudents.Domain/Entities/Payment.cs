@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
-
-namespace BCCStudents.Domain.Entities {
+﻿namespace BCCStudents.Domain.Entities
+{
     public class Payment
     {
         public int Id { get; set; } // გადახდის უნიკალური იდენტიფიკატორი
@@ -19,6 +13,8 @@ namespace BCCStudents.Domain.Entities {
         public string PaymentStatus { get; set; }
         public string Note { get; set; }
         public string FailureReason { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsDeleted { get; set; }
 
         public long? PersonalId { get; set; }
         public string PayerName { get; set; }

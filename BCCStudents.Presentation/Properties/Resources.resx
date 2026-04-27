@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Backup_Auto_Enable_Error" xml:space="preserve">
+    <value>შეცდომა პერიოდული ბექაპის ჩართვისას: {0}</value>
+  </data>
+  <data name="Backup_File_Info_Text" xml:space="preserve">
+    <value>ფაილის სახელი: {0}{1}სრული მისამართი: {2}{1}ზომა: {3}{1}შექმნის თარიღი: {4}{1}ბოლო ცვლილება: {5}{1}ბოლო წვდომა: {6}</value>
+  </data>
+  <data name="Backup_Delete_Success" xml:space="preserve">
+    <value>ბექაპი წარმატებით წაიშალა!</value>
+  </data>
+  <data name="Backup_Restore_Status" xml:space="preserve">
+    <value>მიმდინარეობს ბაზის აღდგენა...</value>
+  </data>
+  <data name="Backup_Restore_ConfirmTitle" xml:space="preserve">
+    <value>ბაზის აღდგენა</value>
+  </data>
+  <data name="Backup_Restore_ConfirmText" xml:space="preserve">
+    <value>ნამდვილად გსურთ ბაზის აღდგენა არჩეული ბექაპიდან?{0}{0}ფაილი: {1}{0}თარიღი: {2}{0}{0}გაფრთხილება: ეს ოპერაცია შეცვლის მიმდინარე მონაცემებს!</value>
+  </data>
+  <data name="Backup_Auto_Status_Disabled" xml:space="preserve">
+    <value>პერიოდული ბექაპი გამორთულია</value>
+  </data>
+  <data name="Backup_Create_Success" xml:space="preserve">
+    <value>ბექაპი წარმატებით შეიქმნა!</value>
+  </data>
+  <data name="Backup_Delete_ConfirmTitle" xml:space="preserve">
+    <value>ბექაპის წაშლა</value>
+  </data>
+  <data name="Backup_Menu_FileInfo" xml:space="preserve">
+    <value>ფაილის ინფორმაცია</value>
+  </data>
+  <data name="Common_InfoTitle" xml:space="preserve">
+    <value>ინფორმაცია</value>
+  </data>
+  <data name="Backup_Create_Status" xml:space="preserve">
+    <value>მიმდინარეობს ბექაპის შექმნა...</value>
+  </data>
+  <data name="Backup_LastBackup" xml:space="preserve">
+    <value>ბოლო ბექაპი: {0}</value>
+  </data>
+  <data name="Backup_Status_LoadError" xml:space="preserve">
+    <value>შეცდომა ბექაპების ჩატვირთვის დროს</value>
+  </data>
+  <data name="Backup_Auto_Enable_Success" xml:space="preserve">
+    <value>პერიოდული ბექაპი ჩართულია!</value>
+  </data>
+  <data name="Backup_LastBackup_None" xml:space="preserve">
+    <value>ბექაპი ჯერ არ არის შექმნილი</value>
+  </data>
+  <data name="Backup_File_NotFound" xml:space="preserve">
+    <value>ფაილი ვერ მოიძებნა!</value>
+  </data>
+  <data name="Backup_Auto_Disable_Success" xml:space="preserve">
+    <value>პერიოდული ბექაპი გამორთულია!</value>
+  </data>
+  <data name="Backup_ViewContent_Title" xml:space="preserve">
+    <value>ბექაპის შიგთავსი - {0}</value>
+  </data>
+  <data name="Backup_File_Open_Error" xml:space="preserve">
+    <value>შეცდომა ფაილის გახსნისას: {0}</value>
+  </data>
+  <data name="Backup_Column_FileSize" xml:space="preserve">
+    <value>ფაილის ზომა</value>
+  </data>
+  <data name="Backup_Status_LoadingBackups" xml:space="preserve">
+    <value>მიმდინარეობს ბექაპების ჩატვირთვა...</value>
+  </data>
+  <data name="Backup_Create_Error" xml:space="preserve">
+    <value>შეცდომა ბექაპის შექმნისას: {0}</value>
+  </data>
+  <data name="Backup_Column_FilePath" xml:space="preserve">
+    <value>ფაილის მისამართი</value>
+  </data>
+  <data name="Backup_File_Copy_Error" xml:space="preserve">
+    <value>შეცდომა ფაილის კოპირებისას: {0}</value>
+  </data>
+  <data name="Backup_File_Info_Error" xml:space="preserve">
+    <value>შეცდომა ფაილის ინფორმაციის ჩვენებისას: {0}</value>
+  </data>
+  <data name="Backup_File_Info_Title" xml:space="preserve">
+    <value>ფაილის ინფორმაცია</value>
+  </data>
+  <data name="Backup_OpenFolder_Error" xml:space="preserve">
+    <value>შეცდომა საქაღალდის გახსნისას: {0}</value>
+  </data>
+  <data name="Common_ErrorTitle" xml:space="preserve">
+    <value>შეცდომა</value>
+  </data>
+  <data name="Backup_Restore_NoSelection" xml:space="preserve">
+    <value>გთხოვთ, აირჩიოთ ბექაპი სიიდან!</value>
+  </data>
+  <data name="Common_WarningTitle" xml:space="preserve">
+    <value>გაფრთხილება</value>
+  </data>
+  <data name="Backup_Menu_ViewContent" xml:space="preserve">
+    <value>შიგთავსის ნახვა</value>
+  </data>
+  <data name="Backup_Restore_Error" xml:space="preserve">
+    <value>შეცდომა ბაზის აღდგენისას: {0}</value>
+  </data>
+  <data name="Backup_Status_LoadedCount" xml:space="preserve">
+    <value>ნაპოვნია {0} ბექაპი</value>
+  </data>
+  <data name="Backup_Delete_ConfirmText" xml:space="preserve">
+    <value>ნამდვილად გსურთ ბექაპის წაშლა?{0}{0}ფაილი: {1}{0}თარიღი: {2}</value>
+  </data>
+  <data name="Backup_Restore_Success" xml:space="preserve">
+    <value>ბაზა წარმატებით აღდგა!</value>
+  </data>
+  <data name="Backup_Auto_Disable_Error" xml:space="preserve">
+    <value>შეცდომა პერიოდული ბექაპის გამორთვისას: {0}</value>
+  </data>
+  <data name="Backup_Delete_NoSelection" xml:space="preserve">
+    <value>გთხოვთ, აირჩიოთ ბექაპი წასაშლელად!</value>
+  </data>
+  <data name="Backup_Auto_Status_Enabled" xml:space="preserve">
+    <value>პერიოდული ბექაპი ჩართულია (ინტერვალი: {0} საათი)</value>
+  </data>
+  <data name="Backup_Status_FilteredCount" xml:space="preserve">
+    <value>ნაპოვნია {0} ბექაპი (ფილტრი: {1} - {2})</value>
+  </data>
+  <data name="Backup_Column_FileName" xml:space="preserve">
+    <value>ფაილის სახელი</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="AppIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AppIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Backup_Column_CreationTime" xml:space="preserve">
+    <value>შექმნის თარიღი</value>
+  </data>
+  <data name="Backup_Restore_Fail" xml:space="preserve">
+    <value>ბაზის აღდგენა ვერ მოხერხდა!</value>
+  </data>
+  <data name="Backup_File_ViewContent_Error" xml:space="preserve">
+    <value>შეცდომა ფაილის შიგთავსის ჩვენებისას: {0}</value>
+  </data>
+  <data name="Backup_Delete_Error" xml:space="preserve">
+    <value>შეცდომა ბექაპის წაშლისას: {0}</value>
+  </data>
+  <data name="Backup_Menu_CopyFile" xml:space="preserve">
+    <value>ფაილის კოპირება</value>
+  </data>
+  <data name="Backup_Create_Fail" xml:space="preserve">
+    <value>ბექაპის შექმნა ვერ მოხერხდა!</value>
+  </data>
+  <data name="BackupTitle" xml:space="preserve">
+    <value>სარეზერვო ასლები</value>
+  </data>
+  <data name="Backup_Menu_OpenInEditor" xml:space="preserve">
+    <value>ტექსტური რედაქტორით გახსნა</value>
+  </data>
+  <data name="AppIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AppIcon.ico;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+</root>

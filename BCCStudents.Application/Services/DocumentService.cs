@@ -1,14 +1,6 @@
 ﻿using BCCStudents.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace BCCStudents.Application.Services
@@ -20,7 +12,7 @@ namespace BCCStudents.Application.Services
         public string DownloadBaseFolder { get; set; } // UI-დან მოდის
         public string FileServerBaseUrl { get; set; } // UI-დან მოდის
         private readonly WebClient _webClient = new WebClient();
-        
+
         public DocumentService()
         {
             DownloadBaseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BCCStudents");
@@ -55,7 +47,7 @@ namespace BCCStudents.Application.Services
                 printDialog.UseEXDialog = true;
 
                 DialogResult dialogResult = printDialog.ShowDialog();
-                
+
                 if (dialogResult == DialogResult.OK)
                 {
                     // მომხმარებელმა აირჩია პრინტერი
@@ -257,7 +249,7 @@ namespace BCCStudents.Application.Services
             string folderPath = GetStudentFolder(student);
             Directory.CreateDirectory(folderPath);
 
-            var files = new List<string> { student.IdCardPath};
+            var files = new List<string> { student.IdCardPath };
 
             // თუ AdditionalDocsPath არის JSON array, გავფართოვოთ ლოგიკა
             if (!string.IsNullOrWhiteSpace(student.AdditionalDocsPath))
@@ -401,7 +393,7 @@ namespace BCCStudents.Application.Services
         }
         private string GetStudentFolder(PendingStudent student)
         {
-                return Path.Combine(DownloadBaseFolder, $"{student.FirstName}_{student.LastName}_{student.Id}");
+            return Path.Combine(DownloadBaseFolder, $"{student.FirstName}_{student.LastName}_{student.Id}");
         }
 
         private void SaveAsPdf(Word.Document doc)

@@ -1,24 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Infrastructure.Data.JSON;
-using BCCStudents.Application.Services;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {
     public partial class FailedStudentsForm : Form
     {
-        private readonly StudentService _studentService;
+        private readonly IStudentService _studentService;
         private List<Student> students = new List<Student>();
-        public FailedStudentsForm(StudentService studentService)
+        public FailedStudentsForm(IStudentService studentService)
         {
             InitializeComponent();
             _studentService = studentService;
@@ -53,9 +42,9 @@ namespace BCCStudents.Presentation
 
         private void btnAddStudent_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("მონაცემების დამატება ბაზაში","კოდი დასამატებელია");
+            MessageBox.Show("მონაცემების დამატება ბაზაში", "კოდი დასამატებელია");
 
-            
+
             LoadData();
         }
 

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Application.Interfaces

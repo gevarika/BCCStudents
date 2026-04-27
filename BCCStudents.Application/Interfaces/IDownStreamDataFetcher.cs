@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Application.Interfaces
@@ -35,6 +31,46 @@ namespace BCCStudents.Application.Interfaces
         /// იღებს სტუდენტ-ქვეჯგუფ კავშირებს სერვერიდან
         /// </summary>
         Task<List<StudentSubGroups>> FetchStudentSubGroupsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს გადახდებს სერვერიდან
+        /// </summary>
+        Task<List<Payment>> FetchPaymentsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს წარუმატებელ გადახდებს სერვერიდან
+        /// </summary>
+        Task<List<FailedPayment>> FetchFailedPaymentsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს იმპორტირებული გადახდების ლოგებს სერვერიდან
+        /// </summary>
+        Task<List<ImportedPaymentLog>> FetchImportedPaymentLogsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს მომხმარებლებს სერვერიდან
+        /// </summary>
+        Task<List<UserModel>> FetchUsersAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს სისტემურ კონფიგურაციებს სერვერიდან
+        /// </summary>
+        Task<List<SystemConfiguration>> FetchSystemConfigAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს PendingStudents სერვერიდან
+        /// </summary>
+        Task<List<PendingStudent>> FetchPendingStudentsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს PendingStudentGroups სერვერიდან
+        /// </summary>
+        Task<List<PendingStudentGroup>> FetchPendingStudentGroupsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// იღებს PendingStudentSubGroups სერვერიდან
+        /// </summary>
+        Task<List<PendingStudentSubGroup>> FetchPendingStudentSubGroupsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
     }
 }
 

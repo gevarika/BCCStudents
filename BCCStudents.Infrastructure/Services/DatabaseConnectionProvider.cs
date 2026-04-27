@@ -5,7 +5,7 @@ using MySql.Data.MySqlClient;
 namespace BCCStudents.Infrastructure.Services
 {
     /// <summary>
-    /// მონაცემთა ბაზასთან კავშირის პროვაიდერი
+    /// მონაცემთა ბაზასთან კავშირის მისაღებად სერვისი
     /// იმპლემენტირებს IDatabaseConnectionProvider ინტერფეისს
     /// იყენებს DatabaseHelper-ს Infrastructure Layer-ში
     /// </summary>
@@ -19,7 +19,7 @@ namespace BCCStudents.Infrastructure.Services
         /// <param name="databaseHelper">DatabaseHelper ინსტანსი კავშირის მისაღებად</param>
         public DatabaseConnectionProvider(DatabaseHelper databaseHelper)
         {
-            _databaseHelper = databaseHelper ?? throw new System.ArgumentNullException(nameof(databaseHelper));
+            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace BCCStudents.Infrastructure.Services
         }
 
         /// <summary>
-        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი, კონფიგურაციის მიხედვით)
+        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი - კონფიგურაციის მიხედვით)
         /// </summary>
         /// <returns>MySqlConnection ინსტანსი</returns>
         public MySqlConnection GetMySqlConnection()

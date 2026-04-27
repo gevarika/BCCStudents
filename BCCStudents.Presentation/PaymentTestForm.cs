@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Domain.Entities;
-using System.Threading.Tasks;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services;
+using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -14,7 +9,7 @@ namespace BCCStudents.Presentation
         private readonly IStudentRepository _studentRepository;
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly IGroupRepository _groupRepository;
-        private readonly PaymentService _paymentService;
+        private readonly IPaymentService _paymentService;
         private int _selectedStudentId = -1;
         private int _selectedGroupId = -1;
 
@@ -30,38 +25,38 @@ namespace BCCStudents.Presentation
             _groupRepository = groupRepository;
             _paymentService = paymentService;
 
-            // DataGridView-áƒ˜áƒ¡ áƒ¡áƒ•áƒ”áƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ
+            // DataGridView-ის სვეტების დაყენება
             SetupDataGridView();
         }
 
         private void SetupDataGridView()
         {
             dgvGroups.Columns.Clear();
-            dgvGroups.Columns.Add("GroupId", "áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID");
-            dgvGroups.Columns.Add("GroupName", "áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜");
-            dgvGroups.Columns.Add("DateOfPayment", "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜");
-            dgvGroups.Columns.Add("PaymentStatus", "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜");
-            dgvGroups.Columns.Add("Price", "áƒ¤áƒáƒ¡áƒ˜");
-            dgvGroups.Columns.Add("Discount", "áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ %");
-            dgvGroups.Columns.Add("IsActive", "áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜");
+            dgvGroups.Columns.Add("GroupId", "ჯგუფის ID");
+            dgvGroups.Columns.Add("GroupName", "ჯგუფის სახელი");
+            dgvGroups.Columns.Add("DateOfPayment", "გადახდის თარიღი");
+            dgvGroups.Columns.Add("PaymentStatus", "გადახდის სტატუსი");
+            dgvGroups.Columns.Add("Price", "ფასი");
+            dgvGroups.Columns.Add("Discount", "ფასდაკლება %");
+            dgvGroups.Columns.Add("IsActive", "აქტიური");
             dgvGroups.SelectionChanged += DgvGroups_SelectionChanged;
         }
 
         private void PaymentTestForm_Load(object sender, EventArgs e)
         {
             LoadStudents();
-            dtpNewDate.Value = DateTime.Today; // áƒœáƒáƒ’áƒ£áƒšáƒ˜áƒ¡áƒ®áƒ›áƒ”áƒ•áƒáƒ“ áƒ“áƒ¦áƒ”áƒ¡áƒ“áƒ¦áƒ”áƒáƒ‘áƒ˜áƒ—
-            AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-            AddLog("áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¢áƒ”áƒ¡áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒáƒ áƒ›áƒ áƒ©áƒáƒ˜áƒ¢áƒ•áƒ˜áƒ áƒ—áƒ");
-            AddLog($"áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {DateTime.Today:dd.MM.yyyy}");
-            AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+            dtpNewDate.Value = DateTime.Today; // ნაგულისხმევად დღევანდელი
+            AddLog("----------------------------------------");
+            AddLog("გადახდის ტესტირების ფორმა ჩაიტვირთა");
+            AddLog($"მიმდინარე თარიღი: {DateTime.Today:dd.MM.yyyy}");
+            AddLog("----------------------------------------");
             AddLog("");
-            AddLog("ðŸ“Œ áƒ˜áƒœáƒ¡áƒ¢áƒ áƒ£áƒ¥áƒªáƒ˜áƒ:");
-            AddLog("1. áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” ComboBox-áƒ“áƒáƒœ");
-            AddLog("2. áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒªáƒ®áƒ áƒ˜áƒšáƒ˜áƒ“áƒáƒœ");
-            AddLog("3. áƒ¨áƒ”áƒªáƒ•áƒáƒšáƒ”áƒ— DateOfPayment (áƒ›áƒáƒ’: áƒ“áƒ¦áƒ”áƒ¡áƒ“áƒ¦áƒ”áƒáƒ‘áƒ˜áƒ— áƒáƒœ áƒ¬áƒáƒ áƒ¡áƒ£áƒšáƒ¨áƒ˜)");
-            AddLog("4. áƒ“áƒáƒáƒ­áƒ˜áƒ áƒ”áƒ— 'áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ'");
-            AddLog("5. áƒ“áƒáƒáƒ­áƒ˜áƒ áƒ”áƒ— 'áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ' áƒáƒœ 'áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ'");
+            AddLog("ინსტრუქცია:");
+            AddLog("1. აირჩიეთ მოსწავლე ComboBox-დან");
+            AddLog("2. აირჩიეთ ჯგუფი ცხრილიდან");
+            AddLog("3. შეცვალეთ DateOfPayment (მაგ: დღევანდელით ან წარსულში)");
+            AddLog("4. დააჭირეთ 'თარიღის განახლება'");
+            AddLog("5. დააჭირეთ 'გადახდა' ან 'ავტომატური გადახდა'");
             AddLog("");
         }
 
@@ -71,12 +66,12 @@ namespace BCCStudents.Presentation
             {
                 cmbStudents.Items.Clear();
                 var students = _studentRepository.GetAllActiveStudents();
-                
+
                 foreach (var student in students.OrderBy(s => s.FirstName).ThenBy(s => s.LastName))
                 {
                     var item = new ComboBoxItem
                     {
-                        Text = $"{student.FirstName} {student.LastName} (ID: {student.Id}, Balance: {student.Balance} â‚¾)",
+                        Text = $"{student.FirstName} {student.LastName} (ID: {student.Id}, Balance: {student.Balance} ლარი)",
                         Value = student.Id
                     };
                     cmbStudents.Items.Add(item);
@@ -87,12 +82,12 @@ namespace BCCStudents.Presentation
                     cmbStudents.SelectedIndex = 0;
                 }
 
-                AddLog($"âœ… áƒ©áƒáƒ˜áƒ¢áƒ•áƒ˜áƒ áƒ—áƒ {students.Count} áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”");
+                AddLog($"ჩაიტვირთა {students.Count} აქტიური მოსწავლე");
             }
             catch (Exception ex)
             {
-                AddLog($"âŒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡áƒáƒ¡: {ex.Message}");
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡áƒáƒ¡:\n{ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AddLog($"შეცდომა მოსწავლეების ჩატვირთვისას: {ex.Message}");
+                MessageBox.Show($"შეცდომა მოსწავლეების ჩატვირთვისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -109,62 +104,62 @@ namespace BCCStudents.Presentation
             try
             {
                 dgvGroups.Rows.Clear();
-                
+
                 if (_selectedStudentId <= 0)
                 {
-                    AddLog("âš ï¸ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ£áƒšáƒ˜");
+                    AddLog("მოსწავლე არ არის არჩეული");
                     return;
                 }
 
                 var student = _studentRepository.GetStudentById(_selectedStudentId);
                 if (student == null)
                 {
-                    AddLog($"âŒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” ID {_selectedStudentId} áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ");
+                    AddLog($"მოსწავლე ID {_selectedStudentId} ვერ მოიძებნა");
                     return;
                 }
 
                 var groups = _studentGroupRepository.GetForPayment(_selectedStudentId);
-                
+
                 if (groups == null || !groups.Any())
                 {
-                    AddLog($"âš ï¸ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” {student.FirstName} {student.LastName} áƒáƒ  áƒáƒ¥áƒ•áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜");
+                    AddLog($"მოსწავლეს {student.FirstName} {student.LastName} არ აქვს აქტიური ჯგუფები");
                     return;
                 }
 
                 foreach (var group in groups)
                 {
-                    var groupName = _groupRepository.GetGroupNameById(group.GroupId) ?? "áƒ£áƒªáƒœáƒáƒ‘áƒ˜";
-                    var dateStr = group.DateOfPayment.HasValue 
-                        ? group.DateOfPayment.Value.ToString("dd.MM.yyyy") 
-                        : "áƒáƒ  áƒáƒ áƒ˜áƒ¡";
-                    
+                    var groupName = _groupRepository.GetGroupNameById(group.GroupId) ?? "უცნობი";
+                    var dateStr = group.DateOfPayment.HasValue
+                        ? group.DateOfPayment.Value.ToString("dd.MM.yyyy")
+                        : "არ არის";
+
                     var isOverdue = group.DateOfPayment.HasValue && group.DateOfPayment.Value <= DateTime.Today;
-                    var statusColor = isOverdue ? "ðŸ”´" : "ðŸŸ¢";
+                    var statusColor = isOverdue ? "OVERDUE" : "OK";
 
                     int rowIndex = dgvGroups.Rows.Add(
                         group.GroupId,
                         groupName,
                         dateStr,
-                        group.PaymentStatus ?? "áƒ£áƒªáƒœáƒáƒ‘áƒ˜",
-                        $"{group.Price:F2} â‚¾",
+                        group.PaymentStatus ?? "უცნობი",
+                        $"{group.Price:F2} ლარი",
                         $"{group.Discount:F1}%",
-                        group.Status ? "áƒ“áƒ˜áƒáƒ®" : "áƒáƒ áƒ"
+                        group.Status ? "დიახ" : "არა"
                     );
 
-                    // áƒ—áƒ£ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ áƒ“áƒáƒ“áƒ’áƒ, áƒ›áƒáƒœáƒ˜áƒ¨áƒœáƒ” áƒ¬áƒ˜áƒ—áƒšáƒáƒ“
+                    // თუ გადახდის დრო დადგა, მონიშნე წითლად
                     if (isOverdue)
                     {
                         dgvGroups.Rows[rowIndex].DefaultCellStyle.BackColor = System.Drawing.Color.LightCoral;
                     }
                 }
 
-                AddLog($"âœ… áƒ©áƒáƒ˜áƒ¢áƒ•áƒ˜áƒ áƒ—áƒ {groups.Count} áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡: {student.FirstName} {student.LastName}");
-                AddLog($"ðŸ’° áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜: {student.Balance} â‚¾");
+                AddLog($"ჩაიტვირთა {groups.Count} ჯგუფი მოსწავლისთვის: {student.FirstName} {student.LastName}");
+                AddLog($"ბალანსი: {student.Balance} ლარი");
             }
             catch (Exception ex)
             {
-                AddLog($"âŒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡áƒáƒ¡: {ex.Message}");
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡áƒáƒ¡:\n{ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AddLog($"შეცდომა ჯგუფების ჩატვირთვისას: {ex.Message}");
+                MessageBox.Show($"შეცდომა ჯგუფების ჩატვირთვისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -173,29 +168,29 @@ namespace BCCStudents.Presentation
             if (dgvGroups.SelectedRows.Count == 0)
             {
                 _selectedGroupId = -1;
-                lblCurrentDate.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: -";
+                lblCurrentDate.Text = "მიმდინარე თარიღი: -";
                 return;
             }
 
             var selectedRow = dgvGroups.SelectedRows[0];
             _selectedGroupId = Convert.ToInt32(selectedRow.Cells["GroupId"].Value);
-            
+
             var dateStr = selectedRow.Cells["DateOfPayment"].Value?.ToString();
-            if (!string.IsNullOrEmpty(dateStr) && dateStr != "áƒáƒ  áƒáƒ áƒ˜áƒ¡")
+            if (!string.IsNullOrEmpty(dateStr) && dateStr != "არ არის")
             {
                 if (DateTime.TryParse(dateStr, out DateTime date))
                 {
-                    lblCurrentDate.Text = $"áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {date:dd.MM.yyyy}";
+                    lblCurrentDate.Text = $"მიმდინარე თარიღი: {date:dd.MM.yyyy}";
                     dtpNewDate.Value = date;
                 }
                 else
                 {
-                    lblCurrentDate.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: -";
+                    lblCurrentDate.Text = "მიმდინარე თარიღი: -";
                 }
             }
             else
             {
-                lblCurrentDate.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒ“áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ£áƒšáƒ˜";
+                lblCurrentDate.Text = "მიმდინარე თარიღი: არ არის დაყენებული";
                 dtpNewDate.Value = DateTime.Today;
             }
         }
@@ -204,7 +199,7 @@ namespace BCCStudents.Presentation
         {
             if (_selectedStudentId <= 0 || _selectedGroupId <= 0)
             {
-                MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒáƒ˜áƒ áƒ©áƒ˜áƒáƒ— áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” áƒ“áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜!", "áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("გთხოვთ, აირჩიოთ მოსწავლე და ჯგუფი!", "გაფრთხილება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -215,40 +210,40 @@ namespace BCCStudents.Presentation
 
                 if (success)
                 {
-                    AddLog($"âœ… áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ áƒ’áƒáƒœáƒáƒ®áƒšáƒ“áƒ: {newDate:dd.MM.yyyy}");
-                    AddLog($"   áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” ID: {_selectedStudentId}, áƒ¯áƒ’áƒ£áƒ¤áƒ˜ ID: {_selectedGroupId}");
-                    
-                    // áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”, áƒ“áƒáƒ“áƒ’áƒ áƒ—áƒ£ áƒáƒ áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ
+                    AddLog($"თარიღი განახლდა: {newDate:dd.MM.yyyy}");
+                    AddLog($"   მოსწავლე ID: {_selectedStudentId}, ჯგუფი ID: {_selectedGroupId}");
+
+                    // შევამოწმოთ, დადგა თუ არა გადახდის დრო
                     if (newDate <= DateTime.Today)
                     {
-                        AddLog($"ðŸŸ¢ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ áƒ“áƒáƒ“áƒ’áƒ! (áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ <= {DateTime.Today:dd.MM.yyyy})");
+                        AddLog($"გადახდის დრო დადგა! (თარიღი <= {DateTime.Today:dd.MM.yyyy})");
                     }
                     else
                     {
-                        AddLog($"ðŸŸ¡ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ áƒ¯áƒ”áƒ  áƒáƒ  áƒ“áƒáƒ“áƒ’áƒ (áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ > {DateTime.Today:dd.MM.yyyy})");
+                        AddLog($"გადახდის დრო ჯერ არ დადგა (თარიღი > {DateTime.Today:dd.MM.yyyy})");
                     }
 
                     MessageBox.Show(
-                        $"áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ’áƒáƒœáƒáƒ®áƒšáƒ“áƒ!\n\n" +
-                        $"áƒáƒ®áƒáƒšáƒ˜ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {newDate:dd.MM.yyyy}\n" +
-                        (newDate <= DateTime.Today ? "âœ… áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ áƒ“áƒáƒ“áƒ’áƒ!" : "â³ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒ áƒ¯áƒ”áƒ  áƒáƒ  áƒ“áƒáƒ“áƒ’áƒ"),
-                        "áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ",
+                        $"თარიღი წარმატებით განახლდა!\n\n" +
+                        $"ახალი თარიღი: {newDate:dd.MM.yyyy}\n" +
+                        (newDate <= DateTime.Today ? "გადახდის დრო დადგა!" : "გადახდის დრო ჯერ არ დადგა"),
+                        "წარმატება",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information
                     );
 
-                    LoadStudentGroups(); // áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+                    LoadStudentGroups(); // განახლება
                 }
                 else
                 {
-                    AddLog($"âŒ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ");
-                    MessageBox.Show("áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ.", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    AddLog("თარიღის განახლება ვერ მოხერხდა");
+                    MessageBox.Show("თარიღის განახლება ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                AddLog($"âŒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ: {ex.Message}");
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡:\n{ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AddLog($"შეცდომა: {ex.Message}");
+                MessageBox.Show($"შეცდომა თარიღის განახლებისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -256,7 +251,7 @@ namespace BCCStudents.Presentation
         {
             if (_selectedStudentId <= 0)
             {
-                MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒáƒ˜áƒ áƒ©áƒ˜áƒáƒ— áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”!", "áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("გთხოვთ, აირჩიოთ მოსწავლე!", "გაფრთხილება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -265,17 +260,17 @@ namespace BCCStudents.Presentation
                 var student = _studentRepository.GetStudentById(_selectedStudentId);
                 if (student == null)
                 {
-                    MessageBox.Show("áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("მოსწავლე ვერ მოიძებნა!", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 if (student.Balance <= 0)
                 {
                     MessageBox.Show(
-                        $"áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ¡ áƒáƒ  áƒáƒ¥áƒ•áƒ¡ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜!\n\n" +
-                        $"áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜: {student.Balance} â‚¾\n\n" +
-                        $"áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒ¯áƒ”áƒ  áƒ“áƒáƒ£áƒ›áƒáƒ¢áƒáƒ— áƒ—áƒáƒœáƒ®áƒ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ–áƒ”.",
-                        "áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ",
+                        $"მოსწავლეს არ აქვს ბალანსი!\n\n" +
+                        $"ბალანსი: {student.Balance} ლარი\n\n" +
+                        $"გთხოვთ, ჯერ დაუმატოთ თანხა ბალანსზე.",
+                        "გაფრთხილება",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning
                     );
@@ -283,20 +278,20 @@ namespace BCCStudents.Presentation
                 }
 
                 AddLog("");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-                AddLog($"ðŸ’° áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒáƒ¬áƒ§áƒ”áƒ‘áƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡: {student.FirstName} {student.LastName}");
-                AddLog($"ðŸ’° áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜: {student.Balance} â‚¾");
-                AddLog($"ðŸ’³ áƒ©áƒáƒ áƒ˜áƒªáƒ®áƒ£áƒšáƒ˜ áƒ—áƒáƒœáƒ®áƒ: 0 â‚¾ (áƒ›áƒ®áƒáƒšáƒáƒ“ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜áƒ“áƒáƒœ)");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+                AddLog("----------------------------------------");
+                AddLog($"გადახდის დაწყება მოსწავლისთვის: {student.FirstName} {student.LastName}");
+                AddLog($"ბალანსი: {student.Balance} ლარი");
+                AddLog("ჩარიცხული თანხა: 0 ლარი (მხოლოდ ბალანსიდან)");
+                AddLog("----------------------------------------");
                 AddLog("");
 
-                // paymentAmount = 0 â†’ áƒ›áƒ®áƒáƒšáƒáƒ“ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜áƒ“áƒáƒœ
+                // paymentAmount = 0 -> მხოლოდ ბალანსიდან
                 var result = await _paymentService.ProcessPayment(_selectedStudentId, 0);
 
                 AddLog("");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-                AddLog($"ðŸ“Š áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¨áƒ”áƒ“áƒ”áƒ’áƒ˜: {result.Status}");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+                AddLog("----------------------------------------");
+                AddLog($"გადახდის შედეგი: {result.Status}");
+                AddLog("----------------------------------------");
                 AddLog("");
 
                 foreach (var log in result.Logs)
@@ -304,40 +299,40 @@ namespace BCCStudents.Presentation
                     AddLog(log);
                 }
 
-                // áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ
+                // განახლებული ინფორმაცია
                 var updatedStudent = _studentRepository.GetStudentById(_selectedStudentId);
                 if (updatedStudent != null)
                 {
                     AddLog("");
-                    AddLog($"ðŸ’° áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ‘áƒáƒšáƒáƒœáƒ¡áƒ˜: {updatedStudent.Balance} â‚¾");
+                    AddLog($"განახლებული ბალანსი: {updatedStudent.Balance} ლარი");
                 }
 
                 MessageBox.Show(
-                    $"áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¨áƒ”áƒ“áƒ”áƒ’áƒ˜: {result.Status}\n\n" +
-                    $"áƒ“áƒ”áƒ¢áƒáƒšáƒ£áƒ áƒ˜ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ áƒœáƒáƒ©áƒ•áƒ”áƒœáƒ”áƒ‘áƒ˜áƒ áƒšáƒáƒ’áƒ”áƒ‘áƒ¨áƒ˜.",
-                    "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ“áƒ",
+                    $"გადახდის შედეგი: {result.Status}\n\n" +
+                    $"დეტალური ინფორმაცია ნაჩვენებია ლოგებში.",
+                    "გადახდა დასრულდა",
                     MessageBoxButtons.OK,
-                    result.Status == "Paid" || result.Status == "Partial" 
-                        ? MessageBoxIcon.Information 
+                    result.Status == "Paid" || result.Status == "Partial"
+                        ? MessageBoxIcon.Information
                         : MessageBoxIcon.Warning
                 );
 
-                LoadStudentGroups(); // áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+                LoadStudentGroups(); // განახლება
             }
             catch (Exception ex)
             {
-                AddLog($"âŒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ: {ex.Message}");
+                AddLog($"შეცდომა: {ex.Message}");
                 AddLog($"Stack Trace: {ex.StackTrace}");
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒáƒ¡:\n{ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"შეცდომა გადახდისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private async void btnRunAutoPayments_Click(object sender, EventArgs e)
         {
             var confirm = MessageBox.Show(
-                "áƒ’áƒ¡áƒ£áƒ áƒ— áƒ’áƒáƒ£áƒ¨áƒ•áƒáƒ— áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ§áƒ•áƒ”áƒšáƒ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡?\n\n" +
-                "áƒ”áƒ¡ áƒžáƒ áƒáƒªáƒ”áƒ¡áƒ˜ áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ¡, áƒ•áƒ˜áƒ¡áƒáƒª áƒáƒ¥áƒ•áƒ¡ Balance > 0.",
-                "áƒ“áƒáƒ“áƒáƒ¡áƒ¢áƒ£áƒ áƒ”áƒ‘áƒ",
+                "გსურთ გაუშვათ ავტომატური გადახდა ყველა აქტიური მოსწავლისთვის?\n\n" +
+                "ეს პროცესი ამუშავებს ყველა მოსწავლეს, ვისაც აქვს Balance > 0.",
+                "დადასტურება",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
             );
@@ -347,9 +342,9 @@ namespace BCCStudents.Presentation
             try
             {
                 AddLog("");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-                AddLog("ðŸ”„ áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒáƒ¬áƒ§áƒ”áƒ‘áƒ áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+                AddLog("----------------------------------------");
+                AddLog("ავტომატური გადახდის დაწყება ყველა მოსწავლისთვის");
+                AddLog("----------------------------------------");
                 AddLog("");
 
                 int processed = 0;
@@ -362,31 +357,31 @@ namespace BCCStudents.Presentation
                     total = totalCount;
                     this.Invoke((Action)(() =>
                     {
-                        AddLog($"ðŸ“Š áƒžáƒ áƒáƒ’áƒ áƒ”áƒ¡áƒ˜: {current} / {totalCount} áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”");
+                        AddLog($"პროგრესი: {current} / {totalCount} მოსწავლე");
                     }));
                 });
 
                 AddLog("");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
-                AddLog($"âœ… áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ“áƒ!");
-                AddLog($"ðŸ“Š áƒ“áƒáƒ›áƒ£áƒ¨áƒáƒ•áƒ”áƒ‘áƒ£áƒšáƒ˜: {processed} / {total} áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”");
-                AddLog("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
+                AddLog("----------------------------------------");
+                AddLog("ავტომატური გადახდა დასრულდა!");
+                AddLog($"დამუშავებული: {processed} / {total} მოსწავლე");
+                AddLog("----------------------------------------");
 
                 MessageBox.Show(
-                    $"áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ“áƒ!\n\n" +
-                    $"áƒ“áƒáƒ›áƒ£áƒ¨áƒáƒ•áƒ”áƒ‘áƒ£áƒšáƒ˜: {processed} / {total} áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”",
-                    "áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ",
+                    $"ავტომატური გადახდა დასრულდა!\n\n" +
+                    $"დამუშავებული: {processed} / {total} მოსწავლე",
+                    "დასრულება",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
                 );
 
-                LoadStudentGroups(); // áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+                LoadStudentGroups(); // განახლება
             }
             catch (Exception ex)
             {
-                AddLog($"âŒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ: {ex.Message}");
+                AddLog($"შეცდომა: {ex.Message}");
                 AddLog($"Stack Trace: {ex.StackTrace}");
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒáƒ¡:\n{ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"შეცდომა ავტომატური გადახდისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -397,7 +392,7 @@ namespace BCCStudents.Presentation
             {
                 LoadStudentGroups();
             }
-            AddLog("ðŸ”„ áƒ›áƒáƒœáƒáƒªáƒ”áƒ›áƒ”áƒ‘áƒ˜ áƒ’áƒáƒœáƒáƒ®áƒšáƒ“áƒ");
+            AddLog("მონაცემები განახლდა");
         }
 
         private void AddLog(string message)
@@ -412,7 +407,7 @@ namespace BCCStudents.Presentation
             txtLogs.ScrollToCaret();
         }
 
-        // ComboBoxItem áƒ™áƒšáƒáƒ¡áƒ˜
+        // ComboBoxItem კლასი
         private class ComboBoxItem
         {
             public string Text { get; set; }

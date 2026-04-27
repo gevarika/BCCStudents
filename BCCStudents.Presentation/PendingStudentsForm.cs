@@ -1,17 +1,8 @@
-﻿using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Application.Services;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Application.Services;
 using System.Windows.Forms.VisualStyles;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Presentation
 {
@@ -21,7 +12,7 @@ namespace BCCStudents.Presentation
         private Dictionary<int, PendingStudent> _originalStudents = new Dictionary<int, PendingStudent>();
         private readonly DocumentService _documentService;
         //private Dictionary<string, string> failedAdd = new Dictionary<string, string>();
-        public PendingStudentsForm(IPendingStudentService pendingService,DocumentService documentService)
+        public PendingStudentsForm(IPendingStudentService pendingService, DocumentService documentService)
         {
             InitializeComponent();
             if (!Properties.Settings.Default.IsTestDb)
@@ -166,13 +157,13 @@ namespace BCCStudents.Presentation
                         Id_Numb = s.Id_Numb,
                         Address = s.Address,
                         TuitionFee = s.TuitionFee,
-                    // სხვა ველები
-                });
+                        // სხვა ველები
+                    });
                 SetupContextMenu();
             }
             else
             {
-                btnApprove.Enabled = false; btnDelete.Enabled = false; btnSaveChanges.Enabled = false;btnDownloadAll.Enabled = false;
+                btnApprove.Enabled = false; btnDelete.Enabled = false; btnSaveChanges.Enabled = false; btnDownloadAll.Enabled = false;
             }
         }
 
@@ -219,7 +210,7 @@ namespace BCCStudents.Presentation
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" }
             };
 
-            dataGridView1.Columns.Insert(1,discountColumn);
+            dataGridView1.Columns.Insert(1, discountColumn);
 
         }
         private void ViewDocuments_Click(object sender, EventArgs e)
@@ -321,7 +312,7 @@ namespace BCCStudents.Presentation
             var original = _originalStudents[student.Id];
 
             bool hasChanges = false;
-            
+
             void Check(string columnName, object originalValue)
             {
                 var current = row.Cells[columnName].Value;

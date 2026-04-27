@@ -30,208 +30,230 @@
 
         private void InitializeComponent()
         {
-            this.cmbStudents = new System.Windows.Forms.ComboBox();
-            this.dgvGroups = new System.Windows.Forms.DataGridView();
-            this.dtpNewDate = new System.Windows.Forms.DateTimePicker();
-            this.btnUpdateDate = new System.Windows.Forms.Button();
-            this.btnRunPayment = new System.Windows.Forms.Button();
-            this.btnRunAutoPayments = new System.Windows.Forms.Button();
-            this.lblStudent = new System.Windows.Forms.Label();
-            this.lblCurrentDate = new System.Windows.Forms.Label();
-            this.lblNewDate = new System.Windows.Forms.Label();
-            this.txtLogs = new System.Windows.Forms.RichTextBox();
-            this.btnRefresh = new System.Windows.Forms.Button();
-            this.gbStudentInfo = new System.Windows.Forms.GroupBox();
-            this.gbDateUpdate = new System.Windows.Forms.GroupBox();
-            this.gbActions = new System.Windows.Forms.GroupBox();
-            this.gbLogs = new System.Windows.Forms.GroupBox();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroups)).BeginInit();
-            this.gbStudentInfo.SuspendLayout();
-            this.gbDateUpdate.SuspendLayout();
-            this.gbActions.SuspendLayout();
-            this.gbLogs.SuspendLayout();
-            this.SuspendLayout();
-            // 
-            // gbStudentInfo
-            // 
-            this.gbStudentInfo.Controls.Add(this.lblStudent);
-            this.gbStudentInfo.Controls.Add(this.cmbStudents);
-            this.gbStudentInfo.Controls.Add(this.btnRefresh);
-            this.gbStudentInfo.Location = new System.Drawing.Point(12, 12);
-            this.gbStudentInfo.Name = "gbStudentInfo";
-            this.gbStudentInfo.Size = new System.Drawing.Size(760, 60);
-            this.gbStudentInfo.TabIndex = 0;
-            this.gbStudentInfo.TabStop = false;
-            this.gbStudentInfo.Text = "áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ•áƒ";
-            // 
-            // lblStudent
-            // 
-            this.lblStudent.AutoSize = true;
-            this.lblStudent.Location = new System.Drawing.Point(6, 25);
-            this.lblStudent.Name = "lblStudent";
-            this.lblStudent.Size = new System.Drawing.Size(60, 13);
-            this.lblStudent.TabIndex = 0;
-            this.lblStudent.Text = "áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”:";
+            cmbStudents = new ComboBox();
+            dgvGroups = new DataGridView();
+            dtpNewDate = new DateTimePicker();
+            btnUpdateDate = new Button();
+            btnRunPayment = new Button();
+            btnRunAutoPayments = new Button();
+            lblStudent = new Label();
+            lblCurrentDate = new Label();
+            lblNewDate = new Label();
+            txtLogs = new RichTextBox();
+            btnRefresh = new Button();
+            gbStudentInfo = new GroupBox();
+            gbDateUpdate = new GroupBox();
+            gbActions = new GroupBox();
+            gbLogs = new GroupBox();
+            ((System.ComponentModel.ISupportInitialize)dgvGroups).BeginInit();
+            gbStudentInfo.SuspendLayout();
+            gbDateUpdate.SuspendLayout();
+            gbActions.SuspendLayout();
+            gbLogs.SuspendLayout();
+            SuspendLayout();
             // 
             // cmbStudents
             // 
-            this.cmbStudents.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbStudents.FormattingEnabled = true;
-            this.cmbStudents.Location = new System.Drawing.Point(72, 22);
-            this.cmbStudents.Name = "cmbStudents";
-            this.cmbStudents.Size = new System.Drawing.Size(500, 21);
-            this.cmbStudents.TabIndex = 1;
-            this.cmbStudents.SelectedIndexChanged += new System.EventHandler(this.cmbStudents_SelectedIndexChanged);
-            // 
-            // btnRefresh
-            // 
-            this.btnRefresh.Location = new System.Drawing.Point(578, 20);
-            this.btnRefresh.Name = "btnRefresh";
-            this.btnRefresh.Size = new System.Drawing.Size(176, 25);
-            this.btnRefresh.TabIndex = 2;
-            this.btnRefresh.Text = "ðŸ”„ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ";
-            this.btnRefresh.UseVisualStyleBackColor = true;
-            this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
+            cmbStudents.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbStudents.FormattingEnabled = true;
+            cmbStudents.Location = new Point(84, 25);
+            cmbStudents.Margin = new Padding(4, 3, 4, 3);
+            cmbStudents.Name = "cmbStudents";
+            cmbStudents.Size = new Size(583, 23);
+            cmbStudents.TabIndex = 1;
+            cmbStudents.SelectedIndexChanged += cmbStudents_SelectedIndexChanged;
             // 
             // dgvGroups
             // 
-            this.dgvGroups.AllowUserToAddRows = false;
-            this.dgvGroups.AllowUserToDeleteRows = false;
-            this.dgvGroups.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.dgvGroups.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvGroups.Location = new System.Drawing.Point(12, 78);
-            this.dgvGroups.Name = "dgvGroups";
-            this.dgvGroups.ReadOnly = true;
-            this.dgvGroups.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvGroups.Size = new System.Drawing.Size(760, 200);
-            this.dgvGroups.TabIndex = 1;
-            // 
-            // gbDateUpdate
-            // 
-            this.gbDateUpdate.Controls.Add(this.lblCurrentDate);
-            this.gbDateUpdate.Controls.Add(this.lblNewDate);
-            this.gbDateUpdate.Controls.Add(this.dtpNewDate);
-            this.gbDateUpdate.Controls.Add(this.btnUpdateDate);
-            this.gbDateUpdate.Location = new System.Drawing.Point(12, 284);
-            this.gbDateUpdate.Name = "gbDateUpdate";
-            this.gbDateUpdate.Size = new System.Drawing.Size(380, 100);
-            this.gbDateUpdate.TabIndex = 2;
-            this.gbDateUpdate.TabStop = false;
-            this.gbDateUpdate.Text = "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ";
-            // 
-            // lblCurrentDate
-            // 
-            this.lblCurrentDate.AutoSize = true;
-            this.lblCurrentDate.Location = new System.Drawing.Point(6, 25);
-            this.lblCurrentDate.Name = "lblCurrentDate";
-            this.lblCurrentDate.Size = new System.Drawing.Size(100, 13);
-            this.lblCurrentDate.TabIndex = 0;
-            this.lblCurrentDate.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: -";
-            // 
-            // lblNewDate
-            // 
-            this.lblNewDate.AutoSize = true;
-            this.lblNewDate.Location = new System.Drawing.Point(6, 50);
-            this.lblNewDate.Name = "lblNewDate";
-            this.lblNewDate.Size = new System.Drawing.Size(75, 13);
-            this.lblNewDate.TabIndex = 1;
-            this.lblNewDate.Text = "áƒáƒ®áƒáƒšáƒ˜ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜:";
+            dgvGroups.AllowUserToAddRows = false;
+            dgvGroups.AllowUserToDeleteRows = false;
+            dgvGroups.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvGroups.BorderStyle = BorderStyle.None;
+            dgvGroups.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvGroups.Location = new Point(14, 90);
+            dgvGroups.Margin = new Padding(4, 3, 4, 3);
+            dgvGroups.MultiSelect = false;
+            dgvGroups.Name = "dgvGroups";
+            dgvGroups.ReadOnly = true;
+            dgvGroups.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvGroups.Size = new Size(887, 231);
+            dgvGroups.TabIndex = 1;
             // 
             // dtpNewDate
             // 
-            this.dtpNewDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpNewDate.Location = new System.Drawing.Point(87, 48);
-            this.dtpNewDate.Name = "dtpNewDate";
-            this.dtpNewDate.Size = new System.Drawing.Size(120, 20);
-            this.dtpNewDate.TabIndex = 2;
+            dtpNewDate.Format = DateTimePickerFormat.Short;
+            dtpNewDate.Location = new Point(102, 55);
+            dtpNewDate.Margin = new Padding(4, 3, 4, 3);
+            dtpNewDate.Name = "dtpNewDate";
+            dtpNewDate.Size = new Size(139, 23);
+            dtpNewDate.TabIndex = 2;
             // 
             // btnUpdateDate
             // 
-            this.btnUpdateDate.Location = new System.Drawing.Point(213, 46);
-            this.btnUpdateDate.Name = "btnUpdateDate";
-            this.btnUpdateDate.Size = new System.Drawing.Size(150, 25);
-            this.btnUpdateDate.TabIndex = 3;
-            this.btnUpdateDate.Text = "âœ… áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ";
-            this.btnUpdateDate.UseVisualStyleBackColor = true;
-            this.btnUpdateDate.Click += new System.EventHandler(this.btnUpdateDate_Click);
-            // 
-            // gbActions
-            // 
-            this.gbActions.Controls.Add(this.btnRunPayment);
-            this.gbActions.Controls.Add(this.btnRunAutoPayments);
-            this.gbActions.Location = new System.Drawing.Point(398, 284);
-            this.gbActions.Name = "gbActions";
-            this.gbActions.Size = new System.Drawing.Size(374, 100);
-            this.gbActions.TabIndex = 3;
-            this.gbActions.TabStop = false;
-            this.gbActions.Text = "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¢áƒ”áƒ¡áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ";
+            btnUpdateDate.Location = new Point(248, 53);
+            btnUpdateDate.Margin = new Padding(4, 3, 4, 3);
+            btnUpdateDate.Name = "btnUpdateDate";
+            btnUpdateDate.Size = new Size(175, 29);
+            btnUpdateDate.TabIndex = 3;
+            btnUpdateDate.Text = "თარიღის განახლება";
+            btnUpdateDate.UseVisualStyleBackColor = true;
+            btnUpdateDate.Click += btnUpdateDate_Click;
             // 
             // btnRunPayment
             // 
-            this.btnRunPayment.Location = new System.Drawing.Point(6, 25);
-            this.btnRunPayment.Name = "btnRunPayment";
-            this.btnRunPayment.Size = new System.Drawing.Size(360, 30);
-            this.btnRunPayment.TabIndex = 0;
-            this.btnRunPayment.Text = "ðŸ’° áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒáƒ áƒ©áƒ”áƒ£áƒšáƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ (Balance > 0)";
-            this.btnRunPayment.UseVisualStyleBackColor = true;
-            this.btnRunPayment.Click += new System.EventHandler(this.btnRunPayment_Click);
+            btnRunPayment.Location = new Point(7, 29);
+            btnRunPayment.Margin = new Padding(4, 3, 4, 3);
+            btnRunPayment.Name = "btnRunPayment";
+            btnRunPayment.Size = new Size(420, 35);
+            btnRunPayment.TabIndex = 0;
+            btnRunPayment.Text = "გადახდა არჩეული მოსწავლისთვის (Balance > 0)";
+            btnRunPayment.UseVisualStyleBackColor = true;
+            btnRunPayment.Click += btnRunPayment_Click;
             // 
             // btnRunAutoPayments
             // 
-            this.btnRunAutoPayments.Location = new System.Drawing.Point(6, 61);
-            this.btnRunAutoPayments.Name = "btnRunAutoPayments";
-            this.btnRunAutoPayments.Size = new System.Drawing.Size(360, 30);
-            this.btnRunAutoPayments.TabIndex = 1;
-            this.btnRunAutoPayments.Text = "ðŸ”„ áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡";
-            this.btnRunAutoPayments.UseVisualStyleBackColor = true;
-            this.btnRunAutoPayments.Click += new System.EventHandler(this.btnRunAutoPayments_Click);
+            btnRunAutoPayments.Location = new Point(7, 70);
+            btnRunAutoPayments.Margin = new Padding(4, 3, 4, 3);
+            btnRunAutoPayments.Name = "btnRunAutoPayments";
+            btnRunAutoPayments.Size = new Size(420, 35);
+            btnRunAutoPayments.TabIndex = 1;
+            btnRunAutoPayments.Text = "ავტომატური გადახდა ყველა მოსწავლისთვის";
+            btnRunAutoPayments.UseVisualStyleBackColor = true;
+            btnRunAutoPayments.Click += btnRunAutoPayments_Click;
             // 
-            // gbLogs
+            // lblStudent
             // 
-            this.gbLogs.Controls.Add(this.txtLogs);
-            this.gbLogs.Location = new System.Drawing.Point(12, 390);
-            this.gbLogs.Name = "gbLogs";
-            this.gbLogs.Size = new System.Drawing.Size(760, 200);
-            this.gbLogs.TabIndex = 4;
-            this.gbLogs.TabStop = false;
-            this.gbLogs.Text = "áƒšáƒáƒ’áƒ”áƒ‘áƒ˜";
+            lblStudent.AutoSize = true;
+            lblStudent.Location = new Point(7, 29);
+            lblStudent.Margin = new Padding(4, 0, 4, 0);
+            lblStudent.Name = "lblStudent";
+            lblStudent.Size = new Size(136, 15);
+            lblStudent.TabIndex = 0;
+            lblStudent.Text = "მოსწავლე:";
+            // 
+            // lblCurrentDate
+            // 
+            lblCurrentDate.AutoSize = true;
+            lblCurrentDate.Location = new Point(7, 29);
+            lblCurrentDate.Margin = new Padding(4, 0, 4, 0);
+            lblCurrentDate.Name = "lblCurrentDate";
+            lblCurrentDate.Size = new Size(267, 15);
+            lblCurrentDate.TabIndex = 0;
+            lblCurrentDate.Text = "მიმდინარე თარიღი: -";
+            // 
+            // lblNewDate
+            // 
+            lblNewDate.AutoSize = true;
+            lblNewDate.Location = new Point(7, 58);
+            lblNewDate.Margin = new Padding(4, 0, 4, 0);
+            lblNewDate.Name = "lblNewDate";
+            lblNewDate.Size = new Size(191, 15);
+            lblNewDate.TabIndex = 1;
+            lblNewDate.Text = "ახალი თარიღი:";
             // 
             // txtLogs
             // 
-            this.txtLogs.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtLogs.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtLogs.Location = new System.Drawing.Point(3, 16);
-            this.txtLogs.Name = "txtLogs";
-            this.txtLogs.ReadOnly = true;
-            this.txtLogs.Size = new System.Drawing.Size(754, 181);
-            this.txtLogs.TabIndex = 0;
-            this.txtLogs.Text = "";
+            txtLogs.Dock = DockStyle.Fill;
+            txtLogs.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtLogs.Location = new Point(4, 19);
+            txtLogs.Margin = new Padding(4, 3, 4, 3);
+            txtLogs.Name = "txtLogs";
+            txtLogs.ReadOnly = true;
+            txtLogs.Size = new Size(879, 209);
+            txtLogs.TabIndex = 0;
+            txtLogs.Text = "";
+            // 
+            // btnRefresh
+            // 
+            btnRefresh.Location = new Point(674, 23);
+            btnRefresh.Margin = new Padding(4, 3, 4, 3);
+            btnRefresh.Name = "btnRefresh";
+            btnRefresh.Size = new Size(205, 29);
+            btnRefresh.TabIndex = 2;
+            btnRefresh.Text = "განახლება";
+            btnRefresh.UseVisualStyleBackColor = true;
+            btnRefresh.Click += btnRefresh_Click;
+            // 
+            // gbStudentInfo
+            // 
+            gbStudentInfo.Controls.Add(lblStudent);
+            gbStudentInfo.Controls.Add(cmbStudents);
+            gbStudentInfo.Controls.Add(btnRefresh);
+            gbStudentInfo.Location = new Point(14, 14);
+            gbStudentInfo.Margin = new Padding(4, 3, 4, 3);
+            gbStudentInfo.Name = "gbStudentInfo";
+            gbStudentInfo.Padding = new Padding(4, 3, 4, 3);
+            gbStudentInfo.Size = new Size(887, 69);
+            gbStudentInfo.TabIndex = 0;
+            gbStudentInfo.TabStop = false;
+            gbStudentInfo.Text = "მოსწავლის არჩევა";
+            // 
+            // gbDateUpdate
+            // 
+            gbDateUpdate.Controls.Add(lblCurrentDate);
+            gbDateUpdate.Controls.Add(lblNewDate);
+            gbDateUpdate.Controls.Add(dtpNewDate);
+            gbDateUpdate.Controls.Add(btnUpdateDate);
+            gbDateUpdate.Location = new Point(14, 328);
+            gbDateUpdate.Margin = new Padding(4, 3, 4, 3);
+            gbDateUpdate.Name = "gbDateUpdate";
+            gbDateUpdate.Padding = new Padding(4, 3, 4, 3);
+            gbDateUpdate.Size = new Size(443, 115);
+            gbDateUpdate.TabIndex = 2;
+            gbDateUpdate.TabStop = false;
+            gbDateUpdate.Text = "გადახდის თარიღის შეცვლა";
+            // 
+            // gbActions
+            // 
+            gbActions.Controls.Add(btnRunPayment);
+            gbActions.Controls.Add(btnRunAutoPayments);
+            gbActions.Location = new Point(464, 328);
+            gbActions.Margin = new Padding(4, 3, 4, 3);
+            gbActions.Name = "gbActions";
+            gbActions.Padding = new Padding(4, 3, 4, 3);
+            gbActions.Size = new Size(436, 115);
+            gbActions.TabIndex = 3;
+            gbActions.TabStop = false;
+            gbActions.Text = "გადახდის ტესტირება";
+            // 
+            // gbLogs
+            // 
+            gbLogs.Controls.Add(txtLogs);
+            gbLogs.Location = new Point(14, 450);
+            gbLogs.Margin = new Padding(4, 3, 4, 3);
+            gbLogs.Name = "gbLogs";
+            gbLogs.Padding = new Padding(4, 3, 4, 3);
+            gbLogs.Size = new Size(887, 231);
+            gbLogs.TabIndex = 4;
+            gbLogs.TabStop = false;
+            gbLogs.Text = "ლოგები";
             // 
             // PaymentTestForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(784, 602);
-            this.Controls.Add(this.gbLogs);
-            this.Controls.Add(this.gbActions);
-            this.Controls.Add(this.gbDateUpdate);
-            this.Controls.Add(this.dgvGroups);
-            this.Controls.Add(this.gbStudentInfo);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "PaymentTestForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¢áƒ”áƒ¡áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ - DateOfPayment áƒ¨áƒ”áƒªáƒ•áƒšáƒ";
-            this.Load += new System.EventHandler(this.PaymentTestForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroups)).EndInit();
-            this.gbStudentInfo.ResumeLayout(false);
-            this.gbStudentInfo.PerformLayout();
-            this.gbDateUpdate.ResumeLayout(false);
-            this.gbDateUpdate.PerformLayout();
-            this.gbActions.ResumeLayout(false);
-            this.gbLogs.ResumeLayout(false);
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(915, 695);
+            Controls.Add(gbLogs);
+            Controls.Add(gbActions);
+            Controls.Add(gbDateUpdate);
+            Controls.Add(dgvGroups);
+            Controls.Add(gbStudentInfo);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(4, 3, 4, 3);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "PaymentTestForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "გადახდის ტესტირება - DateOfPayment შეცვლა";
+            Load += PaymentTestForm_Load;
+            ((System.ComponentModel.ISupportInitialize)dgvGroups).EndInit();
+            gbStudentInfo.ResumeLayout(false);
+            gbStudentInfo.PerformLayout();
+            gbDateUpdate.ResumeLayout(false);
+            gbDateUpdate.PerformLayout();
+            gbActions.ResumeLayout(false);
+            gbLogs.ResumeLayout(false);
+            ResumeLayout(false);
         }
     }
 }

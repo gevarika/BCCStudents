@@ -29,89 +29,96 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LoginForm));
-            this.txtUsername = new System.Windows.Forms.TextBox();
-            this.txtPassword = new System.Windows.Forms.TextBox();
-            this.btnLogin = new System.Windows.Forms.Button();
-            this.lblLoginStatus = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            txtUsername = new TextBox();
+            txtPassword = new TextBox();
+            btnLogin = new Button();
+            lblLoginStatus = new Label();
+            label2 = new Label();
+            label3 = new Label();
+            SuspendLayout();
             // 
             // txtUsername
             // 
-            this.txtUsername.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtUsername.Location = new System.Drawing.Point(120, 46);
-            this.txtUsername.Multiline = true;
-            this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new System.Drawing.Size(185, 39);
-            this.txtUsername.TabIndex = 0;
-            this.txtUsername.Text = "giorgi";
+            txtUsername.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtUsername.Location = new Point(140, 53);
+            txtUsername.Margin = new Padding(4, 3, 4, 3);
+            txtUsername.MinimumSize = new Size(200, 30);
+            txtUsername.Name = "txtUsername";
+            txtUsername.Size = new Size(200, 30);
+            txtUsername.TabIndex = 0;
+            txtUsername.Text = "giorgi";
             // 
             // txtPassword
             // 
-            this.txtPassword.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPassword.Location = new System.Drawing.Point(120, 91);
-            this.txtPassword.Multiline = true;
-            this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(185, 39);
-            this.txtPassword.TabIndex = 1;
-            this.txtPassword.Text = "Giorgi1";
+            txtPassword.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPassword.Location = new Point(140, 98);
+            txtPassword.Margin = new Padding(4, 3, 4, 3);
+            txtPassword.MinimumSize = new Size(200, 30);
+            txtPassword.Name = "txtPassword";
+            txtPassword.Size = new Size(200, 30);
+            txtPassword.TabIndex = 1;
+            txtPassword.Text = "Giorgi1";
             // 
             // btnLogin
             // 
-            this.btnLogin.Location = new System.Drawing.Point(182, 182);
-            this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new System.Drawing.Size(123, 39);
-            this.btnLogin.TabIndex = 2;
-            this.btnLogin.Text = "შესვლა";
-            this.btnLogin.UseVisualStyleBackColor = true;
-            this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
+            btnLogin.Location = new Point(170, 173);
+            btnLogin.Margin = new Padding(4, 3, 4, 3);
+            btnLogin.Name = "btnLogin";
+            btnLogin.Size = new Size(144, 45);
+            btnLogin.TabIndex = 2;
+            btnLogin.Text = "შესვლა";
+            btnLogin.UseVisualStyleBackColor = true;
+            btnLogin.Click += btnLogin_Click;
             // 
             // lblLoginStatus
             // 
-            this.lblLoginStatus.AutoSize = true;
-            this.lblLoginStatus.ForeColor = System.Drawing.Color.Red;
-            this.lblLoginStatus.Location = new System.Drawing.Point(87, 142);
-            this.lblLoginStatus.Name = "lblLoginStatus";
-            this.lblLoginStatus.Size = new System.Drawing.Size(35, 13);
-            this.lblLoginStatus.TabIndex = 2;
-            this.lblLoginStatus.Text = "label1";
+            lblLoginStatus.AutoSize = true;
+            lblLoginStatus.ForeColor = Color.Red;
+            lblLoginStatus.Location = new Point(140, 140);
+            lblLoginStatus.Margin = new Padding(4, 0, 4, 0);
+            lblLoginStatus.Name = "lblLoginStatus";
+            lblLoginStatus.Size = new Size(38, 15);
+            lblLoginStatus.TabIndex = 2;
+            lblLoginStatus.Text = "label1";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(39, 49);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(49, 13);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "სახელი";
+            label2.AutoSize = true;
+            label2.Location = new Point(46, 57);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(53, 15);
+            label2.TabIndex = 2;
+            label2.Text = "სახელი";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(36, 94);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(52, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "პაროლი";
+            label3.AutoSize = true;
+            label3.Location = new Point(42, 108);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(57, 15);
+            label3.TabIndex = 2;
+            label3.Text = "პაროლი";
             // 
             // LoginForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(374, 251);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.lblLoginStatus);
-            this.Controls.Add(this.btnLogin);
-            this.Controls.Add(this.txtPassword);
-            this.Controls.Add(this.txtUsername);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "LoginForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "LoginForm";
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(414, 242);
+            Controls.Add(label3);
+            Controls.Add(label2);
+            Controls.Add(lblLoginStatus);
+            Controls.Add(btnLogin);
+            Controls.Add(txtPassword);
+            Controls.Add(txtUsername);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "LoginForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "LoginForm";
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 

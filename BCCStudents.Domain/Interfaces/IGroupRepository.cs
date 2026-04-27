@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using BCCStudents.Domain.Entities;
 using MySql.Data.MySqlClient;
-using BCCStudents.Domain.Entities;
+using System.Data;
 
 namespace BCCStudents.Domain.Interfaces
 {
@@ -32,7 +30,7 @@ namespace BCCStudents.Domain.Interfaces
 
         #endregion
 
-        #region READ - ჯგუფის წაკითხვა
+        #region SELECT - ჯგუფის წაკითხვა
 
         /// <summary>
         /// ჯგუფის მიღება ID-ით
@@ -67,7 +65,7 @@ namespace BCCStudents.Domain.Interfaces
         /// <summary>
         /// ჯგუფის ფასის მიღება ID-ით
         /// </summary>
-        decimal GetGroupPriceById(int groupId);
+        decimal GetGroupPrice(int groupId);
 
         /// <summary>
         /// ჯგუფის მოსწავლეთა რაოდენობის მიღება ID-ით

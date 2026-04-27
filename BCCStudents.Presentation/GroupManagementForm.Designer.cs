@@ -1,4 +1,4 @@
-﻿namespace BCCStudents.Presentation
+namespace BCCStudents.Presentation
 {
     partial class GroupManagementForm
     {
@@ -29,252 +29,324 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GroupManagementForm));
-            this.dgvMainGroup = new System.Windows.Forms.DataGridView();
-            this.txtGroupName = new System.Windows.Forms.TextBox();
-            this.lblGroupName = new System.Windows.Forms.Label();
-            this.numMaxStudents = new System.Windows.Forms.NumericUpDown();
-            this.lblStuCount = new System.Windows.Forms.Label();
-            this.btnAddGroup = new System.Windows.Forms.Button();
-            this.txtPrice = new System.Windows.Forms.TextBox();
-            this.lblPrice = new System.Windows.Forms.Label();
-            this.lblTeacher = new System.Windows.Forms.Label();
-            this.dgvSubGroups = new System.Windows.Forms.DataGridView();
-            this.cmbSubGroupCount = new System.Windows.Forms.ComboBox();
-            this.lblClass = new System.Windows.Forms.Label();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.tsEdit = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsEditGroups = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsEditSubGroups = new System.Windows.Forms.ToolStripMenuItem();
-            this.txtTeacher = new System.Windows.Forms.TextBox();
-            this.txtDocPath = new System.Windows.Forms.TextBox();
-            this.lblDocPath = new System.Windows.Forms.Label();
-            this.btnFileDialog = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvMainGroup)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numMaxStudents)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvSubGroups)).BeginInit();
-            this.menuStrip1.SuspendLayout();
-            this.SuspendLayout();
+            dgvMainGroup = new DataGridView();
+            txtGroupName = new TextBox();
+            lblGroupName = new Label();
+            numMaxStudents = new NumericUpDown();
+            lblStuCount = new Label();
+            btnAddGroup = new Button();
+            txtPrice = new TextBox();
+            lblPrice = new Label();
+            lblTeacher = new Label();
+            dgvSubGroups = new DataGridView();
+            cmbSubGroupCount = new ComboBox();
+            lblClass = new Label();
+            menuStrip1 = new MenuStrip();
+            tsEdit = new ToolStripMenuItem();
+            tsEditGroups = new ToolStripMenuItem();
+            tsEditSubGroups = new ToolStripMenuItem();
+            txtTeacher = new TextBox();
+            txtDocPath = new TextBox();
+            lblDocPath = new Label();
+            btnFileDialog = new Button();
+            groupBox1 = new GroupBox();
+            chkEnableSubGroupMaxStudents = new CheckBox();
+            groupBox2 = new GroupBox();
+            btnDeleteGroup = new Button();
+            ((System.ComponentModel.ISupportInitialize)dgvMainGroup).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numMaxStudents).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvSubGroups).BeginInit();
+            menuStrip1.SuspendLayout();
+            groupBox2.SuspendLayout();
+            SuspendLayout();
             // 
             // dgvMainGroup
             // 
-            this.dgvMainGroup.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvMainGroup.Location = new System.Drawing.Point(11, 302);
-            this.dgvMainGroup.Name = "dgvMainGroup";
-            this.dgvMainGroup.Size = new System.Drawing.Size(1029, 184);
-            this.dgvMainGroup.TabIndex = 9;
-            this.dgvMainGroup.SelectionChanged += new System.EventHandler(this.dataGridViewGroups_SelectionChanged);
+            dgvMainGroup.AllowUserToAddRows = false;
+            dgvMainGroup.AllowUserToDeleteRows = false;
+            dgvMainGroup.BorderStyle = BorderStyle.None;
+            dgvMainGroup.CellBorderStyle = DataGridViewCellBorderStyle.None;
+            dgvMainGroup.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvMainGroup.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvMainGroup.Location = new Point(13, 405);
+            dgvMainGroup.Margin = new Padding(4, 3, 4, 3);
+            dgvMainGroup.Name = "dgvMainGroup";
+            dgvMainGroup.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvMainGroup.Size = new Size(1090, 256);
+            dgvMainGroup.TabIndex = 9;
+            dgvMainGroup.SelectionChanged += dataGridViewGroups_SelectionChanged;
             // 
             // txtGroupName
             // 
-            this.txtGroupName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtGroupName.Location = new System.Drawing.Point(277, 42);
-            this.txtGroupName.Multiline = true;
-            this.txtGroupName.Name = "txtGroupName";
-            this.txtGroupName.Size = new System.Drawing.Size(194, 30);
-            this.txtGroupName.TabIndex = 0;
+            txtGroupName.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtGroupName.Location = new Point(190, 19);
+            txtGroupName.Margin = new Padding(4, 3, 4, 3);
+            txtGroupName.Multiline = true;
+            txtGroupName.Name = "txtGroupName";
+            txtGroupName.Size = new Size(256, 34);
+            txtGroupName.TabIndex = 0;
             // 
             // lblGroupName
             // 
-            this.lblGroupName.AutoSize = true;
-            this.lblGroupName.Location = new System.Drawing.Point(158, 45);
-            this.lblGroupName.Name = "lblGroupName";
-            this.lblGroupName.Size = new System.Drawing.Size(96, 13);
-            this.lblGroupName.TabIndex = 2;
-            this.lblGroupName.Text = "ჯგუფის სახელი";
+            lblGroupName.AutoSize = true;
+            lblGroupName.Location = new Point(50, 26);
+            lblGroupName.Margin = new Padding(4, 0, 4, 0);
+            lblGroupName.Name = "lblGroupName";
+            lblGroupName.Size = new Size(107, 15);
+            lblGroupName.TabIndex = 2;
+            lblGroupName.Text = "ჯგუფის სახელი";
             // 
             // numMaxStudents
             // 
-            this.numMaxStudents.Enabled = false;
-            this.numMaxStudents.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.numMaxStudents.Location = new System.Drawing.Point(277, 114);
-            this.numMaxStudents.Name = "numMaxStudents";
-            this.numMaxStudents.Size = new System.Drawing.Size(160, 26);
-            this.numMaxStudents.TabIndex = 2;
+            numMaxStudents.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            numMaxStudents.Location = new Point(190, 173);
+            numMaxStudents.Margin = new Padding(4, 3, 4, 3);
+            numMaxStudents.Name = "numMaxStudents";
+            numMaxStudents.Size = new Size(187, 26);
+            numMaxStudents.TabIndex = 4;
             // 
             // lblStuCount
             // 
-            this.lblStuCount.AutoSize = true;
-            this.lblStuCount.Location = new System.Drawing.Point(23, 121);
-            this.lblStuCount.Name = "lblStuCount";
-            this.lblStuCount.Size = new System.Drawing.Size(231, 13);
-            this.lblStuCount.TabIndex = 4;
-            this.lblStuCount.Text = "მოსწავლეების მაქსიმალური რაოდენობა";
+            lblStuCount.AutoSize = true;
+            lblStuCount.Location = new Point(-100, 179);
+            lblStuCount.Margin = new Padding(4, 0, 4, 0);
+            lblStuCount.Name = "lblStuCount";
+            lblStuCount.Size = new Size(257, 15);
+            lblStuCount.TabIndex = 4;
+            lblStuCount.Text = "მოსწავლეების მაქსიმალური რაოდენობა";
             // 
             // btnAddGroup
             // 
-            this.btnAddGroup.Location = new System.Drawing.Point(277, 267);
-            this.btnAddGroup.Name = "btnAddGroup";
-            this.btnAddGroup.Size = new System.Drawing.Size(127, 29);
-            this.btnAddGroup.TabIndex = 7;
-            this.btnAddGroup.Text = "დამატება";
-            this.btnAddGroup.UseVisualStyleBackColor = true;
-            this.btnAddGroup.Click += new System.EventHandler(this.btnAddGroup_Click);
+            btnAddGroup.Location = new Point(190, 277);
+            btnAddGroup.Margin = new Padding(4, 3, 4, 3);
+            btnAddGroup.Name = "btnAddGroup";
+            btnAddGroup.Size = new Size(148, 33);
+            btnAddGroup.TabIndex = 6;
+            btnAddGroup.Text = "დამატება";
+            btnAddGroup.UseVisualStyleBackColor = true;
+            btnAddGroup.Click += btnAddGroup_Click;
             // 
             // txtPrice
             // 
-            this.txtPrice.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPrice.Location = new System.Drawing.Point(277, 78);
-            this.txtPrice.Multiline = true;
-            this.txtPrice.Name = "txtPrice";
-            this.txtPrice.Size = new System.Drawing.Size(160, 30);
-            this.txtPrice.TabIndex = 1;
+            txtPrice.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPrice.Location = new Point(190, 59);
+            txtPrice.Margin = new Padding(4, 3, 4, 3);
+            txtPrice.Multiline = true;
+            txtPrice.Name = "txtPrice";
+            txtPrice.Size = new Size(256, 34);
+            txtPrice.TabIndex = 1;
             // 
             // lblPrice
             // 
-            this.lblPrice.AutoSize = true;
-            this.lblPrice.Location = new System.Drawing.Point(140, 81);
-            this.lblPrice.Name = "lblPrice";
-            this.lblPrice.Size = new System.Drawing.Size(114, 13);
-            this.lblPrice.TabIndex = 2;
-            this.lblPrice.Text = "სწავლის საფასური";
+            lblPrice.AutoSize = true;
+            lblPrice.Location = new Point(30, 66);
+            lblPrice.Margin = new Padding(4, 0, 4, 0);
+            lblPrice.Name = "lblPrice";
+            lblPrice.Size = new Size(127, 15);
+            lblPrice.TabIndex = 2;
+            lblPrice.Text = "სწავლის საფასური";
             // 
             // lblTeacher
             // 
-            this.lblTeacher.AutoSize = true;
-            this.lblTeacher.Location = new System.Drawing.Point(156, 149);
-            this.lblTeacher.Name = "lblTeacher";
-            this.lblTeacher.Size = new System.Drawing.Size(91, 13);
-            this.lblTeacher.TabIndex = 4;
-            this.lblTeacher.Text = "მასწავლებელი";
+            lblTeacher.AutoSize = true;
+            lblTeacher.Location = new Point(58, 140);
+            lblTeacher.Margin = new Padding(4, 0, 4, 0);
+            lblTeacher.Name = "lblTeacher";
+            lblTeacher.Size = new Size(99, 15);
+            lblTeacher.TabIndex = 4;
+            lblTeacher.Text = "მასწავლებელი";
             // 
             // dgvSubGroups
             // 
-            this.dgvSubGroups.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvSubGroups.Location = new System.Drawing.Point(11, 492);
-            this.dgvSubGroups.Name = "dgvSubGroups";
-            this.dgvSubGroups.Size = new System.Drawing.Size(1029, 217);
-            this.dgvSubGroups.TabIndex = 10;
+            dgvSubGroups.AllowUserToAddRows = false;
+            dgvSubGroups.AllowUserToDeleteRows = false;
+            dgvSubGroups.BorderStyle = BorderStyle.None;
+            dgvSubGroups.CellBorderStyle = DataGridViewCellBorderStyle.None;
+            dgvSubGroups.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvSubGroups.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvSubGroups.EditMode = DataGridViewEditMode.EditProgrammatically;
+            dgvSubGroups.Location = new Point(13, 667);
+            dgvSubGroups.Margin = new Padding(4, 3, 4, 3);
+            dgvSubGroups.Name = "dgvSubGroups";
+            dgvSubGroups.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvSubGroups.Size = new Size(1090, 225);
+            dgvSubGroups.TabIndex = 10;
             // 
             // cmbSubGroupCount
             // 
-            this.cmbSubGroupCount.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmbSubGroupCount.FormattingEnabled = true;
-            this.cmbSubGroupCount.ItemHeight = 20;
-            this.cmbSubGroupCount.Items.AddRange(new object[] {
-            "კლასის გარეშე",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5"});
-            this.cmbSubGroupCount.Location = new System.Drawing.Point(277, 182);
-            this.cmbSubGroupCount.Name = "cmbSubGroupCount";
-            this.cmbSubGroupCount.Size = new System.Drawing.Size(187, 28);
-            this.cmbSubGroupCount.TabIndex = 4;
+            cmbSubGroupCount.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            cmbSubGroupCount.FormattingEnabled = true;
+            cmbSubGroupCount.ItemHeight = 20;
+            cmbSubGroupCount.Items.AddRange(new object[] { "კლასის გარეშე", "1", "2", "3", "4", "5" });
+            cmbSubGroupCount.Location = new Point(189, 99);
+            cmbSubGroupCount.Margin = new Padding(4, 3, 4, 3);
+            cmbSubGroupCount.Name = "cmbSubGroupCount";
+            cmbSubGroupCount.Size = new Size(257, 28);
+            cmbSubGroupCount.TabIndex = 2;
+            cmbSubGroupCount.TextChanged += cmbSubGroupCount_TextChanged;
             // 
             // lblClass
             // 
-            this.lblClass.AutoSize = true;
-            this.lblClass.Location = new System.Drawing.Point(128, 190);
-            this.lblClass.Name = "lblClass";
-            this.lblClass.Size = new System.Drawing.Size(126, 13);
-            this.lblClass.TabIndex = 4;
-            this.lblClass.Text = "კლასების რაოდენობა";
+            lblClass.AutoSize = true;
+            lblClass.Location = new Point(18, 106);
+            lblClass.Margin = new Padding(4, 0, 4, 0);
+            lblClass.Name = "lblClass";
+            lblClass.Size = new Size(139, 15);
+            lblClass.TabIndex = 4;
+            lblClass.Text = "კლასების რაოდენობა";
             // 
             // menuStrip1
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsEdit});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1052, 24);
-            this.menuStrip1.TabIndex = 10;
-            this.menuStrip1.Text = "menuStrip1";
+            menuStrip1.Items.AddRange(new ToolStripItem[] { tsEdit });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Padding = new Padding(7, 2, 0, 2);
+            menuStrip1.Size = new Size(1113, 24);
+            menuStrip1.TabIndex = 10;
+            menuStrip1.Text = "menuStrip1";
             // 
             // tsEdit
             // 
-            this.tsEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsEditGroups,
-            this.tsEditSubGroups});
-            this.tsEdit.Name = "tsEdit";
-            this.tsEdit.Size = new System.Drawing.Size(101, 20);
-            this.tsEdit.Text = "რედაქტირება";
+            tsEdit.DropDownItems.AddRange(new ToolStripItem[] { tsEditGroups, tsEditSubGroups });
+            tsEdit.Name = "tsEdit";
+            tsEdit.Size = new Size(101, 20);
+            tsEdit.Text = "რედაქტირება";
             // 
             // tsEditGroups
             // 
-            this.tsEditGroups.Name = "tsEditGroups";
-            this.tsEditGroups.Size = new System.Drawing.Size(131, 22);
-            this.tsEditGroups.Text = "ჯგუფები";
+            tsEditGroups.Name = "tsEditGroups";
+            tsEditGroups.Size = new Size(131, 22);
+            tsEditGroups.Text = "ჯგუფები";
             // 
             // tsEditSubGroups
             // 
-            this.tsEditSubGroups.Name = "tsEditSubGroups";
-            this.tsEditSubGroups.Size = new System.Drawing.Size(131, 22);
-            this.tsEditSubGroups.Text = "კლასები";
+            tsEditSubGroups.Name = "tsEditSubGroups";
+            tsEditSubGroups.Size = new Size(131, 22);
+            tsEditSubGroups.Text = "კლასები";
             // 
             // txtTeacher
             // 
-            this.txtTeacher.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTeacher.Location = new System.Drawing.Point(277, 146);
-            this.txtTeacher.Multiline = true;
-            this.txtTeacher.Name = "txtTeacher";
-            this.txtTeacher.Size = new System.Drawing.Size(220, 30);
-            this.txtTeacher.TabIndex = 3;
+            txtTeacher.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtTeacher.Location = new Point(190, 133);
+            txtTeacher.Margin = new Padding(4, 3, 4, 3);
+            txtTeacher.Multiline = true;
+            txtTeacher.Name = "txtTeacher";
+            txtTeacher.Size = new Size(256, 34);
+            txtTeacher.TabIndex = 3;
             // 
             // txtDocPath
             // 
-            this.txtDocPath.Enabled = false;
-            this.txtDocPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtDocPath.Location = new System.Drawing.Point(277, 216);
-            this.txtDocPath.Multiline = true;
-            this.txtDocPath.Name = "txtDocPath";
-            this.txtDocPath.Size = new System.Drawing.Size(360, 34);
-            this.txtDocPath.TabIndex = 5;
+            txtDocPath.Enabled = false;
+            txtDocPath.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtDocPath.Location = new Point(190, 205);
+            txtDocPath.Margin = new Padding(4, 3, 4, 3);
+            txtDocPath.Multiline = true;
+            txtDocPath.Name = "txtDocPath";
+            txtDocPath.Size = new Size(300, 66);
+            txtDocPath.TabIndex = 5;
             // 
             // lblDocPath
             // 
-            this.lblDocPath.AutoSize = true;
-            this.lblDocPath.Location = new System.Drawing.Point(161, 227);
-            this.lblDocPath.Name = "lblDocPath";
-            this.lblDocPath.Size = new System.Drawing.Size(93, 13);
-            this.lblDocPath.TabIndex = 4;
-            this.lblDocPath.Text = "ხელშეკრულება";
+            lblDocPath.AutoSize = true;
+            lblDocPath.Location = new Point(53, 218);
+            lblDocPath.Margin = new Padding(4, 0, 4, 0);
+            lblDocPath.Name = "lblDocPath";
+            lblDocPath.Size = new Size(104, 15);
+            lblDocPath.TabIndex = 4;
+            lblDocPath.Text = "ხელშეკრულება";
             // 
             // btnFileDialog
             // 
-            this.btnFileDialog.Location = new System.Drawing.Point(643, 216);
-            this.btnFileDialog.Name = "btnFileDialog";
-            this.btnFileDialog.Size = new System.Drawing.Size(75, 34);
-            this.btnFileDialog.TabIndex = 6;
-            this.btnFileDialog.Text = "არჩევა";
-            this.btnFileDialog.UseVisualStyleBackColor = true;
-            this.btnFileDialog.Click += new System.EventHandler(this.btnFileDialog_Click);
+            btnFileDialog.Location = new Point(498, 206);
+            btnFileDialog.Margin = new Padding(4, 3, 4, 3);
+            btnFileDialog.Name = "btnFileDialog";
+            btnFileDialog.Size = new Size(67, 27);
+            btnFileDialog.TabIndex = 5;
+            btnFileDialog.Text = "არჩევა";
+            btnFileDialog.UseVisualStyleBackColor = true;
+            btnFileDialog.Click += btnFileDialog_Click;
+            // 
+            // groupBox1
+            // 
+            groupBox1.Font = new Font("Microsoft Sans Serif", 10F);
+            groupBox1.Location = new Point(680, 63);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(423, 305);
+            groupBox1.TabIndex = 11;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "ქვეჯგუფები";
+            // 
+            // chkEnableSubGroupMaxStudents
+            // 
+            chkEnableSubGroupMaxStudents.AutoSize = true;
+            chkEnableSubGroupMaxStudents.Location = new Point(713, 37);
+            chkEnableSubGroupMaxStudents.Name = "chkEnableSubGroupMaxStudents";
+            chkEnableSubGroupMaxStudents.Size = new Size(329, 19);
+            chkEnableSubGroupMaxStudents.TabIndex = 12;
+            chkEnableSubGroupMaxStudents.Text = "ქვეჯგუფების მოსწავლეების რაოდენობის მართვა";
+            chkEnableSubGroupMaxStudents.UseVisualStyleBackColor = true;
+            // 
+            // groupBox2
+            // 
+            groupBox2.Controls.Add(lblGroupName);
+            groupBox2.Controls.Add(txtGroupName);
+            groupBox2.Controls.Add(lblPrice);
+            groupBox2.Controls.Add(btnFileDialog);
+            groupBox2.Controls.Add(numMaxStudents);
+            groupBox2.Controls.Add(txtDocPath);
+            groupBox2.Controls.Add(lblStuCount);
+            groupBox2.Controls.Add(txtTeacher);
+            groupBox2.Controls.Add(lblTeacher);
+            groupBox2.Controls.Add(cmbSubGroupCount);
+            groupBox2.Controls.Add(lblClass);
+            groupBox2.Controls.Add(lblDocPath);
+            groupBox2.Controls.Add(txtPrice);
+            groupBox2.Controls.Add(btnAddGroup);
+            groupBox2.Location = new Point(13, 37);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Size = new Size(661, 331);
+            groupBox2.TabIndex = 13;
+            groupBox2.TabStop = false;
+            groupBox2.Text = "ჯგუფის დეტალები ";
+            // 
+            // btnDeleteGroup
+            // 
+            btnDeleteGroup.Location = new Point(13, 376);
+            btnDeleteGroup.Name = "btnDeleteGroup";
+            btnDeleteGroup.Size = new Size(75, 23);
+            btnDeleteGroup.TabIndex = 14;
+            btnDeleteGroup.Text = "წაშლა";
+            btnDeleteGroup.UseVisualStyleBackColor = true;
+            btnDeleteGroup.Click += BtnDeleteGroup_Click;
             // 
             // GroupManagementForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1052, 721);
-            this.Controls.Add(this.btnFileDialog);
-            this.Controls.Add(this.txtDocPath);
-            this.Controls.Add(this.txtTeacher);
-            this.Controls.Add(this.cmbSubGroupCount);
-            this.Controls.Add(this.dgvSubGroups);
-            this.Controls.Add(this.txtPrice);
-            this.Controls.Add(this.btnAddGroup);
-            this.Controls.Add(this.lblDocPath);
-            this.Controls.Add(this.lblClass);
-            this.Controls.Add(this.lblTeacher);
-            this.Controls.Add(this.lblStuCount);
-            this.Controls.Add(this.numMaxStudents);
-            this.Controls.Add(this.lblPrice);
-            this.Controls.Add(this.lblGroupName);
-            this.Controls.Add(this.txtGroupName);
-            this.Controls.Add(this.dgvMainGroup);
-            this.Controls.Add(this.menuStrip1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip1;
-            this.Name = "GroupManagementForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "GroupManagementForm";
-            this.Load += new System.EventHandler(this.GroupManagementForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvMainGroup)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numMaxStudents)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvSubGroups)).EndInit();
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1113, 899);
+            Controls.Add(btnDeleteGroup);
+            Controls.Add(groupBox2);
+            Controls.Add(chkEnableSubGroupMaxStudents);
+            Controls.Add(groupBox1);
+            Controls.Add(dgvSubGroups);
+            Controls.Add(dgvMainGroup);
+            Controls.Add(menuStrip1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MainMenuStrip = menuStrip1;
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "GroupManagementForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "GroupManagementForm";
+            Load += GroupManagementForm_Load;
+            ((System.ComponentModel.ISupportInitialize)dgvMainGroup).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numMaxStudents).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvSubGroups).EndInit();
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
+            groupBox2.ResumeLayout(false);
+            groupBox2.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
@@ -300,5 +372,9 @@
         private System.Windows.Forms.TextBox txtDocPath;
         private System.Windows.Forms.Label lblDocPath;
         private System.Windows.Forms.Button btnFileDialog;
+        private GroupBox groupBox1;
+        private CheckBox chkEnableSubGroupMaxStudents;
+        private GroupBox groupBox2;
+        private Button btnDeleteGroup;
     }
 }

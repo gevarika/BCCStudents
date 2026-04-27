@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {
@@ -21,23 +16,23 @@ namespace BCCStudents.Presentation
             this.selectedGroups = groups;
             this.defaultDiscount = defaultDiscount;
             this.groupDiscounts = new Dictionary<int, double>();
-            
+
             Console.WriteLine($"GroupDiscountForm constructor - defaultDiscount: {defaultDiscount}");
             Console.WriteLine($"Number of groups: {groups?.Count ?? 0}");
-            
+
             InitializeForm();
         }
 
         private void InitializeForm()
         {
-            this.Text = "áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ";
+            this.Text = "ჯგუფების ფასდაკლების დაყენება";
             this.Size = new Size(500, 400);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // áƒ›áƒ—áƒáƒ•áƒáƒ áƒ˜ áƒžáƒáƒœáƒ”áƒšáƒ˜
+            // მთავარი პანელი
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -46,17 +41,17 @@ namespace BCCStudents.Presentation
                 Padding = new Padding(10)
             };
 
-            // áƒ¡áƒáƒ—áƒáƒ£áƒ áƒ˜
+            // სათაური
             var lblTitle = new Label
             {
-                Text = "áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ áƒ—áƒ˜áƒ—áƒáƒ”áƒ£áƒšáƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡:",
+                Text = "აირჩიეთ ფასდაკლება თითოეული ჯგუფისთვის:",
                 Font = new Font("Sylfaen", 12, FontStyle.Bold),
                 Dock = DockStyle.Top,
                 Height = 30,
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            // áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒ
+            // ჯგუფების სია
             var groupPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -76,7 +71,7 @@ namespace BCCStudents.Presentation
                     Margin = new Padding(5)
                 };
 
-                // áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜
+                // ჯგუფის სახელი
                 var lblGroupName = new Label
                 {
                     Text = group.Name,
@@ -85,7 +80,7 @@ namespace BCCStudents.Presentation
                     TextAlign = ContentAlignment.MiddleLeft
                 };
 
-                // áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ•áƒ”áƒšáƒ˜
+                // ფასდაკლების ველი
                 var numDiscount = new NumericUpDown
                 {
                     Minimum = 0,
@@ -95,10 +90,10 @@ namespace BCCStudents.Presentation
                     Width = 80,
                     Dock = DockStyle.Fill
                 };
-                
+
                 Console.WriteLine($"Setting discount for group {group.Name}: {defaultDiscount}");
 
-                // áƒžáƒ áƒáƒªáƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒœáƒ˜áƒ¨áƒáƒœáƒ˜
+                // პროცენტის ნიშანი
                 var lblPercent = new Label
                 {
                     Text = "%",
@@ -113,17 +108,17 @@ namespace BCCStudents.Presentation
 
                 groupPanel.Controls.Add(groupRow);
 
-                // áƒ¨áƒ”áƒ•áƒ˜áƒœáƒáƒ®áƒáƒ— áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ
+                // შევინახოთ შეცვლილი ფასდაკლება
                 numDiscount.ValueChanged += (sender, e) =>
                 {
                     groupDiscounts[group.Id] = (double)numDiscount.Value;
                 };
 
-                // áƒ¡áƒáƒ¬áƒ§áƒ˜áƒ¡áƒ˜ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ‘áƒ
+                // საწყისი მნიშვნელობის ჩაწერა
                 groupDiscounts[group.Id] = defaultDiscount;
             }
 
-            // áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜áƒ¡ áƒžáƒáƒœáƒ”áƒšáƒ˜
+            // ღილაკების პანელი
             var buttonPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Bottom,
@@ -133,7 +128,7 @@ namespace BCCStudents.Presentation
 
             var btnCancel = new Button
             {
-                Text = "áƒ’áƒáƒ£áƒ¥áƒ›áƒ”áƒ‘áƒ",
+                Text = "გაუქმება",
                 Width = 80,
                 Height = 30,
                 DialogResult = DialogResult.Cancel
@@ -141,7 +136,7 @@ namespace BCCStudents.Presentation
 
             var btnOK = new Button
             {
-                Text = "áƒ“áƒáƒ›áƒ¢áƒ™áƒ˜áƒªáƒ”áƒ‘áƒ",
+                Text = "დამტკიცება",
                 Width = 80,
                 Height = 30,
                 DialogResult = DialogResult.OK
@@ -157,4 +152,4 @@ namespace BCCStudents.Presentation
             this.Controls.Add(mainPanel);
         }
     }
-} 
+}

@@ -1,70 +1,124 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Infrastructure.Services;
+using BCCStudents.Presentation.Properties;
+using System.Data;
+//using Irony;
 
 namespace BCCStudents.Presentation
 {
     public partial class BackupManagementForm : Form
     {
-        private readonly BackupManager _backupManager;
+        private readonly BackupService _backupManager;
+        private readonly IUserContext _userContext;
         private List<BackupInfo> _backups;
         private bool _isLoading = false;
 
-        public BackupManagementForm(BackupManager backupManager)
+        public BackupManagementForm(BackupService backupManager, IUserContext userContext)
         {
             _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             InitializeComponent();
             InitializeForm();
             LoadBackups();
+
+            // Apply security checks after form is loaded
+            this.Load += BackupManagementForm_Load;
+        }
+
+        private void BackupManagementForm_Load(object sender, EventArgs e)
+        {
+            ApplySecurityChecks();
+        }
+
+        private void ApplySecurityChecks()
+        {
+            // btnCreateBackup - CanEditSettings permission (backup creation is a settings operation)
+            if (btnCreateBackup != null)
+            {
+                btnCreateBackup.Tag = $"Permission_{Permission.CanEditSettings}";
+                btnCreateBackup.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnRestoreBackup - CanEditSettings permission (backup restore is a settings operation)
+            if (btnRestoreBackup != null)
+            {
+                btnRestoreBackup.Tag = $"Permission_{Permission.CanEditSettings}";
+                btnRestoreBackup.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnDeleteBackup - CanEditSettings permission
+            if (btnDeleteBackup != null)
+            {
+                btnDeleteBackup.Tag = $"Permission_{Permission.CanEditSettings}";
+                btnDeleteBackup.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnEnableAutoBackup - CanEditSettings permission
+            if (btnEnableAutoBackup != null)
+            {
+                btnEnableAutoBackup.Tag = $"Permission_{Permission.CanEditSettings}";
+                btnEnableAutoBackup.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnDisableAutoBackup - CanEditSettings permission
+            if (btnDisableAutoBackup != null)
+            {
+                btnDisableAutoBackup.Tag = $"Permission_{Permission.CanEditSettings}";
+                btnDisableAutoBackup.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnRefresh - CanViewReports or CanEditSettings (viewing backups)
+            if (btnRefresh != null)
+            {
+                btnRefresh.Tag = $"Permission_{Permission.CanViewReports}";
+                btnRefresh.Enabled = _userContext.HasPermission(Permission.CanViewReports) || _userContext.HasPermission(Permission.CanEditSettings);
+            }
+
+            // btnOpenBackupFolder - CanViewReports or CanEditSettings
+            if (btnOpenBackupFolder != null)
+            {
+                btnOpenBackupFolder.Tag = $"Permission_{Permission.CanViewReports}";
+                btnOpenBackupFolder.Enabled = _userContext.HasPermission(Permission.CanViewReports) || _userContext.HasPermission(Permission.CanEditSettings);
+            }
         }
 
         private void InitializeForm()
         {
-            if (!Properties.Settings.Default.IsTestDb)
-                FormTitleHelper.SetTitle(this, "áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ›áƒáƒ áƒ—áƒ•áƒ");
-            else FormTitleHelper.SetTitle(this, "áƒ‘áƒ”áƒ¥áƒáƒ¤áƒ˜áƒ¡ áƒ›áƒáƒ áƒ—áƒ•áƒ - áƒ¡áƒáƒ¢áƒ”áƒ¡áƒ¢áƒ áƒ áƒ”áƒŸáƒ˜áƒ›áƒ˜");
-            
-            // áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ”áƒ‘áƒ˜
+            FormTitleHelper.SetTitle(this, Resources.BackupTitle);
+
+            // ღილაკების ივენთების მიბმა
             btnCreateBackup.Click += BtnCreateBackup_Click;
             btnRestoreBackup.Click += BtnRestoreBackup_Click;
             btnDeleteBackup.Click += BtnDeleteBackup_Click;
             btnRefresh.Click += BtnRefresh_Click;
             btnOpenBackupFolder.Click += BtnOpenBackupFolder_Click;
-            
-            // áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜
+
+            // პერიოდული ბექაპის ღილაკების ივენთები
             btnEnableAutoBackup.Click += BtnEnableAutoBackup_Click;
             btnDisableAutoBackup.Click += BtnDisableAutoBackup_Click;
-            
-            // áƒ¤áƒ˜áƒšáƒ¢áƒ áƒ˜áƒ¡ áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜
+
+            // ფილტრის ღილაკების ივენთები
             btnApplyFilter.Click += BtnApplyFilter_Click;
             btnClearFilter.Click += BtnClearFilter_Click;
-            
-            // áƒ¤áƒáƒ áƒ›áƒ˜áƒ¡ áƒ“áƒáƒ®áƒ£áƒ áƒ•áƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ˜
+
+            // ფორმის დახურვის ივენთი
             this.FormClosing += BackupManagementForm_FormClosing;
-            
-            // DataGridView-áƒ˜áƒ¡ áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ
+
+            // DataGridView-ის ინიციალიზაცია
             SetupDataGridView();
-            
-            // áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+
+            // პერიოდული ბექაპის სტატუსის ჩვენება
             UpdateAutoBackupStatus();
-            
-            // áƒ¤áƒ˜áƒšáƒ¢áƒ áƒ˜áƒ¡ áƒ•áƒ”áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ
+
+            // საწყისი თარიღების დაყენება ფილტრისთვის
             dtpFrom.Value = DateTime.Today.AddDays(-30);
             dtpTo.Value = DateTime.Today;
         }
 
         private void BackupManagementForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // áƒáƒ  áƒ•áƒáƒ©áƒ”áƒ áƒ”áƒ‘áƒ— áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒš áƒ‘áƒ”áƒ¥áƒáƒžáƒ¡, áƒ áƒáƒ“áƒ’áƒáƒœ áƒ˜áƒ¡ áƒ£áƒœáƒ“áƒ áƒ’áƒáƒ’áƒ áƒ«áƒ”áƒšáƒ“áƒ”áƒ¡ áƒ›áƒ—áƒáƒ•áƒáƒ  áƒ¤áƒáƒ áƒ›áƒáƒ¨áƒ˜
+            // აქ შეგვიძლია გავაჩეროთ პერიოდული ბექაპი დახურვისას (ამჟამად გამორთულია)
             // BackupManager.StopPeriodicBackup();
         }
 
@@ -72,42 +126,42 @@ namespace BCCStudents.Presentation
         {
             dgvBackups.AutoGenerateColumns = false;
             dgvBackups.Columns.Clear();
-            
+
             dgvBackups.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "FileName",
-                HeaderText = "áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜",
+                HeaderText = Resources.Backup_Column_FileName,
                 DataPropertyName = "FileName",
                 Width = 200
             });
-            
+
             dgvBackups.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "CreationTime",
-                HeaderText = "áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜",
+                HeaderText = Resources.Backup_Column_CreationTime,
                 DataPropertyName = "CreationTime",
                 Width = 150,
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd HH:mm" }
             });
-            
+
             dgvBackups.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "FileSize",
-                HeaderText = "áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ–áƒáƒ›áƒ",
+                HeaderText = Resources.Backup_Column_FileSize,
                 DataPropertyName = "FileSizeFormatted",
                 Width = 100
             });
-            
+
             dgvBackups.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "FilePath",
-                HeaderText = "áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ¡áƒáƒ›áƒáƒ áƒ—áƒ˜",
+                HeaderText = Resources.Backup_Column_FilePath,
                 DataPropertyName = "FilePath",
                 Width = 300,
                 Visible = false
             });
-            
-            // áƒáƒ áƒ›áƒáƒ’áƒ˜ áƒ“áƒáƒ¬áƒ™áƒáƒžáƒ£áƒœáƒ”áƒ‘áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ”áƒšáƒáƒ“
+
+            // ორმაგი დაჭერა ბექაპის ფაილის გასახსნელად
             dgvBackups.CellDoubleClick += (s, e) =>
             {
                 if (e.RowIndex >= 0)
@@ -127,23 +181,26 @@ namespace BCCStudents.Presentation
             {
                 _isLoading = true;
                 btnRefresh.Enabled = false;
-                
-                // áƒ•áƒáƒ©áƒ•áƒ”áƒœáƒáƒ— áƒžáƒ áƒáƒ’áƒ áƒ”áƒ¡áƒ˜
-                lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒ”áƒ¥áƒáƒžáƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ...";
+
+                // ვაჩვენებთ, რომ მიმდინარეობს ბექაპების ჩატვირთვა
+                lblStatus.Text = Resources.Backup_Status_LoadingBackups;
                 System.Windows.Forms.Application.DoEvents();
-                
+
                 _backups = await Task.Run(() => _backupManager.GetBackupList());
-                
-                // áƒ’áƒáƒ•áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒ— áƒ—áƒáƒ áƒ˜áƒ¦áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—
+
+                // თარიღის ფილტრის გამოყენება
                 ApplyDateFilter();
-                
-                lblStatus.Text = $"áƒœáƒáƒžáƒáƒ•áƒœáƒ˜áƒ {_backups.Count} áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜";
+
+                lblStatus.Text = string.Format(Resources.Backup_Status_LoadedCount, _backups.Count);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                lblStatus.Text = "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡";
+                MessageBox.Show(
+                    $"{Resources.Backup_Status_LoadError}: {ex.Message}",
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                lblStatus.Text = Resources.Backup_Status_LoadError;
             }
             finally
             {
@@ -155,39 +212,61 @@ namespace BCCStudents.Presentation
         private void ApplyDateFilter()
         {
             if (_backups == null) return;
-            
-            var filteredBackups = _backups.Where(b => 
-                b.CreationTime.Date >= dtpFrom.Value.Date && 
+
+            var filteredBackups = _backups.Where(b =>
+                b.CreationTime.Date >= dtpFrom.Value.Date &&
                 b.CreationTime.Date <= dtpTo.Value.Date).ToList();
-            
+
             dgvBackups.DataSource = filteredBackups;
-            lblStatus.Text = $"áƒœáƒáƒžáƒáƒ•áƒœáƒ˜áƒ {filteredBackups.Count} áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ (áƒ¤áƒ˜áƒšáƒ¢áƒ áƒ˜: {dtpFrom.Value:yyyy-MM-dd} - {dtpTo.Value:yyyy-MM-dd})";
+            lblStatus.Text = string.Format(
+                Resources.Backup_Status_FilteredCount,
+                filteredBackups.Count,
+                dtpFrom.Value.ToString("yyyy-MM-dd"),
+                dtpTo.Value.ToString("yyyy-MM-dd"));
         }
 
         private async void BtnCreateBackup_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanEditSettings))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             try
             {
                 btnCreateBackup.Enabled = false;
-                lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ...";
+                lblStatus.Text = Resources.Backup_Create_Status;
                 System.Windows.Forms.Application.DoEvents();
-                
+
                 bool success = _backupManager.CreatePeriodicBackup();
-                
+
                 if (success)
                 {
-                    MessageBox.Show("áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ¨áƒ”áƒ˜áƒ¥áƒ›áƒœáƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        Resources.Backup_Create_Success,
+                        Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     LoadBackups();
                 }
                 else
                 {
-                    MessageBox.Show("áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        Resources.Backup_Create_Fail,
+                        Resources.Common_ErrorTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_Create_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             finally
             {
@@ -199,42 +278,61 @@ namespace BCCStudents.Presentation
         {
             if (dgvBackups.SelectedRows.Count == 0)
             {
-                MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒáƒ˜áƒ áƒ©áƒ˜áƒáƒ— áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    Resources.Backup_Restore_NoSelection,
+                    Resources.Common_WarningTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
-            
+
             var selectedBackup = dgvBackups.SelectedRows[0].DataBoundItem as BackupInfo;
             if (selectedBackup == null) return;
-            
+
             var result = MessageBox.Show(
-                $"áƒœáƒáƒ›áƒ“áƒ•áƒ˜áƒšáƒáƒ“ áƒ’áƒ¡áƒ£áƒ áƒ— áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ“áƒáƒœ?\n\náƒ¤áƒáƒ˜áƒšáƒ˜: {selectedBackup.FileName}\náƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {selectedBackup.CreationTime:yyyy-MM-dd HH:mm}\n\náƒ§áƒ£áƒ áƒáƒ“áƒ¦áƒ”áƒ‘áƒ: áƒ”áƒ¡ áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ áƒ¨áƒ”áƒªáƒ•áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒ›áƒáƒœáƒáƒªáƒ”áƒ›áƒ”áƒ‘áƒ¡!",
-                "áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ",
+                string.Format(
+                    Resources.Backup_Restore_ConfirmText,
+                    Environment.NewLine,
+                    selectedBackup.FileName,
+                    selectedBackup.CreationTime.ToString("yyyy-MM-dd HH:mm")),
+                Resources.Backup_Restore_ConfirmTitle,
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
-            
+
             if (result == DialogResult.Yes)
             {
                 try
                 {
                     btnRestoreBackup.Enabled = false;
-                    lblStatus.Text = "áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡ áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ...";
+                    lblStatus.Text = Resources.Backup_Restore_Status;
                     System.Windows.Forms.Application.DoEvents();
-                    
+
                     bool success = _backupManager.RestoreBackup(selectedBackup.FilePath);
-                    
+
                     if (success)
                     {
-                        MessageBox.Show("áƒ‘áƒáƒ–áƒ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ˜áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(
+                            Resources.Backup_Restore_Success,
+                            Resources.Common_InfoTitle,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show("áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(
+                            Resources.Backup_Restore_Fail,
+                            Resources.Common_ErrorTitle,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ‘áƒáƒ–áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                        "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        string.Format(Resources.Backup_Restore_Error, ex.Message),
+                        Resources.Common_ErrorTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -245,33 +343,55 @@ namespace BCCStudents.Presentation
 
         private void BtnDeleteBackup_Click(object sender, EventArgs e)
         {
-            if (dgvBackups.SelectedRows.Count == 0)
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanEditSettings))
             {
-                MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒáƒ˜áƒ áƒ©áƒ˜áƒáƒ— áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ¬áƒáƒ¡áƒáƒ¨áƒšáƒ”áƒšáƒáƒ“!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            
+
+            if (dgvBackups.SelectedRows.Count == 0)
+            {
+                MessageBox.Show(
+                    Resources.Backup_Delete_NoSelection,
+                    Resources.Common_WarningTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
             var selectedBackup = dgvBackups.SelectedRows[0].DataBoundItem as BackupInfo;
             if (selectedBackup == null) return;
-            
+
             var result = MessageBox.Show(
-                $"áƒœáƒáƒ›áƒ“áƒ•áƒ˜áƒšáƒáƒ“ áƒ’áƒ¡áƒ£áƒ áƒ— áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ?\n\náƒ¤áƒáƒ˜áƒšáƒ˜: {selectedBackup.FileName}\náƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {selectedBackup.CreationTime:yyyy-MM-dd HH:mm}",
-                "áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ",
+                string.Format(
+                    Resources.Backup_Delete_ConfirmText,
+                    Environment.NewLine,
+                    selectedBackup.FileName,
+                    selectedBackup.CreationTime.ToString("yyyy-MM-dd HH:mm")),
+                Resources.Backup_Delete_ConfirmTitle,
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
-            
+
             if (result == DialogResult.Yes)
             {
                 try
                 {
                     File.Delete(selectedBackup.FilePath);
-                    MessageBox.Show("áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ¬áƒáƒ˜áƒ¨áƒáƒšáƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        Resources.Backup_Delete_Success,
+                        Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     LoadBackups();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                        "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        string.Format(Resources.Backup_Delete_Error, ex.Message),
+                        Resources.Common_ErrorTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                 }
             }
         }
@@ -289,45 +409,76 @@ namespace BCCStudents.Presentation
                 {
                     Directory.CreateDirectory(_backupManager.BackupDirectory);
                 }
-                
+
                 System.Diagnostics.Process.Start("explorer.exe", _backupManager.BackupDirectory);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒšáƒ“áƒ”áƒ áƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ”áƒšáƒáƒ“: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_OpenFolder_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
         private void BtnEnableAutoBackup_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanEditSettings))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             try
             {
                 _backupManager.AutoBackupEnabled = true;
                 _backupManager.InitializePeriodicBackup();
                 UpdateAutoBackupStatus();
-                MessageBox.Show("áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    Resources.Backup_Auto_Enable_Success,
+                    Resources.Common_InfoTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ©áƒáƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_Auto_Enable_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
         private void BtnDisableAutoBackup_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanEditSettings))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             try
             {
                 _backupManager.AutoBackupEnabled = false;
                 _backupManager.StopPeriodicBackup();
                 UpdateAutoBackupStatus();
-                MessageBox.Show("áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ’áƒáƒ›áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    Resources.Backup_Auto_Disable_Success,
+                    Resources.Common_InfoTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ’áƒáƒ›áƒáƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_Auto_Disable_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -345,28 +496,32 @@ namespace BCCStudents.Presentation
 
         private void UpdateAutoBackupStatus()
         {
-                if (_backupManager.AutoBackupEnabled)
+            if (_backupManager.AutoBackupEnabled)
             {
-                lblAutoBackupStatus.Text = $"áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ (áƒ˜áƒœáƒ¢áƒ”áƒ áƒ•áƒáƒšáƒ˜: {_backupManager.BackupIntervalHours} áƒ¡áƒáƒáƒ—áƒ˜)";
+                lblAutoBackupStatus.Text = string.Format(
+                    Resources.Backup_Auto_Status_Enabled,
+                    _backupManager.BackupIntervalHours);
                 lblAutoBackupStatus.ForeColor = Color.Green;
                 btnEnableAutoBackup.Enabled = false;
                 btnDisableAutoBackup.Enabled = true;
             }
             else
             {
-                lblAutoBackupStatus.Text = "áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒ˜ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ’áƒáƒ›áƒáƒ áƒ—áƒ£áƒšáƒ˜áƒ";
+                lblAutoBackupStatus.Text = Resources.Backup_Auto_Status_Disabled;
                 lblAutoBackupStatus.ForeColor = Color.Red;
                 btnEnableAutoBackup.Enabled = true;
                 btnDisableAutoBackup.Enabled = false;
             }
-            
+
             if (_backupManager.LastBackupTime != DateTime.MinValue)
             {
-                lblLastBackup.Text = $"áƒ‘áƒáƒšáƒ áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜: {_backupManager.LastBackupTime:yyyy-MM-dd HH:mm}";
+                lblLastBackup.Text = string.Format(
+                    Resources.Backup_LastBackup,
+                    _backupManager.LastBackupTime.ToString("yyyy-MM-dd HH:mm"));
             }
             else
             {
-                lblLastBackup.Text = "áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜ áƒ¯áƒ”áƒ  áƒáƒ  áƒ’áƒáƒ™áƒ”áƒ—áƒ”áƒ‘áƒ£áƒšáƒ";
+                lblLastBackup.Text = Resources.Backup_LastBackup_None;
             }
         }
 
@@ -376,15 +531,19 @@ namespace BCCStudents.Presentation
             {
                 if (!File.Exists(filePath))
                 {
-                    MessageBox.Show("áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        Resources.Backup_File_NotFound,
+                        Resources.Common_ErrorTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                     return;
                 }
 
-                // áƒ¨áƒ”áƒ•áƒ¥áƒ›áƒœáƒáƒ— áƒ™áƒáƒœáƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ›áƒ”áƒœáƒ˜áƒ£ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ”áƒšáƒáƒ“
+                // ვქმნით კონტექსტურ მენიუს არჩეული ბექაპ ფაილისთვის
                 var contextMenu = new ContextMenuStrip();
-                
-                // áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ áƒ”áƒ“áƒáƒ¥áƒ¢áƒáƒ áƒ˜áƒ— áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ
-                contextMenu.Items.Add("áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ áƒ”áƒ“áƒáƒ¥áƒ¢áƒáƒ áƒ˜áƒ— áƒ’áƒáƒ®áƒ¡áƒœáƒ", null, (s, e) =>
+
+                // ტექსტური რედაქტორით გახსნა
+                contextMenu.Items.Add(Resources.Backup_Menu_OpenInEditor, null, (s, e) =>
                 {
                     try
                     {
@@ -392,55 +551,68 @@ namespace BCCStudents.Presentation
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ”áƒšáƒáƒ“: {ex.Message}", 
-                            "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(
+                            string.Format(Resources.Backup_File_Open_Error, ex.Message),
+                            Resources.Common_ErrorTitle,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
                 });
 
-                // áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜áƒ¡ áƒœáƒáƒ®áƒ•áƒ áƒ¤áƒáƒ áƒ›áƒáƒ¨áƒ˜
-                contextMenu.Items.Add("áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜áƒ¡ áƒœáƒáƒ®áƒ•áƒ", null, (s, e) =>
+                // შიგთავსის ნახვა
+                contextMenu.Items.Add(Resources.Backup_Menu_ViewContent, null, (s, e) =>
                 {
                     ViewBackupContent(filePath);
                 });
 
-                // áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ
-                contextMenu.Items.Add("áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ", null, (s, e) =>
+                // ფაილის კოპირება
+                contextMenu.Items.Add(Resources.Backup_Menu_CopyFile, null, (s, e) =>
                 {
                     try
                     {
                         var saveDialog = new SaveFileDialog
                         {
                             FileName = Path.GetFileName(filePath),
-                            Filter = "SQL áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜ (*.sql)|*.sql|áƒ§áƒ•áƒ”áƒšáƒ áƒ¤áƒáƒ˜áƒšáƒ˜ (*.*)|*.*"
+                            Filter = "SQL ფაილები (*.sql)|*.sql|ყველა ფაილი (*.*)|*.*"
                         };
 
                         if (saveDialog.ShowDialog() == DialogResult.OK)
                         {
                             File.Copy(filePath, saveDialog.FileName, true);
-                            MessageBox.Show("áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ“áƒáƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show(
+                                "ფაილი წარმატებით დაკოპირდა!",
+                                Resources.Common_InfoTitle,
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
                         }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                            "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(
+                            string.Format(Resources.Backup_File_Copy_Error, ex.Message),
+                            Resources.Common_ErrorTitle,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                     }
                 });
 
-                // áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ˜áƒ¡ áƒœáƒáƒ®áƒ•áƒ
-                contextMenu.Items.Add("áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", null, (s, e) =>
+                // ფაილის ინფორმაციის ნახვა
+                contextMenu.Items.Add(Resources.Backup_Menu_FileInfo, null, (s, e) =>
                 {
                     ShowFileInfo(filePath);
                 });
 
-                // áƒ•áƒáƒ©áƒ•áƒ”áƒœáƒáƒ— áƒ™áƒáƒœáƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ›áƒ”áƒœáƒ˜áƒ£
+                // ვაჩვენებთ კონტექსტურ მენიუს
                 var point = dgvBackups.PointToClient(Cursor.Position);
                 contextMenu.Show(dgvBackups, point);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ®áƒ¡áƒœáƒ”áƒšáƒáƒ“: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_File_Open_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -453,8 +625,11 @@ namespace BCCStudents.Presentation
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜áƒ¡ áƒ¬áƒáƒ¡áƒáƒ™áƒ˜áƒ—áƒ®áƒáƒ“: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_File_ViewContent_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -462,33 +637,33 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— UTF-8 áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
+                // ვცდილობთ UTF-8 კოდირებით წაკითხვას
                 return File.ReadAllText(filePath, System.Text.Encoding.UTF8);
             }
             catch
             {
                 try
                 {
-                    // áƒ—áƒ£ UTF-8 áƒáƒ  áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡, áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— UTF-8 BOM-áƒ˜áƒ—
+                    // თუ UTF-8 არ იმუშავებს, ვცდილობთ UTF-8 BOM-ით
                     return File.ReadAllText(filePath, new System.Text.UTF8Encoding(true));
                 }
                 catch
                 {
                     try
                     {
-                        // áƒ—áƒ£ UTF-8 áƒáƒ  áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡, áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— Windows-1252 áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
+                        // შემდეგ ვცდილობთ Windows-1252 კოდირებით
                         return File.ReadAllText(filePath, System.Text.Encoding.GetEncoding(1252));
                     }
                     catch
                     {
                         try
                         {
-                            // áƒ‘áƒáƒšáƒ áƒ•áƒáƒ áƒ˜áƒáƒœáƒ¢áƒ˜ - áƒ¡áƒ˜áƒ¡áƒ¢áƒ”áƒ›áƒ˜áƒ¡ default áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ
+                            // ბოლოს ვიყენებთ სისტემის default კოდირებას
                             return File.ReadAllText(filePath, System.Text.Encoding.Default);
                         }
                         catch
                         {
-                            // áƒ—áƒ£ áƒáƒ áƒáƒ¤áƒ”áƒ áƒ˜ áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡, áƒ•áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ— áƒáƒ áƒ˜áƒ’áƒ˜áƒœáƒáƒšáƒ¡
+                            // თუ მაინც ვერ წავიკითხეთ, ვაბრუნებთ File.ReadAllText-ის ნაგულისხმევს
                             return File.ReadAllText(filePath);
                         }
                     }
@@ -501,19 +676,29 @@ namespace BCCStudents.Presentation
             try
             {
                 var fileInfo = new FileInfo(filePath);
-                var info = $"áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜: {fileInfo.Name}\n" +
-                          $"áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ›áƒ˜áƒ¡áƒáƒ›áƒáƒ áƒ—áƒ˜: {fileInfo.FullName}\n" +
-                          $"áƒ–áƒáƒ›áƒ: {FormatFileSize(fileInfo.Length)}\n" +
-                          $"áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜: {fileInfo.CreationTime:yyyy-MM-dd HH:mm:ss}\n" +
-                          $"áƒ‘áƒáƒšáƒ áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ: {fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}\n" +
-                          $"áƒ‘áƒáƒšáƒ áƒ¬áƒ•áƒ“áƒáƒ›áƒ: {fileInfo.LastAccessTime:yyyy-MM-dd HH:mm:ss}";
+                var info = string.Format(
+                    Resources.Backup_File_Info_Text,
+                    fileInfo.Name,
+                    Environment.NewLine,
+                    fileInfo.FullName,
+                    FormatFileSize(fileInfo.Length),
+                    fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    fileInfo.LastAccessTime.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                MessageBox.Show(info, "áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    info,
+                    Resources.Backup_File_Info_Title,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    string.Format(Resources.Backup_File_Info_Error, ex.Message),
+                    Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -530,4 +715,4 @@ namespace BCCStudents.Presentation
             return $"{len:0.##} {sizes[order]}";
         }
     }
-} 
+}

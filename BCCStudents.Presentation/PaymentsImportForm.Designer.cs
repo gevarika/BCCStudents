@@ -28,162 +28,177 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.btnSelectValid = new System.Windows.Forms.Button();
-            this.btnDeselectAll = new System.Windows.Forms.Button();
-            this.btnSelectAll = new System.Windows.Forms.Button();
-            this.lblStatus = new System.Windows.Forms.Label();
-            this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.btnImport = new System.Windows.Forms.Button();
-            this.btnPreview = new System.Windows.Forms.Button();
-            this.btnSelectFile = new System.Windows.Forms.Button();
-            this.txtFilePath = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.dgvPreview = new System.Windows.Forms.DataGridView();
-            this.panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvPreview)).BeginInit();
-            this.SuspendLayout();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PaymentsImportForm));
+            panel1 = new Panel();
+            btnSelectValid = new Button();
+            btnDeselectAll = new Button();
+            btnSelectAll = new Button();
+            lblStatus = new Label();
+            progressBar = new ProgressBar();
+            btnImport = new Button();
+            btnPreview = new Button();
+            btnSelectFile = new Button();
+            txtFilePath = new TextBox();
+            label1 = new Label();
+            dgvPreview = new DataGridView();
+            panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvPreview).BeginInit();
+            SuspendLayout();
             // 
             // panel1
             // 
-            this.panel1.BackColor = System.Drawing.Color.White;
-            this.panel1.Controls.Add(this.btnSelectValid);
-            this.panel1.Controls.Add(this.btnDeselectAll);
-            this.panel1.Controls.Add(this.btnSelectAll);
-            this.panel1.Controls.Add(this.lblStatus);
-            this.panel1.Controls.Add(this.progressBar);
-            this.panel1.Controls.Add(this.btnImport);
-            this.panel1.Controls.Add(this.btnPreview);
-            this.panel1.Controls.Add(this.btnSelectFile);
-            this.panel1.Controls.Add(this.txtFilePath);
-            this.panel1.Controls.Add(this.label1);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Name = "panel1";
-            this.panel1.Padding = new System.Windows.Forms.Padding(10);
-            this.panel1.Size = new System.Drawing.Size(984, 100);
-            this.panel1.TabIndex = 0;
+            panel1.BackColor = Color.White;
+            panel1.Controls.Add(btnSelectValid);
+            panel1.Controls.Add(btnDeselectAll);
+            panel1.Controls.Add(btnSelectAll);
+            panel1.Controls.Add(lblStatus);
+            panel1.Controls.Add(progressBar);
+            panel1.Controls.Add(btnImport);
+            panel1.Controls.Add(btnPreview);
+            panel1.Controls.Add(btnSelectFile);
+            panel1.Controls.Add(txtFilePath);
+            panel1.Controls.Add(label1);
+            panel1.Dock = DockStyle.Top;
+            panel1.Location = new Point(0, 0);
+            panel1.Margin = new Padding(4, 3, 4, 3);
+            panel1.Name = "panel1";
+            panel1.Padding = new Padding(12, 12, 12, 12);
+            panel1.Size = new Size(1148, 115);
+            panel1.TabIndex = 0;
             // 
             // btnSelectValid
             // 
-            this.btnSelectValid.Enabled = false;
-            this.btnSelectValid.Location = new System.Drawing.Point(573, 10);
-            this.btnSelectValid.Name = "btnSelectValid";
-            this.btnSelectValid.Size = new System.Drawing.Size(95, 23);
-            this.btnSelectValid.TabIndex = 9;
-            this.btnSelectValid.Text = "აირჩიეთ მოქმედი";
-            this.btnSelectValid.UseVisualStyleBackColor = true;
+            btnSelectValid.Enabled = false;
+            btnSelectValid.Location = new Point(668, 12);
+            btnSelectValid.Margin = new Padding(4, 3, 4, 3);
+            btnSelectValid.Name = "btnSelectValid";
+            btnSelectValid.Size = new Size(111, 27);
+            btnSelectValid.TabIndex = 9;
+            btnSelectValid.Text = "აირჩიეთ მოქმედი";
+            btnSelectValid.UseVisualStyleBackColor = true;
             // 
             // btnDeselectAll
             // 
-            this.btnDeselectAll.Enabled = false;
-            this.btnDeselectAll.Location = new System.Drawing.Point(472, 10);
-            this.btnDeselectAll.Name = "btnDeselectAll";
-            this.btnDeselectAll.Size = new System.Drawing.Size(95, 23);
-            this.btnDeselectAll.TabIndex = 8;
-            this.btnDeselectAll.Text = "ყველას მოხსნა";
-            this.btnDeselectAll.UseVisualStyleBackColor = true;
+            btnDeselectAll.Enabled = false;
+            btnDeselectAll.Location = new Point(551, 12);
+            btnDeselectAll.Margin = new Padding(4, 3, 4, 3);
+            btnDeselectAll.Name = "btnDeselectAll";
+            btnDeselectAll.Size = new Size(111, 27);
+            btnDeselectAll.TabIndex = 8;
+            btnDeselectAll.Text = "ყველას მოხსნა";
+            btnDeselectAll.UseVisualStyleBackColor = true;
             // 
             // btnSelectAll
             // 
-            this.btnSelectAll.Enabled = false;
-            this.btnSelectAll.Location = new System.Drawing.Point(371, 10);
-            this.btnSelectAll.Name = "btnSelectAll";
-            this.btnSelectAll.Size = new System.Drawing.Size(95, 23);
-            this.btnSelectAll.TabIndex = 7;
-            this.btnSelectAll.Text = "ყველას არჩევა";
-            this.btnSelectAll.UseVisualStyleBackColor = true;
+            btnSelectAll.Enabled = false;
+            btnSelectAll.Location = new Point(433, 12);
+            btnSelectAll.Margin = new Padding(4, 3, 4, 3);
+            btnSelectAll.Name = "btnSelectAll";
+            btnSelectAll.Size = new Size(111, 27);
+            btnSelectAll.TabIndex = 7;
+            btnSelectAll.Text = "ყველას არჩევა";
+            btnSelectAll.UseVisualStyleBackColor = true;
             // 
             // lblStatus
             // 
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(13, 70);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(55, 13);
-            this.lblStatus.TabIndex = 6;
-            this.lblStatus.Text = "სტატუსი";
+            lblStatus.AutoSize = true;
+            lblStatus.Location = new Point(15, 81);
+            lblStatus.Margin = new Padding(4, 0, 4, 0);
+            lblStatus.Name = "lblStatus";
+            lblStatus.Size = new Size(62, 15);
+            lblStatus.TabIndex = 6;
+            lblStatus.Text = "სტატუსი";
             // 
             // progressBar
             // 
-            this.progressBar.Location = new System.Drawing.Point(13, 45);
-            this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(958, 23);
-            this.progressBar.TabIndex = 5;
+            progressBar.Location = new Point(15, 52);
+            progressBar.Margin = new Padding(4, 3, 4, 3);
+            progressBar.Name = "progressBar";
+            progressBar.Size = new Size(1118, 27);
+            progressBar.TabIndex = 5;
             // 
             // btnImport
             // 
-            this.btnImport.Enabled = false;
-            this.btnImport.Location = new System.Drawing.Point(876, 10);
-            this.btnImport.Name = "btnImport";
-            this.btnImport.Size = new System.Drawing.Size(95, 23);
-            this.btnImport.TabIndex = 4;
-            this.btnImport.Text = "იმპორტი";
-            this.btnImport.UseVisualStyleBackColor = true;
+            btnImport.Enabled = false;
+            btnImport.Location = new Point(1022, 12);
+            btnImport.Margin = new Padding(4, 3, 4, 3);
+            btnImport.Name = "btnImport";
+            btnImport.Size = new Size(111, 27);
+            btnImport.TabIndex = 4;
+            btnImport.Text = "იმპორტი";
+            btnImport.UseVisualStyleBackColor = true;
             // 
             // btnPreview
             // 
-            this.btnPreview.Enabled = false;
-            this.btnPreview.Location = new System.Drawing.Point(775, 10);
-            this.btnPreview.Name = "btnPreview";
-            this.btnPreview.Size = new System.Drawing.Size(95, 23);
-            this.btnPreview.TabIndex = 3;
-            this.btnPreview.Text = "პრევიუს";
-            this.btnPreview.UseVisualStyleBackColor = true;
+            btnPreview.Enabled = false;
+            btnPreview.Location = new Point(904, 12);
+            btnPreview.Margin = new Padding(4, 3, 4, 3);
+            btnPreview.Name = "btnPreview";
+            btnPreview.Size = new Size(111, 27);
+            btnPreview.TabIndex = 3;
+            btnPreview.Text = "პრევიუს";
+            btnPreview.UseVisualStyleBackColor = true;
             // 
             // btnSelectFile
             // 
-            this.btnSelectFile.Location = new System.Drawing.Point(674, 10);
-            this.btnSelectFile.Name = "btnSelectFile";
-            this.btnSelectFile.Size = new System.Drawing.Size(95, 23);
-            this.btnSelectFile.TabIndex = 2;
-            this.btnSelectFile.Text = "ფაილის არჩევა";
-            this.btnSelectFile.UseVisualStyleBackColor = true;
+            btnSelectFile.Location = new Point(786, 12);
+            btnSelectFile.Margin = new Padding(4, 3, 4, 3);
+            btnSelectFile.Name = "btnSelectFile";
+            btnSelectFile.Size = new Size(111, 27);
+            btnSelectFile.TabIndex = 2;
+            btnSelectFile.Text = "ფაილის არჩევა";
+            btnSelectFile.UseVisualStyleBackColor = true;
             // 
             // txtFilePath
             // 
-            this.txtFilePath.Location = new System.Drawing.Point(89, 12);
-            this.txtFilePath.Name = "txtFilePath";
-            this.txtFilePath.ReadOnly = true;
-            this.txtFilePath.Size = new System.Drawing.Size(276, 20);
-            this.txtFilePath.TabIndex = 1;
+            txtFilePath.Location = new Point(104, 14);
+            txtFilePath.Margin = new Padding(4, 3, 4, 3);
+            txtFilePath.Name = "txtFilePath";
+            txtFilePath.ReadOnly = true;
+            txtFilePath.Size = new Size(321, 23);
+            txtFilePath.TabIndex = 1;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 15);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(119, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "ფაილის მისამართი:";
+            label1.AutoSize = true;
+            label1.Location = new Point(15, 17);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(131, 15);
+            label1.TabIndex = 0;
+            label1.Text = "ფაილის მისამართი:";
             // 
             // dgvPreview
             // 
-            this.dgvPreview.AllowUserToAddRows = false;
-            this.dgvPreview.AllowUserToDeleteRows = false;
-            this.dgvPreview.BackgroundColor = System.Drawing.Color.White;
-            this.dgvPreview.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.dgvPreview.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvPreview.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dgvPreview.Location = new System.Drawing.Point(0, 100);
-            this.dgvPreview.Name = "dgvPreview";
-            this.dgvPreview.Size = new System.Drawing.Size(984, 461);
-            this.dgvPreview.TabIndex = 1;
+            dgvPreview.AllowUserToAddRows = false;
+            dgvPreview.AllowUserToDeleteRows = false;
+            dgvPreview.BackgroundColor = Color.White;
+            dgvPreview.BorderStyle = BorderStyle.None;
+            dgvPreview.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvPreview.Dock = DockStyle.Fill;
+            dgvPreview.Location = new Point(0, 115);
+            dgvPreview.Margin = new Padding(4, 3, 4, 3);
+            dgvPreview.Name = "dgvPreview";
+            dgvPreview.Size = new Size(1148, 532);
+            dgvPreview.TabIndex = 1;
             // 
             // PaymentsImportForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(984, 561);
-            this.Controls.Add(this.dgvPreview);
-            this.Controls.Add(this.panel1);
-            this.MinimumSize = new System.Drawing.Size(800, 400);
-            this.Name = "PaymentsImportForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "გადახდების იმპორტი";
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvPreview)).EndInit();
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1148, 647);
+            Controls.Add(dgvPreview);
+            Controls.Add(panel1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 3, 4, 3);
+            MinimumSize = new Size(931, 456);
+            Name = "PaymentsImportForm";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "გადახდების იმპორტი";
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvPreview).EndInit();
+            ResumeLayout(false);
 
         }
 

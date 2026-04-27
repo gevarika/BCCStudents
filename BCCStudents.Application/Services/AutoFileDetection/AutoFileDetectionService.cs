@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Application.Interfaces;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using System.Security.Cryptography;
 
 namespace BCCStudents.Application.Services.AutoFileDetection
 {
     /// <summary>
-    /// áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒáƒ¦áƒ›áƒáƒ©áƒ”áƒœáƒ˜áƒ¡ áƒ¡áƒ”áƒ áƒ•áƒ˜áƒ¡áƒ˜
-    /// áƒ›áƒáƒœáƒ˜áƒ¢áƒáƒ áƒ”áƒ‘áƒ¡ áƒ¬áƒ˜áƒœáƒáƒ¡áƒ¬áƒáƒ  áƒ’áƒáƒœáƒ¡áƒáƒ–áƒ¦áƒ•áƒ áƒ£áƒš áƒ¡áƒáƒ¥áƒáƒ¦áƒáƒšáƒ“áƒ”áƒ¡ áƒáƒ®áƒáƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+    /// ავტომატური ფაილის აღმოჩენის სერვისი
+    /// მონიტორებს წინასწარ განსაზღვრულ საქაღალდეში ახალი გადასახდების ფაილებისთვის
     /// </summary>
     public class AutoFileDetectionService
     {
@@ -27,15 +20,15 @@ namespace BCCStudents.Application.Services.AutoFileDetection
         }
 
         /// <summary>
-        /// áƒáƒ¦áƒ›áƒáƒáƒ©áƒ”áƒœáƒ¡ áƒáƒ®áƒáƒš áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ¡ áƒ¡áƒáƒ¥áƒáƒ¦áƒáƒšáƒ“áƒ”áƒ¨áƒ˜
-        /// áƒ›áƒ®áƒáƒšáƒáƒ“ áƒ”áƒ áƒ—áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒáƒ¦áƒ›áƒáƒáƒ©áƒ”áƒœáƒ¡ (áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜ áƒœáƒáƒžáƒáƒ•áƒœáƒ˜)
+        /// აღმოაჩენს ახალ გადასახდების ფაილებს საქაღალდეში
+        /// მხოლოდ ერთ ფაილს აბრუნებს (პირველი ნაპოვნი)
         /// </summary>
-        /// <returns>áƒáƒ®áƒáƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒ (áƒ›áƒáƒ¥áƒ¡áƒ˜áƒ›áƒ£áƒ› 1 áƒ”áƒšáƒ”áƒ›áƒ”áƒœáƒ¢áƒ˜)</returns>
+        /// <returns>ახალი ფაილების სია (მაქსიმუმ 1 ელემენტი)</returns>
         public async Task<List<DetectedFile>> DetectNewFilesAsync()
         {
             var newFiles = new List<DetectedFile>();
 
-            // áƒ¨áƒ”áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒáƒ— áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¤áƒ£áƒœáƒ¥áƒªáƒ˜áƒ áƒ©áƒáƒ áƒ—áƒ£áƒšáƒ˜
+            // შევამოწმოთ, არის თუ არა ფუნქცია ჩართული
             if (!_config.Enabled)
             {
                 return newFiles;
@@ -48,7 +41,7 @@ namespace BCCStudents.Application.Services.AutoFileDetection
 
             try
             {
-                // áƒ›áƒáƒ•áƒ«áƒ”áƒ‘áƒœáƒáƒ— áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜ áƒ¨áƒ”áƒ¡áƒáƒ‘áƒáƒ›áƒ˜áƒ¡áƒ˜ áƒœáƒ˜áƒ›áƒ£áƒ¨áƒ˜áƒ—
+                // მოვძებნოთ ფაილები შესაბამისი ნიმუშით
                 var files = Directory.GetFiles(_config.WatchFolderPath, _config.FileNamePattern, SearchOption.TopDirectoryOnly);
 
                 foreach (var filePath in files)
@@ -57,14 +50,14 @@ namespace BCCStudents.Application.Services.AutoFileDetection
                     {
                         var fileInfo = new FileInfo(filePath);
 
-                        // áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒ›áƒ®áƒáƒ áƒ“áƒáƒ­áƒ”áƒ áƒ˜áƒš áƒ’áƒáƒ¤áƒáƒ áƒ—áƒáƒ”áƒ‘áƒáƒ¡
+                        // შევამოწმოთ მხარდაჭერილი გაფართოება
                         if (!_config.SupportedExtensions.Contains(fileInfo.Extension.ToLower()))
                             continue;
 
-                        // áƒ’áƒáƒ›áƒáƒ•áƒ—áƒ•áƒáƒšáƒáƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ hash
+                        // გამოვთვალოთ ფაილის hash
                         var fileHash = await CalculateFileHashAsync(filePath);
 
-                        // áƒ¨áƒ”áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒáƒ— áƒ£áƒ™áƒ•áƒ” áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ áƒ—áƒ£ áƒáƒ áƒ
+                        // შევამოწმოთ უკვე იმპორტირებულია თუ არა
                         if (!await _fileTrackingRepository.IsFileAlreadyImportedAsync(fileHash))
                         {
                             newFiles.Add(new DetectedFile
@@ -76,31 +69,31 @@ namespace BCCStudents.Application.Services.AutoFileDetection
                                 CreatedAt = fileInfo.CreationTime,
                                 ModifiedAt = fileInfo.LastWriteTime
                             });
-                            
-                            // áƒ›áƒ®áƒáƒšáƒáƒ“ áƒ”áƒ áƒ—áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒáƒ¦áƒ›áƒáƒáƒ©áƒ”áƒœáƒ¡
+
+                            // მხოლოდ ერთი ფაილი აღმოაჩენს
                             break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        // áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ˜áƒ¡áƒ
-                        Console.WriteLine($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡ {filePath}: {ex.Message}");
+                        // ლოგირება შეცდომისას
+                        Console.WriteLine($"შეცდომა ფაილის შემოწმებისას {filePath}: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¡áƒáƒ¥áƒáƒ¦áƒáƒšáƒ“áƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡ {_config.WatchFolderPath}: {ex.Message}");
+                Console.WriteLine($"შეცდომა საქაღალდის შემოწმებისას {_config.WatchFolderPath}: {ex.Message}");
             }
 
             return newFiles;
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ›áƒáƒ—áƒ•áƒšáƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ MD5 hash-áƒ¡
+        /// გამოითვლის ფაილის MD5 hash-ს
         /// </summary>
-        /// <param name="filePath">áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒ–áƒ</param>
-        /// <returns>áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ hash</returns>
+        /// <param name="filePath">ფაილის გზა</param>
+        /// <returns>ფაილის hash</returns>
         private async Task<string> CalculateFileHashAsync(string filePath)
         {
             using (var md5 = MD5.Create())
@@ -114,10 +107,10 @@ namespace BCCStudents.Application.Services.AutoFileDetection
         }
 
         /// <summary>
-        /// áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒš áƒ¤áƒáƒ˜áƒšáƒ¡
+        /// ლოგირებს იმპორტირებულ ფაილს
         /// </summary>
-        /// <param name="filePath">áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒ–áƒ</param>
-        /// <param name="importedBy">áƒ•áƒ˜áƒœ áƒ’áƒáƒáƒ™áƒ”áƒ—áƒ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜</param>
+        /// <param name="filePath">ფაილის გზა</param>
+        /// <param name="importedBy">ვინ გააკეთა იმპორტი</param>
         public async Task LogImportedFileAsync(string filePath, string importedBy)
         {
             try
@@ -139,15 +132,15 @@ namespace BCCStudents.Application.Services.AutoFileDetection
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡ {filePath}: {ex.Message}");
+                Console.WriteLine($"შეცდომა ფაილის ლოგირებისას {filePath}: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ£áƒ™áƒ•áƒ” áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜
+        /// შეამოწმებს არის თუ არა ფაილი უკვე იმპორტირებული
         /// </summary>
-        /// <param name="filePath">áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒ–áƒ</param>
-        /// <returns>true áƒ—áƒ£ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ£áƒ™áƒ•áƒ” áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ</returns>
+        /// <param name="filePath">ფაილის გზა</param>
+        /// <returns>true თუ ფაილი უკვე იმპორტირებულია</returns>
         public async Task<bool> IsFileAlreadyImportedAsync(string filePath)
         {
             try
@@ -157,7 +150,7 @@ namespace BCCStudents.Application.Services.AutoFileDetection
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡ {filePath}: {ex.Message}");
+                Console.WriteLine($"შეცდომა ფაილის შემოწმებისას {filePath}: {ex.Message}");
                 return false;
             }
         }

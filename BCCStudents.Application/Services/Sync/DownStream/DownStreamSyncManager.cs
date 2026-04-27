@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.DownStream
 {
     /// <summary>
-    /// áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒáƒ“ áƒ˜áƒ«áƒáƒ®áƒ”áƒ‘áƒ¡ DownStreamSyncService-áƒ¡ (áƒ›áƒáƒ’. áƒ§áƒáƒ•áƒ”áƒš 5 áƒ¬áƒ£áƒ—áƒ¨áƒ˜).
+    /// პერიოდულად იძახებს DownStreamSyncService-ს (მაგ. ყოველ 5 წუთში).
     /// </summary>
     public sealed class DownStreamSyncManager : IDisposable, IDownStreamSyncManager
     {
@@ -22,7 +16,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
         private bool _disposed;
 
         /// <summary>
-        /// Event áƒ áƒáƒ›áƒ”áƒšáƒ˜áƒª áƒ˜áƒ«áƒáƒ®áƒ”áƒ‘áƒ áƒ¡áƒ˜áƒœáƒ¥áƒ áƒáƒœáƒ˜áƒ–áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡
+        /// Event რომელიც იძახება სინქრონიზაციის დასრულებისას
         /// </summary>
         public event EventHandler<SyncStatusEventArgs> SyncCompleted;
 
@@ -77,7 +71,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             finally
             {
                 Interlocked.Exchange(ref _isRunning, 0);
-                // Event-áƒ˜áƒ¡ áƒ’áƒáƒ›áƒáƒ«áƒáƒ®áƒ”áƒ‘áƒ UI thread-áƒ–áƒ”
+                // Event-ის გამოძახება UI thread-ზე
                 if (SyncCompleted != null && result != null)
                 {
                     var args = new SyncStatusEventArgs

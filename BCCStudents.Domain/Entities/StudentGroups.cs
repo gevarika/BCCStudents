@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BCCStudents.Domain.Entities {
+﻿namespace BCCStudents.Domain.Entities
+{
     public class StudentGroups
     {
         public int Id { get; set; }
@@ -19,7 +14,7 @@ namespace BCCStudents.Domain.Entities {
         public double Discount { get; set; }
         //public bool ActiveStatus { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public bool IsDeleted {  get; set; }
+        public bool IsDeleted { get; set; }
     }
 }
 

@@ -1,24 +1,24 @@
-﻿using System;
-using System.Windows.Forms;
-
-using Microsoft.Extensions.DependencyInjection;
-using BCCStudents.Infrastructure;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Repositories;
+using BCCStudents.Application.Interfaces; // IConnectionStatusService-სთვის
 using BCCStudents.Application.Services;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Application.Services.Update;
 using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Application.Services.Sync;
-using BCCStudents.Application.Services.Sync.UpStream;
 using BCCStudents.Application.Services.Sync.DownStream;
-using BCCStudents.Presentation.Services;
+using BCCStudents.Application.Services.Sync.UpStream;
+using BCCStudents.Application.Services.Update;
+using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Infrastructure.Data;
+using BCCStudents.Infrastructure.Repositories;
 using BCCStudents.Infrastructure.Services; // ConnectionStatusService-სთვის
-using BCCStudents.Application.Interfaces; // IConnectionStatusService-სთვის
+using BCCStudents.Presentation.Services;
+using Microsoft.Extensions.DependencyInjection;
+using static BCCStudents.Presentation.LoginForm;
+using static BCCStudents.Presentation.MainForm;
+using static BCCStudents.Presentation.StudentManagementForm;
 
 namespace BCCStudents.Presentation
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     static class Program
     {
         /// <summary>
@@ -42,9 +42,12 @@ namespace BCCStudents.Presentation
                 // თუ migration ვერ მოხერხდა, გავაგრძელოთ default settings-ებით
                 var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
                 Directory.CreateDirectory(logDir);
-                File.AppendAllText(Path.Combine(logDir, "settings-migration.txt"), 
+                File.AppendAllText(Path.Combine(logDir, "settings-migration.txt"),
                     $"[{DateTime.Now}] Settings migration failed: {ex.Message}\n\n");
             }
+
+            var externalConfig = ExternalConfigLoader.Load();
+            ExternalConfigLoader.ApplyOverrides(externalConfig);
 
             AppDomain.CurrentDomain.FirstChanceException += (sender, e) =>
             {
@@ -86,28 +89,69 @@ namespace BCCStudents.Presentation
                     catch { }
                     args.SetObserved(); // საჭირო რომ პროცესმა არ "ჩაიფერფლოს"
                 };
-                // ბაზის ინიციალიზაცია - ახალი ლოგიკა!
-                // ვიღებთ ConnectionStatusService-ს DI-თ და ვამოწმებთ კავშირს.
-                // MainForm-საც DI-თ გადაეცემა იგივე სერვისი და თავად ნახავს სტატუსს.
-                var connectionService = serviceProvider.GetRequiredService<IConnectionStatusService>();
-                connectionService.CheckConnection(); // კავშირის საწყისი შემოწმება
+
+                // --- Emergency Setup Mode: პირველ რიგში შევამოწმოთ MySQL კავშირი ---
+                var appStatus = serviceProvider.GetRequiredService<IApplicationStatus>();
+                appStatus.IsDatabaseOnline = false;
+                appStatus.IsAuthenticated = false;
 
                 var configService = serviceProvider.GetRequiredService<IConfigurationService>();
+                var initScriptPath = ExternalConfigLoader.ResolveInitScriptPath(externalConfig);
+                if (!DatabaseInitializer.TryEnsureLocalDatabase(configService, initScriptPath, out var initError) &&
+                    !string.IsNullOrWhiteSpace(initError))
+                {
+                    MessageBox.Show(
+                        $"ბაზის ინიციალიზაცია ვერ შესრულდა: {initError}",
+                        "ინიციალიზაციის შეცდომა",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+
+                var dbHelper = serviceProvider.GetRequiredService<DatabaseHelper>();
+                bool canConnect;
+                try
+                {
+                    canConnect = dbHelper.TestConnectionAsync().GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    canConnect = false;
+                }
+
+                if (!canConnect)
+                {
+                    MessageBox.Show(
+                        "ბაზასთან კავშირი ვერ დამყარდა. პროგრამა ჩაირთვება შეზღუდულ რეჟიმში პარამეტრების გასასწორებლად.",
+                        "კავშირი ვერ დამყარდა",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    appStatus.IsDatabaseOnline = false;
+                }
+                else
+                {
+                    appStatus.IsDatabaseOnline = true;
+                }
 
                 var userService = serviceProvider.GetRequiredService<IUserService>();
                 var upStreamManager = serviceProvider.GetRequiredService<IUpStreamSyncManager>();
                 var downStreamManager = serviceProvider.GetRequiredService<IDownStreamSyncManager>();
-                upStreamManager.Start();
+
+                // UpStreamSyncManager აღარ იწყება აქ - იწყება MainForm_Load-ში ავტორიზაციის შემდეგ
                 System.Windows.Forms.Application.ApplicationExit += (sender, args) =>
                 {
                     upStreamManager.Stop();
                     downStreamManager.Stop();
                 };
 
-                //Form initialForm = userService.IsUserRegistered() ? (Form)serviceProvider.GetRequiredService<LoginForm>() :  (Form)serviceProvider.GetRequiredService<RegisterForm>() && UserSession.FirstStart = true ;
                 Form initialForm;
 
-                if (userService.IsUserRegistered())
+                if (!appStatus.IsDatabaseOnline)
+                {
+                    // პირველი გაშვება / კავშირი ვერ დამყარდა -> გავუშვათ SetupWizardForm
+                    initialForm = serviceProvider.GetRequiredService<SetupWizardForm>();
+                }
+                else if (userService.IsUserRegistered())
                 {
                     initialForm = serviceProvider.GetRequiredService<LoginForm>();
                 }
@@ -119,7 +163,7 @@ namespace BCCStudents.Presentation
 
                 System.Windows.Forms.Application.Run(initialForm);
             }
-            
+
 
         }
         private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
@@ -140,6 +184,9 @@ namespace BCCStudents.Presentation
             // Configuration Service - საჭიროა DB კავშირის სტრიქონის მისაღებად
             services.AddSingleton<IConfigurationService, ConfigurationService>();
 
+            // Application Status - გლობალური აპლიკაციის მდგომარეობა (DB/ავტორიზაცია)
+            services.AddSingleton<IApplicationStatus, ApplicationStatus>();
+
             // Database Helper - გამოიყენება ConnectionStatusService-ში და DatabaseConnectionChecker-ში კავშირის შესამოწმებლად
             services.AddSingleton<DatabaseHelper>();
 
@@ -158,11 +205,11 @@ namespace BCCStudents.Presentation
             // Connection Status Service (Singleton - მთელი აპლიკაციისთვის ერთი ინსტანსი)
             services.AddSingleton<IConnectionStatusService, BCCStudents.Infrastructure.Services.ConnectionStatusService>();
 
-            // Connection Monitor Service (Singleton)
-            services.AddSingleton<ConnectionMonitorService>();
+            // Connection Monitor Service (Singleton) - Clean Architecture-ის დაცვით
+            services.AddSingleton<BCCStudents.Application.Interfaces.IConnectionMonitor, BCCStudents.Infrastructure.Services.ConnectionMonitorService>();
 
             // Backup Manager (Singleton)
-            services.AddSingleton<BCCStudents.Infrastructure.Services.BackupManager>();
+            services.AddSingleton<BCCStudents.Infrastructure.Services.BackupService>();
 
             // Admin Code Manager (Singleton)
             services.AddSingleton<BCCStudents.Infrastructure.Services.AdminCodeManager>();
@@ -184,6 +231,7 @@ namespace BCCStudents.Presentation
             services.AddScoped<IPendingStudentGroupRepository, PendingStudentGroupRepository>();
             services.AddScoped<IFileTrackingRepository, FileTrackingRepository>();
             services.AddScoped<IUpStreamSyncRepository, UpStreamSyncRepository>();
+            services.AddScoped<BCCStudents.Domain.Interfaces.ISystemConfigurationRepository, BCCStudents.Infrastructure.Repositories.SystemConfigurationRepository>();
 
 
             // --- 3. Application Services (Use Cases) ---
@@ -193,21 +241,27 @@ namespace BCCStudents.Presentation
             services.AddScoped<IUserService, UserService>(); // ეს იყო IUserService -> UserService
             services.AddScoped<IGroupService, GroupService>(); // ეს უნდა იყოს IGroupService -> GroupService
 
+            // User Context - Singleton რომ მიმდინარე მომხმარებლის ინფორმაცია იყოს ერთი სისტემაში
+            services.AddSingleton<BCCStudents.Application.Interfaces.IUserContext, BCCStudents.Infrastructure.Services.UserContext>();
+            services.AddScoped<BCCStudents.Application.Interfaces.IStudentGroupsService, BCCStudents.Application.Services.StudentGroupsService>();
+            services.AddScoped<BCCStudents.Application.Interfaces.IStudentSubGroupsService, BCCStudents.Application.Services.StudentSubGroupsService>();
+
             // Import & Payment Services
-            services.AddScoped<IImportService, ImportService>();
+            services.AddScoped<IImportService, ImportServiceV2>();
             services.AddScoped<IExcelPaymentImportService, ExcelPaymentImportService>();
             services.AddScoped<IPendingStudentService, PendingStudentService>();
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISubGroupService, SubGroupService>();
-            services.AddScoped<IConnectionService, ConnectionService>();
             services.AddScoped<IStatisticsService, StatisticsService>();
             services.AddScoped<IPaymentDateService, PaymentDateService>();
             services.AddScoped<IPaymentDescriptionAnalyzer, PaymentDescriptionAnalyzer>();
             services.AddScoped<IStudentCodeGenerator, StudentCodeGenerator>();
             services.AddScoped<ICleanupService, CleanupService>();
             services.AddScoped<IStudentExportService, StudentExportService>();
+            services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
             services.AddSingleton<IUpdateService, UpdateService>();
+            services.AddScoped<IBackupService, BackupService>();
 
             // Sync Services
             services.AddSingleton<ISyncLogger, SyncLogger>(); // SyncLogger არის Infrastructure-ში და გამოიყენება Application/Sync-ში
@@ -251,27 +305,130 @@ namespace BCCStudents.Presentation
 
             // --- 4. Presentation (Forms) ---
             // აქ მხოლოდ UI ელემენტები რეგისტრირდება (Transient).
+            services.AddTransient<SetupWizardForm>();
             services.AddTransient<LoginForm>();
             services.AddTransient<RegisterForm>();
             services.AddTransient<MainForm>();
+            services.AddTransient<mainFormFactory>(servicepProvider =>
+            {
+
+                return () => servicepProvider.GetRequiredService<MainForm>();
+            });
             services.AddTransient<StudentManagementForm>();
+            services.AddTransient<StudentManagementFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას StudentManagementForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<StudentManagementForm>();
+            });
             services.AddTransient<PaymentForm>();
+            services.AddTransient<PaymentFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას PaymentForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<PaymentForm>();
+            });
+            services.AddTransient<PaymentTestForm>();
+            services.AddTransient<PaymentTestFormFactory>(serviceProvider =>
+            {
+                return () => serviceProvider.GetRequiredService<PaymentTestForm>();
+            });
+            services.AddTransient<BalanceTransferForm>();
+            services.AddTransient<BalanceTransferFormFactory>(serviceProvider =>
+            {
+                return () => serviceProvider.GetRequiredService<BalanceTransferForm>();
+            });
             services.AddTransient<AdminPanelForm>();
+            services.AddTransient<AdminPanelFormFactory>(servicepProvider =>
+            {
+                return () => servicepProvider.GetRequiredService<AdminPanelForm>();
+            });
+            services.AddTransient<BackupManagementForm>();
+            services.AddTransient<BackupManagementFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას BackupManagementForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<BackupManagementForm>();
+            });
             services.AddTransient<GroupManagementForm>();
+            services.AddTransient<GroupManFormFactory>(serviceProvider =>
+            {
+                return () => serviceProvider.GetRequiredService<GroupManagementForm>();
+            });
             services.AddTransient<GroupsEdit>();
-            services.AddTransient<ImportForm>();
+            services.AddTransient<GroupsEditFormFactory>(serviceProvider =>
+            {
+                return () => serviceProvider.GetRequiredService<GroupsEdit>();
+            });
+            services.AddTransient<ImportFormV2>();
+            services.AddTransient<ImportFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას ImportForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<ImportFormV2>();
+            });
             services.AddTransient<PendingStudentsForm>();
+            services.AddTransient<PendingStudentsFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას PendingStudentsForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<PendingStudentsForm>();
+            });
             services.AddTransient<SetStudyStartDateForm>();
+            services.AddTransient<SetStudyStartDateFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას StudentManagementForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<SetStudyStartDateForm>();
+            });
+            services.AddTransient<StatisticsForm>();
+            services.AddTransient<StatisticsFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას StudentManagementForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<StatisticsForm>();
+            });
             services.AddTransient<StudentsEditForm>();
+            services.AddTransient<StudentsEditFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას StudentsEditForm და გადასცეს მას ყველა დამოკიდებულება (IUserContext-ის ჩათვლით).
+                return () => serviceProvider.GetRequiredService<StudentsEditForm>();
+            });
             services.AddTransient<PaymentsImportForm>();
-            services.AddTransient<StudyStartDateManager>(); // ⚠️ ეს არის Service, მაგრამ რადგან არ აქვს I-ინტერფეისი, დროებით დავტოვოთ აქ.
             services.AddTransient<PaymentImportHistoryForm>();
             services.AddTransient<FinanceManagementForm>();
+            services.AddTransient<FinanceFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას StudentManagementForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<FinanceManagementForm>();
+            });
             services.AddTransient<UnmatchedPaymentsForm>();
             services.AddTransient<LogViewerForm>();
-            services.AddTransient<ImportTestForm>();
+            services.AddTransient<LogViewerFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას LogViewerForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<LogViewerForm>();
+            });
             services.AddTransient<UpdateProgressForm>();
             services.AddTransient<PaymentTestForm>();
+            services.AddTransient<FailedStudentsForm>();
+            services.AddTransient<FailedStudentsFormFactory>(serviceProvider =>
+            {
+                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
+                // რათა შექმნას LogViewerForm და გადასცეს მას ყველა დამოკიდებულება.
+                return () => serviceProvider.GetRequiredService<FailedStudentsForm>();
+            });
+
+            // User Management Form
+            services.AddTransient<UserManagementForm>();
+            services.AddTransient<UserManagementFormFactory>(serviceProvider =>
+            {
+                return () => serviceProvider.GetRequiredService<UserManagementForm>();
+            });
+
         }
     }
 }

@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services.AutoFileDetection;
-using static BCCStudents.Domain.Entities.UserSession;
-using BCCStudents.Application.Services;
-using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -50,7 +44,7 @@ namespace BCCStudents.Presentation
             try
             {
                 var newFiles = await _detectionService.DetectNewFilesAsync();
-                
+
                 if (newFiles.Count > 0)
                 {
                     ShowImportNotificationAsync(newFiles);
@@ -71,10 +65,10 @@ namespace BCCStudents.Presentation
 
             // გახსენით შეტყობინების ფორმა
             var notificationForm = new AutoImportNotificationForm(newFiles, _detectionService, _importService, _descriptionAnalyzer);
-            
+
             // ფორმის ჩვენება
             var result = notificationForm.ShowDialog();
-            
+
             // თუ მომხმარებელმა აირჩია ფაილები და დააჭირა OK
             if (result == DialogResult.OK && notificationForm.SelectedFiles.Count > 0)
             {
@@ -94,23 +88,23 @@ namespace BCCStudents.Presentation
                 if (selectedFiles.Count == 1)
                 {
                     var file = selectedFiles[0];
-                    
+
                     // გახსენით იმპორტის ფორმა
                     var importForm = new PaymentsImportForm(_importService, _descriptionAnalyzer);
-                    
+
                     // დააყენეთ არჩეული ფაილი
                     importForm.SetSelectedFile(file.FilePath);
-                    
+
                     // ჩვენება ფორმის
                     var dialogResult = importForm.ShowDialog();
-                    
+
                     // შედეგის შემოწმება
                     if (importForm.Result == ImportFormResult.Success)
                     {
                         // ლოგირება წარმატებული იმპორტის
                         var currentUser = _userService.GetUserById(UserSession.Id);
                         await _detectionService.LogImportedFileAsync(file.FilePath, currentUser?.FullName ?? "Unknown");
-                        
+
                         MessageBox.Show("იმპორტი წარმატებით დასრულდა!", "იმპორტი", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else if (importForm.Result == ImportFormResult.Failed)

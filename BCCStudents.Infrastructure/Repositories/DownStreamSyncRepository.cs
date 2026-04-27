@@ -1,26 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Interfaces;
 using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class DownStreamSyncRepository : IDownStreamSyncRepository
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
         private readonly object _schemaLock = new object();
         private bool _schemaEnsured;
 
-        public DownStreamSyncRepository(DatabaseHelper databaseHelper, ISyncLogger logger)
+        public DownStreamSyncRepository(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -29,7 +23,7 @@ namespace BCCStudents.Infrastructure.Repositories
             EnsureSchema();
             cancellationToken.ThrowIfCancellationRequested();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 const string sql = @"SELECT TableName, LastSyncedAt, LastSyncedId
@@ -61,7 +55,7 @@ namespace BCCStudents.Infrastructure.Repositories
             EnsureSchema();
             cancellationToken.ThrowIfCancellationRequested();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 const string sql = @"INSERT INTO SyncState (TableName, LastSyncedAt, LastSyncedId)
@@ -112,7 +106,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                  Balance = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(Balance), Balance),
                                  UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(UpdatedAt), UpdatedAt);";
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -157,7 +151,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                  StudentCount = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(StudentCount), StudentCount),
                                  UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(UpdatedAt), UpdatedAt);";
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -201,7 +195,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                  Status = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(Status), Status),
                                  UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(UpdatedAt), UpdatedAt);";
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -246,7 +240,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                  UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(UpdatedAt), UpdatedAt),
                                  IsDeleted = 0;";
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -291,7 +285,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                  UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt, VALUES(UpdatedAt), UpdatedAt),
                                  IsDeleted = 0;";
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -303,6 +297,367 @@ namespace BCCStudents.Infrastructure.Repositories
                         {
                             cancellationToken.ThrowIfCancellationRequested();
                             FillStudentSubGroupParameters(command, item);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertPaymentsAsync(IReadOnlyList<Payment> payments, CancellationToken cancellationToken = default)
+        {
+            if (payments == null || payments.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO Payments
+                                (Id, StudentId, GroupId, Amount, PaymentDate, PaymentStatus, Description, PayerName, PersonalId, UpdatedAt, IsDeleted)
+                                VALUES
+                                (@Id, @StudentId, @GroupId, @Amount, @PaymentDate, @PaymentStatus, @Description, @PayerName, @PersonalId, @UpdatedAt, @IsDeleted)
+                                ON DUPLICATE KEY UPDATE
+                                 StudentId = VALUES(StudentId),
+                                 GroupId = VALUES(GroupId),
+                                 Amount = VALUES(Amount),
+                                 PaymentDate = VALUES(PaymentDate),
+                                 PaymentStatus = VALUES(PaymentStatus),
+                                 Description = VALUES(Description),
+                                 PayerName = VALUES(PayerName),
+                                 PersonalId = VALUES(PersonalId),
+                                 UpdatedAt = VALUES(UpdatedAt),
+                                 IsDeleted = VALUES(IsDeleted);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PreparePaymentParameters(command);
+                        foreach (var payment in payments)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillPaymentParameters(command, payment);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertFailedPaymentsAsync(IReadOnlyList<FailedPayment> payments, CancellationToken cancellationToken = default)
+        {
+            if (payments == null || payments.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO FailedPayments
+                                (Id, RowNumber, PaymentDate, Amount, PersonalId, Description, Reason, CreatedAt)
+                                VALUES
+                                (@Id, @RowNumber, @PaymentDate, @Amount, @PersonalId, @Description, @Reason, @CreatedAt)
+                                ON DUPLICATE KEY UPDATE
+                                 RowNumber = VALUES(RowNumber),
+                                 PaymentDate = VALUES(PaymentDate),
+                                 Amount = VALUES(Amount),
+                                 PersonalId = VALUES(PersonalId),
+                                 Description = VALUES(Description),
+                                 Reason = VALUES(Reason),
+                                 CreatedAt = VALUES(CreatedAt);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PrepareFailedPaymentParameters(command);
+                        foreach (var payment in payments)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillFailedPaymentParameters(command, payment);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertImportedPaymentLogsAsync(IReadOnlyList<ImportedPaymentLog> logs, CancellationToken cancellationToken = default)
+        {
+            if (logs == null || logs.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO ImportedPaymentsLog
+                                (Id, PaymentDate, Amount, PersonalId, Description, ImportSource, CreatedAt)
+                                VALUES
+                                (@Id, @PaymentDate, @Amount, @PersonalId, @Description, @ImportSource, @CreatedAt)
+                                ON DUPLICATE KEY UPDATE
+                                 PaymentDate = VALUES(PaymentDate),
+                                 Amount = VALUES(Amount),
+                                 PersonalId = VALUES(PersonalId),
+                                 Description = VALUES(Description),
+                                 ImportSource = VALUES(ImportSource),
+                                 CreatedAt = VALUES(CreatedAt);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PrepareImportedPaymentLogParameters(command);
+                        foreach (var item in logs)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillImportedPaymentLogParameters(command, item);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertUsersAsync(IReadOnlyList<UserModel> users, CancellationToken cancellationToken = default)
+        {
+            if (users == null || users.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO Users
+                                (Id, Username, FullName, Email, Password, Role, CreatedAt, LastLogin)
+                                VALUES
+                                (@Id, @Username, @FullName, @Email, @Password, @Role, @CreatedAt, @LastLogin)
+                                ON DUPLICATE KEY UPDATE
+                                 Username = VALUES(Username),
+                                 FullName = VALUES(FullName),
+                                 Email = VALUES(Email),
+                                 Password = VALUES(Password),
+                                 Role = VALUES(Role),
+                                 CreatedAt = VALUES(CreatedAt),
+                                 LastLogin = VALUES(LastLogin);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PrepareUserParameters(command);
+                        foreach (var user in users)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillUserParameters(command, user);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertSystemConfigAsync(IReadOnlyList<SystemConfiguration> configs, CancellationToken cancellationToken = default)
+        {
+            if (configs == null || configs.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO SystemConfig
+                                (Id, `Key`, `Value`, `Type`, `Description`, CreatedAt, UpdatedAt)
+                                VALUES
+                                (@Id, @Key, @Value, @Type, @Description, @CreatedAt, @UpdatedAt)
+                                ON DUPLICATE KEY UPDATE
+                                 `Key` = VALUES(`Key`),
+                                 `Value` = VALUES(`Value`),
+                                 `Type` = VALUES(`Type`),
+                                 `Description` = VALUES(`Description`),
+                                 CreatedAt = VALUES(CreatedAt),
+                                 UpdatedAt = VALUES(UpdatedAt);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PrepareSystemConfigParameters(command);
+                        foreach (var item in configs)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillSystemConfigParameters(command, item);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertPendingStudentsAsync(IReadOnlyList<PendingStudent> students, CancellationToken cancellationToken = default)
+        {
+            if (students == null || students.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO PendingStudents
+                                (Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
+                                 TuitionFee, DiscountPercentage, StudentCode, IdCardPath, AdditionalDocsPath, user_id, CreatedAt)
+                                VALUES
+                                (@Id, @FirstName, @LastName, @Age, @ParentName, @PhoneNumber, @IdNumb, @Address,
+                                 @TuitionFee, @DiscountPercentage, @StudentCode, @IdCardPath, @AdditionalDocsPath, @UserId, @CreatedAt)
+                                ON DUPLICATE KEY UPDATE
+                                 FirstName = VALUES(FirstName),
+                                 LastName = VALUES(LastName),
+                                 Age = VALUES(Age),
+                                 ParentName = VALUES(ParentName),
+                                 PhoneNumber = VALUES(PhoneNumber),
+                                 Id_Numb = VALUES(Id_Numb),
+                                 Address = VALUES(Address),
+                                 TuitionFee = VALUES(TuitionFee),
+                                 DiscountPercentage = VALUES(DiscountPercentage),
+                                 StudentCode = VALUES(StudentCode),
+                                 IdCardPath = VALUES(IdCardPath),
+                                 AdditionalDocsPath = VALUES(AdditionalDocsPath),
+                                 user_id = VALUES(user_id),
+                                 CreatedAt = VALUES(CreatedAt);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PreparePendingStudentParameters(command);
+                        foreach (var item in students)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillPendingStudentParameters(command, item);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertPendingStudentGroupsAsync(IReadOnlyList<PendingStudentGroup> groups, CancellationToken cancellationToken = default)
+        {
+            if (groups == null || groups.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO PendingStudentGroups
+                                (Id, StudentId, GroupId)
+                                VALUES
+                                (@Id, @StudentId, @GroupId)
+                                ON DUPLICATE KEY UPDATE
+                                 StudentId = VALUES(StudentId),
+                                 GroupId = VALUES(GroupId);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PreparePendingStudentGroupParameters(command);
+                        foreach (var item in groups)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillPendingStudentGroupParameters(command, item);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpsertPendingStudentSubGroupsAsync(IReadOnlyList<PendingStudentSubGroup> subGroups, CancellationToken cancellationToken = default)
+        {
+            if (subGroups == null || subGroups.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureSchema();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            const string sql = @"INSERT INTO PendingStudentSubGroups
+                                (Id, StudentId, GroupId, SubGroupId)
+                                VALUES
+                                (@Id, @StudentId, @GroupId, @SubGroupId)
+                                ON DUPLICATE KEY UPDATE
+                                 StudentId = VALUES(StudentId),
+                                 GroupId = VALUES(GroupId),
+                                 SubGroupId = VALUES(SubGroupId);";
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new MySqlCommand(sql, connection, transaction))
+                    {
+                        PreparePendingStudentSubGroupParameters(command);
+                        foreach (var item in subGroups)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            FillPendingStudentSubGroupParameters(command, item);
                             command.ExecuteNonQuery();
                         }
                     }
@@ -452,6 +807,196 @@ namespace BCCStudents.Infrastructure.Repositories
             command.Parameters["@UpdatedAt"].Value = item.UpdatedAt;
         }
 
+        private static void PrepareUserParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@Username", MySqlDbType.VarChar);
+            command.Parameters.Add("@FullName", MySqlDbType.VarChar);
+            command.Parameters.Add("@Email", MySqlDbType.VarChar);
+            command.Parameters.Add("@Password", MySqlDbType.VarChar);
+            command.Parameters.Add("@Role", MySqlDbType.VarChar);
+            command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
+            command.Parameters.Add("@LastLogin", MySqlDbType.DateTime);
+        }
+
+        private static void FillUserParameters(MySqlCommand command, UserModel user)
+        {
+            command.Parameters["@Id"].Value = user.Id;
+            command.Parameters["@Username"].Value = user.UserName ?? (object)DBNull.Value;
+            command.Parameters["@FullName"].Value = user.FullName ?? (object)DBNull.Value;
+            command.Parameters["@Email"].Value = user.Email ?? (object)DBNull.Value;
+            command.Parameters["@Password"].Value = user.Password ?? (object)DBNull.Value;
+            command.Parameters["@Role"].Value = user.Role ?? (object)DBNull.Value;
+            command.Parameters["@CreatedAt"].Value = user.CreatedAt ?? (object)DBNull.Value;
+            command.Parameters["@LastLogin"].Value = user.LastLogin ?? (object)DBNull.Value;
+        }
+
+        private static void PrepareSystemConfigParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@Key", MySqlDbType.VarChar);
+            command.Parameters.Add("@Value", MySqlDbType.Text);
+            command.Parameters.Add("@Type", MySqlDbType.VarChar);
+            command.Parameters.Add("@Description", MySqlDbType.VarChar);
+            command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
+            command.Parameters.Add("@UpdatedAt", MySqlDbType.DateTime);
+        }
+
+        private static void FillSystemConfigParameters(MySqlCommand command, SystemConfiguration config)
+        {
+            command.Parameters["@Id"].Value = config.Id;
+            command.Parameters["@Key"].Value = config.Key ?? (object)DBNull.Value;
+            command.Parameters["@Value"].Value = config.Value ?? (object)DBNull.Value;
+            command.Parameters["@Type"].Value = config.Type ?? (object)DBNull.Value;
+            command.Parameters["@Description"].Value = config.Description ?? (object)DBNull.Value;
+            command.Parameters["@CreatedAt"].Value = config.CreatedAt;
+            command.Parameters["@UpdatedAt"].Value = config.UpdatedAt ?? (object)DBNull.Value;
+        }
+
+        private static void PreparePendingStudentParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@FirstName", MySqlDbType.VarChar);
+            command.Parameters.Add("@LastName", MySqlDbType.VarChar);
+            command.Parameters.Add("@Age", MySqlDbType.Int32);
+            command.Parameters.Add("@ParentName", MySqlDbType.VarChar);
+            command.Parameters.Add("@PhoneNumber", MySqlDbType.VarChar);
+            command.Parameters.Add("@IdNumb", MySqlDbType.Int64);
+            command.Parameters.Add("@Address", MySqlDbType.VarChar);
+            command.Parameters.Add("@TuitionFee", MySqlDbType.Decimal);
+            command.Parameters.Add("@DiscountPercentage", MySqlDbType.Decimal);
+            command.Parameters.Add("@StudentCode", MySqlDbType.VarChar);
+            command.Parameters.Add("@IdCardPath", MySqlDbType.VarChar);
+            command.Parameters.Add("@AdditionalDocsPath", MySqlDbType.VarChar);
+            command.Parameters.Add("@UserId", MySqlDbType.Int32);
+            command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
+        }
+
+        private static void FillPendingStudentParameters(MySqlCommand command, PendingStudent student)
+        {
+            command.Parameters["@Id"].Value = student.Id;
+            command.Parameters["@FirstName"].Value = student.FirstName ?? (object)DBNull.Value;
+            command.Parameters["@LastName"].Value = student.LastName ?? (object)DBNull.Value;
+            command.Parameters["@Age"].Value = student.Age;
+            command.Parameters["@ParentName"].Value = student.ParentName ?? (object)DBNull.Value;
+            command.Parameters["@PhoneNumber"].Value = student.PhoneNumber ?? (object)DBNull.Value;
+            command.Parameters["@IdNumb"].Value = student.Id_Numb;
+            command.Parameters["@Address"].Value = student.Address ?? (object)DBNull.Value;
+            command.Parameters["@TuitionFee"].Value = student.TuitionFee;
+            command.Parameters["@DiscountPercentage"].Value = student.Discount;
+            command.Parameters["@StudentCode"].Value = student.StudentCode ?? (object)DBNull.Value;
+            command.Parameters["@IdCardPath"].Value = student.IdCardPath ?? (object)DBNull.Value;
+            command.Parameters["@AdditionalDocsPath"].Value = student.AdditionalDocsPath ?? (object)DBNull.Value;
+            command.Parameters["@UserId"].Value = student.UserId;
+            command.Parameters["@CreatedAt"].Value = student.CreatedAt;
+        }
+
+        private static void PreparePendingStudentGroupParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@StudentId", MySqlDbType.Int32);
+            command.Parameters.Add("@GroupId", MySqlDbType.Int32);
+        }
+
+        private static void FillPendingStudentGroupParameters(MySqlCommand command, PendingStudentGroup item)
+        {
+            command.Parameters["@Id"].Value = item.Id;
+            command.Parameters["@StudentId"].Value = item.StudentId;
+            command.Parameters["@GroupId"].Value = item.GroupId;
+        }
+
+        private static void PreparePendingStudentSubGroupParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@StudentId", MySqlDbType.Int32);
+            command.Parameters.Add("@GroupId", MySqlDbType.Int32);
+            command.Parameters.Add("@SubGroupId", MySqlDbType.Int32);
+        }
+
+        private static void FillPendingStudentSubGroupParameters(MySqlCommand command, PendingStudentSubGroup item)
+        {
+            command.Parameters["@Id"].Value = item.Id;
+            command.Parameters["@StudentId"].Value = item.StudentId;
+            command.Parameters["@GroupId"].Value = item.GroupId;
+            command.Parameters["@SubGroupId"].Value = item.SubGroupId;
+        }
+
+        private static void PreparePaymentParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@StudentId", MySqlDbType.Int32);
+            command.Parameters.Add("@GroupId", MySqlDbType.Int32);
+            command.Parameters.Add("@Amount", MySqlDbType.Decimal);
+            command.Parameters.Add("@PaymentDate", MySqlDbType.DateTime);
+            command.Parameters.Add("@PaymentStatus", MySqlDbType.VarChar);
+            command.Parameters.Add("@Description", MySqlDbType.VarChar);
+            command.Parameters.Add("@PayerName", MySqlDbType.VarChar);
+            command.Parameters.Add("@PersonalId", MySqlDbType.Int64);
+            command.Parameters.Add("@UpdatedAt", MySqlDbType.DateTime);
+            command.Parameters.Add("@IsDeleted", MySqlDbType.Bit);
+        }
+
+        private static void FillPaymentParameters(MySqlCommand command, Payment payment)
+        {
+            command.Parameters["@Id"].Value = payment.Id;
+            command.Parameters["@StudentId"].Value = payment.StudentId ?? (object)DBNull.Value;
+            command.Parameters["@GroupId"].Value = payment.GroupId;
+            command.Parameters["@Amount"].Value = payment.Amount;
+            command.Parameters["@PaymentDate"].Value = payment.PaymentDate;
+            command.Parameters["@PaymentStatus"].Value = payment.PaymentStatus ?? (object)DBNull.Value;
+            command.Parameters["@Description"].Value = payment.Description ?? (object)DBNull.Value;
+            command.Parameters["@PayerName"].Value = payment.PayerName ?? (object)DBNull.Value;
+            command.Parameters["@PersonalId"].Value = payment.PersonalId ?? (object)DBNull.Value;
+            command.Parameters["@UpdatedAt"].Value = payment.UpdatedAt ?? (object)DBNull.Value;
+            command.Parameters["@IsDeleted"].Value = payment.IsDeleted;
+        }
+
+        private static void PrepareFailedPaymentParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@RowNumber", MySqlDbType.Int32);
+            command.Parameters.Add("@PaymentDate", MySqlDbType.DateTime);
+            command.Parameters.Add("@Amount", MySqlDbType.Decimal);
+            command.Parameters.Add("@PersonalId", MySqlDbType.Int64);
+            command.Parameters.Add("@Description", MySqlDbType.VarChar);
+            command.Parameters.Add("@Reason", MySqlDbType.VarChar);
+            command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
+        }
+
+        private static void FillFailedPaymentParameters(MySqlCommand command, FailedPayment payment)
+        {
+            command.Parameters["@Id"].Value = payment.Id;
+            command.Parameters["@RowNumber"].Value = payment.RowNumber;
+            command.Parameters["@PaymentDate"].Value = payment.PaymentDate;
+            command.Parameters["@Amount"].Value = payment.Amount;
+            command.Parameters["@PersonalId"].Value = payment.PersonalId ?? (object)DBNull.Value;
+            command.Parameters["@Description"].Value = payment.Description ?? (object)DBNull.Value;
+            command.Parameters["@Reason"].Value = payment.Reason ?? (object)DBNull.Value;
+            command.Parameters["@CreatedAt"].Value = payment.CreatedAt;
+        }
+
+        private static void PrepareImportedPaymentLogParameters(MySqlCommand command)
+        {
+            command.Parameters.Add("@Id", MySqlDbType.Int32);
+            command.Parameters.Add("@PaymentDate", MySqlDbType.DateTime);
+            command.Parameters.Add("@Amount", MySqlDbType.Decimal);
+            command.Parameters.Add("@PersonalId", MySqlDbType.Int64);
+            command.Parameters.Add("@Description", MySqlDbType.VarChar);
+            command.Parameters.Add("@ImportSource", MySqlDbType.VarChar);
+            command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
+        }
+
+        private static void FillImportedPaymentLogParameters(MySqlCommand command, ImportedPaymentLog item)
+        {
+            command.Parameters["@Id"].Value = item.Id;
+            command.Parameters["@PaymentDate"].Value = item.PaymentDate;
+            command.Parameters["@Amount"].Value = item.Amount;
+            command.Parameters["@PersonalId"].Value = item.PersonalId ?? (object)DBNull.Value;
+            command.Parameters["@Description"].Value = item.Description ?? (object)DBNull.Value;
+            command.Parameters["@ImportSource"].Value = item.ImportSource ?? (object)DBNull.Value;
+            command.Parameters["@CreatedAt"].Value = item.CreatedAt;
+        }
+
         #endregion
 
         private void EnsureSchema()
@@ -462,7 +1007,7 @@ namespace BCCStudents.Infrastructure.Repositories
             {
                 if (_schemaEnsured) return;
 
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     const string sql = @"CREATE TABLE IF NOT EXISTS SyncState (

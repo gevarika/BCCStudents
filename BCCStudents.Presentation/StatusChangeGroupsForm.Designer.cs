@@ -34,7 +34,7 @@
             this.lblSelectGroup.Name = "lblSelectGroup";
             this.lblSelectGroup.Size = new System.Drawing.Size(120, 13);
             this.lblSelectGroup.TabIndex = 0;
-            this.lblSelectGroup.Text = "áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡:";
+            this.lblSelectGroup.Text = "აირჩიეთ ჯგუფი სტატუსისთვის:";
             // 
             // cmbGroups
             // 
@@ -61,7 +61,7 @@
             this.btnAllGroups.Name = "btnAllGroups";
             this.btnAllGroups.Size = new System.Drawing.Size(90, 25);
             this.btnAllGroups.TabIndex = 3;
-            this.btnAllGroups.Text = "áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜";
+            this.btnAllGroups.Text = "ყველა ჯგუფი";
             this.btnAllGroups.UseVisualStyleBackColor = true;
             this.btnAllGroups.Click += new System.EventHandler(this.btnAllGroups_Click);
             // 
@@ -90,7 +90,7 @@
             this.MinimizeBox = false;
             this.Name = "StatusChangeGroupsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ¨áƒ˜";
+            this.Text = "სტატუსის შეცვლა ჯგუფებში";
             this.ResumeLayout(false);
             this.PerformLayout();
         }

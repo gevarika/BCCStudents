@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using BCCStudents.Application.Services.Sync.UpStream;
-using BCCStudents.Application.Services.Sync;
-
-using BCCStudents.Application.Interfaces;
+using System.Data;
 
 namespace BCCStudents.Application.Services
 {
@@ -26,7 +18,7 @@ namespace BCCStudents.Application.Services
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
-        
+
 
         public void AddSubGroups(SubGroup subGroup, int subGroupCount)
         {
@@ -40,6 +32,8 @@ namespace BCCStudents.Application.Services
         public int AddSubGroup(SubGroup subGroup)
         {
             int newSubGroupId = _subGroupRepository.AddSubGroup(subGroup);
+
+            //IncrementSubGroupCount(newSubGroupId);
             SyncSubGroupSnapshot(newSubGroupId, SyncOperationType.Insert);
             return newSubGroupId;
         }
@@ -53,8 +47,8 @@ namespace BCCStudents.Application.Services
             }
         }
         public List<SubGroup> GetStudentSubGroupsByStudentId(int studentId)
-        { 
-            return _subGroupRepository.GetStudentSubGroupsByStudentId(studentId); 
+        {
+            return _subGroupRepository.GetStudentSubGroupsByStudentId(studentId);
         }
         public List<SubGroup> GetSubGroupsByGroupId(int groupId)
         {
@@ -76,25 +70,24 @@ namespace BCCStudents.Application.Services
         { return _subGroupRepository.GetFirstSubGroupByGroupId(groupId); }
         public void UpdateStudentSubGroupPaymentDate(int studentId, int groupId, int subGroupId, DateTime paymentDate)
         { _subGroupRepository.UpdateStudentSubGroupPaymentDate(studentId, groupId, subGroupId, paymentDate); }
-        public void UpdateSubGroupStudentCount(int subGroupId, int count)
-        { _subGroupRepository.UpdateSubGroupStudentCount(subGroupId, count); }
+
         public void UpdateStudentSubGroup(int studentId, int groupId, int subGroupId, int oldSubGroupId)
         {
             // განვაახლოთ SubGroupId StudentSubGroups ცხრილში
             _subGroupRepository.UpdateStudentSubGroup(studentId, groupId, subGroupId, oldSubGroupId);
-            
+
             // განვაახლოთ StudentCount ორივე ქვეჯგუფისთვის (ძველი და ახალი)
             if (oldSubGroupId > 0 && oldSubGroupId != subGroupId)
             {
                 // ძველი ქვეჯგუფის StudentCount-ის შემცირება (-1)
                 _subGroupRepository.DecreaseStudentCount(oldSubGroupId);
                 SyncSubGroupSnapshot(oldSubGroupId, SyncOperationType.Update);
-                
+
                 // ახალი ქვეჯგუფის StudentCount-ის გაზრდა (+1)
                 _subGroupRepository.IncrementSubGroupCount(subGroupId, null, null);
                 SyncSubGroupSnapshot(subGroupId, SyncOperationType.Update);
             }
-            
+
             // StudentSubGroups-ის სინქრონიზაცია
             SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
         }
@@ -102,8 +95,10 @@ namespace BCCStudents.Application.Services
         {
             return _subGroupRepository.UpdateStudentSubGroupPaymentStatus(studentId, groupId, subGroupId, status);
         }
-        public void IncrementSubGroupCount(int subGroupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null)
-        { _subGroupRepository.IncrementSubGroupCount(subGroupId,externalConnection,externalTransaction); }
+        /*public void UpdateSubGroupStudentCount(int subGroupId, int count)
+        { _subGroupRepository.UpdateSubGroupStudentCount(subGroupId, count); }
+        /*public void IncrementSubGroupCount(int subGroupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null)
+        { _subGroupRepository.IncrementSubGroupCount(subGroupId,externalConnection,externalTransaction); }*/
         public void DecreaseStudentCount(int SubGroupId)
         { _subGroupRepository.DecreaseStudentCount(SubGroupId); }
         public SubGroup GetSubGroupById(int Id)
@@ -114,10 +109,7 @@ namespace BCCStudents.Application.Services
         {
             return _subGroupRepository.GetSubGroupByNumber(groupId, Id);
         }
-        /*public void DeleteSubGroup(int Id)
-        {
-            _subGroupRepository.DeleteSubGroup(Id);
-        }*/
+
         /// <summary>
         /// Removes all StudentSubGroups links for a student in a given group.
         /// </summary>
@@ -149,7 +141,7 @@ namespace BCCStudents.Application.Services
 
             // Soft delete: Status=0, IsDeleted=1
             DeleteStudentFromSubGroup(studentId, groupId);
-            
+
             // Recalculate SubGroup counts after deletion (გამოვაკლოთ 1 თითოეულ ქვეჯგუფს)
             // DecreaseStudentCount ამოწმებს IsDeleted=0-ს, ამიტომ soft delete-ის შემდეგ ის ავტომატურად გამოაკლებს 1-ს
             foreach (var subGroupId in subGroupIds)
@@ -231,7 +223,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                
+
                 return _subGroupRepository.UpdateStudentSubGroupStatus(groupId, studentId, subGroupId, status);
             }
             catch
@@ -264,7 +256,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                using (var connection = _connectionProvider.GetMySqlConnection()) 
+                using (var connection = _connectionProvider.GetMySqlConnection())
                 {
                     connection.Open();
                     const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt

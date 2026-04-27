@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace BCCStudents.Domain.Entities
+﻿namespace BCCStudents.Domain.Entities
 {
     /// <summary>
-    /// áƒáƒ¦áƒ›áƒáƒ©áƒ”áƒœáƒ˜áƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ
+    /// აღმოჩენილი ფაილის ინფორმაცია
     /// </summary>
     public class DetectedFile
     {
@@ -18,7 +14,7 @@ namespace BCCStudents.Domain.Entities
     }
 
     /// <summary>
-    /// áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ
+    /// იმპორტირებული ფაილის ინფორმაცია
     /// </summary>
     public class ImportedFileInfo
     {
@@ -31,6 +27,6 @@ namespace BCCStudents.Domain.Entities
         public string ComputerName { get; set; }
     }
 }
-    /// <summary>
-    /// áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¢áƒ áƒ”áƒ™áƒ˜áƒœáƒ’áƒ˜áƒ¡ áƒ áƒ”áƒžáƒáƒ–áƒ˜áƒ¢áƒáƒ áƒ˜áƒ˜áƒ¡ áƒ˜áƒœáƒ¢áƒ”áƒ áƒ¤áƒ”áƒ˜áƒ¡áƒ˜
-    /// </summary>
+/// <summary>
+/// ფაილების ტრეკინგის რეპოზიტორიის ინტერფეისი
+/// </summary>

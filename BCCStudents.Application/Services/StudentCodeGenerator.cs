@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using BCCStudents.Domain.Interfaces;
-
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services
 {

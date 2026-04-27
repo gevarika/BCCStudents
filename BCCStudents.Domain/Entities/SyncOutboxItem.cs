@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace BCCStudents.Domain.Entities
 {
     /// <summary>
-    /// áƒ¬áƒáƒ áƒ›áƒáƒáƒ“áƒ’áƒ”áƒœáƒ¡ SyncOutbox áƒªáƒ®áƒ áƒ˜áƒšáƒ¨áƒ˜ áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒš áƒ”áƒ áƒ— áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ¡ (retry queue item).
+    /// წარმოადგენს SyncOutbox ცხრილში არსებულ ერთ ჩანაწერს (retry queue item).
     /// </summary>
     public sealed class SyncOutboxItem
     {
@@ -22,7 +19,7 @@ namespace BCCStudents.Domain.Entities
         public string LastError { get; set; }
 
         /// <summary>
-        /// áƒáƒ¦áƒáƒ“áƒ’áƒ”áƒœáƒ¡ payload-áƒ¡ SyncOutbox áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ“áƒáƒœ, áƒ áƒáƒ—áƒ áƒ®áƒ”áƒšáƒáƒ®áƒšáƒ áƒ•áƒªáƒáƒ“áƒáƒ— áƒ’áƒáƒ’áƒ–áƒáƒ•áƒœáƒ.
+        /// აღადგენს payload-ს SyncOutbox ჩანაწერიდან, რათა ხელახლა ვცადოთ გაგზავნა.
         /// </summary>
         public SyncChangePayload ToPayload()
         {

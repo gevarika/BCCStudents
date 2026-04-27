@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using BCCStudents;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
 
-using BCCStudents.Application.Interfaces;
-
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     /// <summary>
     /// გადახდის თარიღის მართვის სერვისი
     /// ამუშავებს გადახდის თარიღის გამოთვლას და განახლებას სხვადასხვა სცენარებისთვის
@@ -38,7 +34,7 @@ namespace BCCStudents.Application.Services {
         public DateTime CalculateInitialPaymentDate(DateTime registrationDate, int? dayOfMonth = null)
         {
             int paymentDay = dayOfMonth ?? registrationDate.Day;
-            
+
             // თვის ბოლო დღის შემოწმება
             int daysInMonth = DateTime.DaysInMonth(registrationDate.Year, registrationDate.Month);
             paymentDay = Math.Min(paymentDay, daysInMonth);
@@ -85,7 +81,7 @@ namespace BCCStudents.Application.Services {
         public DateTime CalculateNextPaymentDateAfterFullPayment(DateTime currentPaymentDate)
         {
             var nextDate = currentPaymentDate.AddMonths(1);
-            
+
             // თვის ბოლო დღის კორექცია (მაგ: 31 იანვარი -> 28 თებერვალი)
             int originalDay = currentPaymentDate.Day;
             int daysInNextMonth = DateTime.DaysInMonth(nextDate.Year, nextDate.Month);
@@ -129,12 +125,12 @@ namespace BCCStudents.Application.Services {
 
             // რამდენი თვე ფარავს ზედმეტი თანხა
             int monthsCovered = (int)Math.Floor(excessAmount / monthlyFee);
-            
+
             if (monthsCovered > 0)
             {
                 // გადახდის თარიღი გადაინაცვლებს წინ
                 var newDate = currentPaymentDate.AddMonths(monthsCovered);
-                
+
                 // თვის ბოლო დღის კორექცია
                 int originalDay = currentPaymentDate.Day;
                 int daysInMonth = DateTime.DaysInMonth(newDate.Year, newDate.Month);
@@ -182,7 +178,7 @@ namespace BCCStudents.Application.Services {
         public void ProcessMonthlyPaymentReset()
         {
             var today = DateTime.Today;
-            
+
             // ყველა აქტიური StudentGroup-ის მიღება რომელთაც გადახდის თარიღი გავიდა
             var overdueGroups = _studentGroupRepo.GetOverduePayments(today);
 
@@ -193,7 +189,7 @@ namespace BCCStudents.Application.Services {
                 {
                     // შემოწმება - გადახდილია თუ არა ამ პერიოდისთვის
                     bool isPaid = _paymentRepo.IsGroupPaidForPeriod(sg.StudentId, sg.GroupId, sg.DateOfPayment.Value);
-                    
+
                     if (!isPaid)
                     {
                         // სტატუსის განახლება "Overdue"-ზე
@@ -288,17 +284,14 @@ namespace BCCStudents.Application.Services {
         /// გამოიყენება სწავლის დაწყების თარიღის დაყენებისას
         /// </summary>
         /// <param name="studyStartDate">სწავლის დაწყების თარიღი</param>
-        public void UpdateNextPaymentDate(DateTime studyStartDate)
+        public void UpdateNextPaymentDate(DateTime paymentDate)
         {
-            // გადახდის თარიღი = სწავლის დაწყებიდან + 1 თვე
-            var nextPaymentDate = studyStartDate.AddMonths(1);
-            
             // ყველა აქტიური StudentGroup-ისთვის განახლება
             var allActiveGroups = _studentGroupRepo.GetOverduePayments(DateTime.MaxValue); // მიიღებს ყველას
-            // ან შეგვიძლია დავამატოთ GetAllActive მეთოდი
-            
+                                                                                           // ან შეგვიძლია დავამატოთ GetAllActive მეთოდი
+
             // ამჯერად მარტივი მიდგომა - ბაზაში პირდაპირი განახლება
-            UpdateAllActivePaymentDates(nextPaymentDate);
+            UpdateAllActivePaymentDates(paymentDate);
         }
 
         /// <summary>
@@ -335,7 +328,7 @@ namespace BCCStudents.Application.Services {
             int correctedDay = Math.Min(newDayOfMonth, daysInMonth);
 
             var newDate = new DateTime(currentDate.Year, currentDate.Month, correctedDay);
-            
+
             // თუ ახალი დღე უკვე გავიდა ამ თვეში, მომდევნო თვიდან
             if (newDate < DateTime.Today)
             {

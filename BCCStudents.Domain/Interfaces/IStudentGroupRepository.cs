@@ -1,189 +1,187 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BCCStudents.Domain.Entities;
 using MySql.Data.MySqlClient;
-using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Domain.Interfaces
 {
     /// <summary>
-    /// StudentGroups áƒªáƒ®áƒ áƒ˜áƒšáƒ—áƒáƒœ áƒ¡áƒáƒ›áƒ£áƒ¨áƒáƒ áƒ˜áƒœáƒ¢áƒ”áƒ áƒ¤áƒ”áƒ˜áƒ¡áƒ˜
-    /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”-áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜áƒ¡ áƒ›áƒáƒ áƒ—áƒ•áƒ
+    /// StudentGroups ცხრილთან სამუშაო ინტერფეისი
+    /// მოსწავლის-ჯგუფის კავშირის მართვა
     /// </summary>
     public interface IStudentGroupRepository
     {
-        #region INSERT - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ
+        #region INSERT - ჩანაწერის დამატება
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ¡áƒ áƒ£áƒšáƒ˜ áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (სრული ობიექტით)
         /// </summary>
-        /// <param name="studentGroup">StudentGroups áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜</param>
-        /// <param name="connection">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜ - áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡)</param>
-        /// <param name="transaction">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜)</param>
-        /// <returns>áƒáƒ®áƒáƒšáƒ˜ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ ID</returns>
+        /// <param name="studentGroup">StudentGroups ობიექტი</param>
+        /// <param name="connection">არსებული კავშირი (ოფციონალური - ტრანზაქციისთვის)</param>
+        /// <param name="transaction">არსებული ტრანზაქცია (ოფციონალური)</param>
+        /// <returns>ახალი ჩანაწერის ID</returns>
         int InsertStudentGroup(StudentGroups studentGroup, MySqlConnection connection = null, MySqlTransaction transaction = null);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ›áƒ˜áƒœáƒ˜áƒ›áƒáƒšáƒ£áƒ áƒ˜ áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (მინიმალური პარამეტრებით)
         /// </summary>
-        /// <param name="studentId">áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ ID</param>
-        /// <param name="groupId">áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID</param>
-        /// <param name="connection">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜ - áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡)</param>
-        /// <param name="transaction">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜)</param>
-        /// <returns>áƒáƒ®áƒáƒšáƒ˜ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ ID</returns>
+        /// <param name="studentId">მოსწავლის ID</param>
+        /// <param name="groupId">ჯგუფის ID</param>
+        /// <param name="connection">არსებული კავშირი (ოფციონალური - ტრანზაქციისთვის)</param>
+        /// <param name="transaction">არსებული ტრანზაქცია (ოფციონალური)</param>
+        /// <returns>ახალი ჩანაწერის ID</returns>
         int InsertStudentGroup(int studentId, int groupId, MySqlConnection connection = null, MySqlTransaction transaction = null);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (ფასდაკლებით)
         /// </summary>
         int InsertStudentGroupWithDiscount(int studentId, int groupId, double discount);
 
         #endregion
 
-        #region SELECT - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¬áƒáƒ™áƒ˜áƒ—áƒ®áƒ•áƒ
+        #region SELECT - ჩანაწერის წაკითხვა
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ ID-áƒ˜áƒ—
+        /// ჩანაწერის მიღება ID-ით
         /// </summary>
         StudentGroups GetById(int id);
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ StudentId áƒ“áƒ GroupId-áƒ˜áƒ—
+        /// ჩანაწერის მიღება StudentId და GroupId-ით
         /// </summary>
         StudentGroups GetByStudentAndGroup(int studentId, int groupId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის ყველა ჯგუფის მიღება
         /// </summary>
         List<StudentGroups> GetByStudentId(int studentId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის აქტიური ჯგუფების მიღება
         /// </summary>
         List<StudentGroups> GetActiveByStudentId(int studentId);
 
         /// <summary>
-        /// áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// ჯგუფის ყველა მოსწავლის მიღება
         /// </summary>
         List<StudentGroups> GetByGroupId(int groupId);
 
         /// <summary>
-        /// áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// ჯგუფის აქტიური მოსწავლეების მიღება
         /// </summary>
         List<StudentGroups> GetActiveByGroupId(int groupId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ (Groups áƒªáƒ®áƒ áƒ˜áƒšáƒ—áƒáƒœ JOIN)
+        /// მოსწავლის ჯგუფების მიღება გადასახდისთვის (Groups ცხრილთან JOIN)
         /// </summary>
         List<StudentGroups> GetForPayment(int studentId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID-áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის ჯგუფის ID-ების მიღება
         /// </summary>
         List<int> GetGroupIdsByStudentId(int studentId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID-áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის აქტიური ჯგუფის ID-ების მიღება
         /// </summary>
         List<int> GetActiveGroupIdsByStudentId(int studentId);
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ£áƒ®áƒ“áƒ”áƒšáƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// გადაუხდელი ჯგუფების მიღება
         /// </summary>
         List<StudentGroups> GetUnpaidByStudentId(int studentId);
 
         /// <summary>
-        /// áƒ•áƒáƒ“áƒáƒ’áƒáƒ“áƒáƒªáƒ˜áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ (áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ áƒ’áƒáƒ•áƒ˜áƒ“áƒ)
+        /// ვადაგადაცილებული გადახდების მიღება (გადახდის თარიღი გავიდა)
         /// </summary>
         List<StudentGroups> GetOverduePayments(DateTime asOfDate);
 
         /// <summary>
-        /// áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜
+        /// არსებობს თუ არა აქტიური კავშირი
         /// </summary>
         bool ExistsActive(int studentId, int groupId);
 
         /// <summary>
-        /// áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒáƒœ áƒáƒ áƒáƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜)
+        /// არსებობს თუ არა კავშირი (აქტიური ან არააქტიური)
         /// </summary>
         bool ExistsAny(int studentId, int groupId);
 
         #endregion
 
-        #region UPDATE - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒ¡áƒ áƒ£áƒšáƒ˜)
+        #region UPDATE - ჩანაწერის განახლება (სრული)
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ჩანაწერის სრული განახლება
         /// </summary>
         bool Update(StudentGroups studentGroup);
 
         #endregion
 
-        #region UPDATE - áƒªáƒáƒšáƒ™áƒ”áƒ£áƒšáƒ˜ áƒ•áƒ”áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        #region UPDATE - ცალკეული ველების განახლება
 
         /// <summary>
-        /// áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒáƒ¥áƒ¢áƒ˜áƒ•áƒáƒªáƒ˜áƒ/áƒ“áƒ”áƒáƒ¥áƒ¢áƒ˜áƒ•áƒáƒªáƒ˜áƒ)
+        /// სტატუსის განახლება (აქტივაცია/დეაქტივაცია)
         /// </summary>
         bool UpdateStatus(int studentId, int groupId, bool status);
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის სტატუსის განახლება
         /// </summary>
         bool UpdatePaymentStatus(int studentId, int groupId, string paymentStatus);
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის თარიღის განახლება
         /// </summary>
         bool UpdateDateOfPayment(int studentId, int groupId, DateTime? dateOfPayment);
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (alias)
+        /// გადახდის თარიღის განახლება (alias)
         /// </summary>
         bool UpdatePaymentDate(int studentId, int groupId, DateTime newDate);
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ“áƒ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ”áƒ áƒ—áƒáƒ“ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის სტატუსის და თარიღის ერთდროული განახლება
         /// </summary>
         bool UpdatePaymentStatusAndDate(int studentId, int groupId, string paymentStatus, DateTime? dateOfPayment);
 
         /// <summary>
-        /// áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ფასდაკლების განახლება
         /// </summary>
         bool UpdateDiscount(int studentId, int groupId, double discount);
 
         /// <summary>
-        /// áƒ¤áƒáƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ფასის განახლება
         /// </summary>
         bool UpdatePrice(int studentId, int groupId, decimal price);
 
         /// <summary>
-        /// GroupId-áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ)
+        /// GroupId-ის განახლება (ჯგუფის შეცვლა)
         /// </summary>
         bool UpdateGroupId(int studentId, int oldGroupId, int newGroupId);
 
         #endregion
 
-        #region DELETE - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ
+        #region DELETE - ჩანაწერის წაშლა
 
         /// <summary>
-        /// Soft Delete - áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ
+        /// Soft Delete - სტატუსის შეცვლა
         /// </summary>
         bool SoftDelete(int studentId, int groupId);
 
         /// <summary>
-        /// Hard Delete - áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ¬áƒáƒ¨áƒšáƒ
+        /// Hard Delete - სრული წაშლა
         /// </summary>
         bool HardDelete(int studentId, int groupId);
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ“áƒáƒœ Soft Delete
+        /// მოსწავლის ყველა ჯგუფიდან Soft Delete
         /// </summary>
         bool SoftDeleteAllByStudentId(int studentId);
 
         #endregion
 
-        #region IMPORT - áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ áƒ¡áƒáƒ­áƒ˜áƒ áƒ áƒ›áƒ”áƒ—áƒáƒ“áƒ”áƒ‘áƒ˜
+        #region IMPORT - იმპორტისთვის საჭირო მეთოდები
 
         /// <summary>
-        /// áƒ§áƒ•áƒ”áƒšáƒ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”-áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¬áƒ§áƒ•áƒ˜áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ (áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡ áƒ“áƒ£áƒ‘áƒšáƒ˜áƒ™áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒšáƒáƒ“)
+        /// ყველა აქტიური მოსწავლე-ჯგუფის წყვილის მიღება (იმპორტის დროს დუბლიკატების შესამოწმებლად)
         /// </summary>
         List<(int StudentId, int GroupId)> GetAllActiveStudentGroupPairs();
 

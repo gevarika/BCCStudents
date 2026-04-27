@@ -1,8 +1,6 @@
-﻿using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
 using ClosedXML.Excel;
-using System.Linq;
-
-using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Application.Services
 {
@@ -13,7 +11,7 @@ namespace BCCStudents.Application.Services
         private readonly IStudentGroupRepository _studentGroupRepository;
 
         public StudentExportService(
-            IStudentRepository studentRepository, 
+            IStudentRepository studentRepository,
             IGroupRepository groupRepository,
             IStudentGroupRepository studentGroupRepository)
         {

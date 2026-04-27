@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
 using BCCStudents.Application.Services;
 using BCCStudents.Domain.Entities;
 using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Application.Interfaces
 {
@@ -13,8 +11,8 @@ namespace BCCStudents.Application.Interfaces
     public interface IStudentService
     {
         // მიგრაცია
-        void MigrateStudentGroups();
-
+        //void MigrateStudentGroups();
+        void MigrateStudentToGroup(int studentId, int oldGroupId, int newGroupId);
         // სტუდენტების მიღება
         DataTable GetUnassignedStudents();
         DataTable GetAllStudentsFor();
@@ -26,6 +24,7 @@ namespace BCCStudents.Application.Interfaces
         List<Student> GetStudentsByGroupId(int groupId);
         List<Student> SearchStudentsByNameAndGroup(string text, int groupId);
         List<Student> GetAllStudentsWithGroups();
+        List<Student> GetStudentsInMultipleGroups();
         List<Student> SearchStudentsByNameAcrossAllGroups(string name);
         List<Student> SearchStudents(string fieldName, string searchText, int? groupId = null);
         Student GetStudentDetailsById(int studentId, int groupId);
@@ -40,23 +39,20 @@ namespace BCCStudents.Application.Interfaces
         void DeleteStudent(int studentId, int userId);
         void UpdateStudent(Student student);
         void UpdateStudentFields(int studentId, Dictionary<string, object> changedFields);
-        bool UpdateStudentStatus(int studentId, int groupId, bool status);
-
+        //bool UpdateStudentStatus(int studentId, int groupId, bool status);
         // ჯგუფებთან მუშაობა
+        bool UpdateStudentStatus(int studentId, int groupId, bool status);
         void UpdateStudentGroupFields(StudentGroups original, StudentGroups updated);
         void AddStudentToGroup(int studentId, int groupId, bool status = true, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null);
         void AddStudentToGroup(int studentId, int groupId, bool status, DateTime? dateOfPayment, string paymentStatus, decimal price, double discount);
         bool IsStudentInGroup(int studentId, int groupId);
         int? UpdateStudentGroupId(int studentId, int newGroupId);
         void RemoveStudentFromGroup(int studentId, int groupId);
-
         // ქვეჯგუფებთან მუშაობა
         void AddStudentToSubGroup(int studentId, int groupId, int subGroupId, string paymentStatus, DateTime? dateOfPayment, decimal price, double discount, bool status);
         void UpdateStudentSubGroupId(int studentId, int newGroupId, int newSubGroupId);
-
         // გამოთვლები
         decimal CalculateFinalFee(decimal baseFee, decimal discountPercentage);
-
         // JSON ოპერაციები
         List<Student> LoadStudentsFromJson();
         void SaveStudentsToJson(List<Student> students);

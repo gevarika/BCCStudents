@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Application.Services;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -20,7 +14,7 @@ namespace BCCStudents.Presentation
         private readonly AutoFileDetectionService _detectionService;
         private readonly IExcelPaymentImportService _importService;
         private readonly IPaymentDescriptionAnalyzer _descriptionAnalyzer;
-        
+
         public List<DetectedFile> SelectedFiles { get; private set; }
         public bool ShouldOpenImportForm { get; private set; } = false;
 
@@ -35,7 +29,7 @@ namespace BCCStudents.Presentation
             _importService = importService;
             _descriptionAnalyzer = descriptionAnalyzer;
             SelectedFiles = new List<DetectedFile>();
-            
+
             InitializeComponent();
             SetupForm();
         }
@@ -43,7 +37,7 @@ namespace BCCStudents.Presentation
         private void InitializeComponent()
         {
             this.SuspendLayout();
-            
+
             // Form properties
             this.Text = "ახალი გადახდების ფაილები აღმოჩენილია";
             this.Size = new Size(600, 400);
@@ -51,7 +45,7 @@ namespace BCCStudents.Presentation
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            
+
             this.ResumeLayout(false);
         }
 
@@ -126,7 +120,7 @@ namespace BCCStudents.Presentation
                         SelectedFiles.Add(_newFiles[i]);
                     }
                 }
-                
+
                 // თუ ფაილები არჩეულია, გადავიდეთ PaymentsImportForm-ზე
                 if (SelectedFiles.Count > 0)
                 {

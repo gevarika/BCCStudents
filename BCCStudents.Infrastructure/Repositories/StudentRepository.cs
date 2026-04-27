@@ -1,13 +1,8 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
@@ -271,7 +266,7 @@ namespace BCCStudents.Infrastructure.Repositories
             {
                 connection.Open();
                 var query = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
-                              RegistrationDate, StudentCode, Status, IdCardPath, AdditionalDocsPath,
+                              RegistrationDate, StudentCode, `Status`, IdCardPath, AdditionalDocsPath,
                               user_id, Balance, Info, UpdatedAt, IsDeleted
                               FROM Students WHERE IsDeleted = 0 ORDER BY FirstName, LastName";
 
@@ -622,7 +617,7 @@ namespace BCCStudents.Infrastructure.Repositories
             // დაშვებული ველების სია (SQL Injection-ისგან დაცვა)
             var allowedFields = new HashSet<string>
             {
-                "FirstName", "LastName", "ParentName", "Age", "PhoneNumber", 
+                "FirstName", "LastName", "ParentName", "Age", "PhoneNumber",
                 "Id_Numb", "Address", "Info", "Balance", "Status", "StudentCode",
                 "IdCardPath", "AdditionalDocsPath"
             };
@@ -638,7 +633,7 @@ namespace BCCStudents.Infrastructure.Repositories
                 // დინამიური SQL აგება
                 var setClauses = validFields.Select(f => $"{f.Key} = @{f.Key}").ToList();
                 setClauses.Add("UpdatedAt = @UpdatedAt");
-                
+
                 var query = $"UPDATE Students SET {string.Join(", ", setClauses)} WHERE Id = @StudentId";
 
                 using (var cmd = new MySqlCommand(query, connection))
@@ -1455,6 +1450,94 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
+        /// მოსწავლეები რამდენიმე ჯგუფის მიხედვით
+        /// </summary>
+        public List<Student> GetStudentsByGroupIds(List<int> groupIds)
+        {
+            var students = new List<Student>();
+            if (groupIds == null || !groupIds.Any())
+                return students;
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                // შევქმნათ IN clause-ისთვის პარამეტრები
+                var paramNames = new List<string>();
+                for (int i = 0; i < groupIds.Count; i++)
+                {
+                    paramNames.Add($"@GroupId{i}");
+                }
+                var inClause = string.Join(",", paramNames);
+
+                var query = $@"SELECT DISTINCT s.*, sg.GroupId, g.Name AS GroupName 
+                              FROM Students s
+                              INNER JOIN StudentGroups sg ON s.Id = sg.StudentId
+                              INNER JOIN `Groups` g ON sg.GroupId = g.Id
+                              WHERE sg.GroupId IN ({inClause}) 
+                              AND sg.Status = 1 AND (sg.IsDeleted = 0 OR sg.IsDeleted IS NULL)
+                              AND s.IsDeleted = 0
+                              ORDER BY s.LastName, s.FirstName";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    for (int i = 0; i < groupIds.Count; i++)
+                    {
+                        cmd.Parameters.AddWithValue($"@GroupId{i}", groupIds[i]);
+                    }
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var student = MapStudentFromReader(reader);
+                            student.GroupId = reader.GetInt32("GroupId");
+                            student.GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString("GroupName");
+                            students.Add(student);
+                        }
+                    }
+                }
+            }
+            return students;
+        }
+
+        /// <summary>
+        /// მოსწავლეები რომლებიც 1-ზე მეტ ჯგუფში არიან
+        /// </summary>
+        public List<Student> GetStudentsInMultipleGroups()
+        {
+            var students = new List<Student>();
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                var query = @"SELECT s.*, sg.GroupId, g.Name AS GroupName
+                              FROM Students s
+                              INNER JOIN StudentGroups sg ON s.Id = sg.StudentId AND sg.Status = 1 AND (sg.IsDeleted = 0 OR sg.IsDeleted IS NULL)
+                              INNER JOIN `Groups` g ON sg.GroupId = g.Id
+                              WHERE s.IsDeleted = 0
+                              AND s.Id IN (
+                                  SELECT StudentId 
+                                  FROM StudentGroups 
+                                  WHERE Status = 1 AND (IsDeleted = 0 OR IsDeleted IS NULL)
+                                  GROUP BY StudentId 
+                                  HAVING COUNT(DISTINCT GroupId) > 1
+                              )
+                              ORDER BY s.LastName, s.FirstName, sg.GroupId";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var student = MapStudentFromReader(reader);
+                        student.GroupId = reader.GetInt32("GroupId");
+                        student.GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString("GroupName");
+                        students.Add(student);
+                    }
+                }
+            }
+            return students;
+        }
+
+        /// <summary>
         /// მოსწავლის დეტალები ID-ით და GroupId-ით
         /// </summary>
         public Student GetStudentDetailsById(int studentId, int groupId)
@@ -1462,7 +1545,7 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                
+
                 string query;
                 // თუ groupId არის 0 ან უარყოფითი, მხოლოდ studentId-ით ვეძებთ
                 if (groupId <= 0)
@@ -1495,14 +1578,14 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@StudentId", studentId);
                     if (groupId > 0)
                         cmd.Parameters.AddWithValue("@GroupId", groupId);
-                    
+
                     using (var reader = cmd.ExecuteReader())
                     {
                         if (reader.Read())
                         {
                             var student = MapStudentFromReader(reader);
                             student.GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString("GroupName");
-                            
+
                             // DateOfPayment და PaymentStatus წაკითხვა (თუ არსებობს query-ში)
                             if (HasColumn(reader, "DateOfPayment"))
                                 student.DateOfPayment = reader.IsDBNull(reader.GetOrdinal("DateOfPayment")) ? (DateTime?)null : reader.GetDateTime("DateOfPayment");
@@ -1512,7 +1595,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                 student.TuitionFee = reader.IsDBNull(reader.GetOrdinal("GroupPrice")) ? 0 : reader.GetDecimal("GroupPrice");
                             if (HasColumn(reader, "Discount"))
                                 student.Discount = reader.IsDBNull(reader.GetOrdinal("Discount")) ? 0 : reader.GetDouble("Discount");
-                            
+
                             return student;
                         }
                     }
@@ -1720,7 +1803,7 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                
+
                 // StudentGroups soft delete
                 var query1 = @"UPDATE StudentGroups SET Status = 0, IsDeleted = 1, UpdatedAt = @UpdatedAt 
                                WHERE StudentId = @StudentId";
@@ -1751,7 +1834,7 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                
+
                 // StudentGroups soft delete
                 var query1 = @"UPDATE StudentGroups SET Status = 0, IsDeleted = 1, UpdatedAt = @UpdatedAt 
                                WHERE StudentId = @StudentId AND GroupId = @GroupId";
@@ -1806,11 +1889,11 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <summary>
         /// StudentGroups-ის მიგრაცია
         /// </summary>
-        public void MigrateStudentGroups()
+        /*public void MigrateStudentGroups()
         {
             // მიგრაციის ლოგიკა თუ საჭიროა
             // ცარიელი იმპლემენტაცია - საჭიროების შემთხვევაში დაემატება
-        }
+        }*/
 
         #endregion
 

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
 using Core.Models;
 
-using BCCStudents.Application.Interfaces;
-
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class PaymentService : IPaymentService
     {
         private readonly IPaymentRepository _paymentRepo;
@@ -18,6 +14,8 @@ namespace BCCStudents.Application.Services {
         private readonly IStudentSubGroupRepository _studentSubGroupRepo;
         private readonly ILoggerRepository _loggerRepository;
         private readonly ISmsService _smsService;
+        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
+        private readonly IConfigurationService _configService;
 
         public PaymentService(
             IPaymentRepository paymentRepo,
@@ -26,7 +24,9 @@ namespace BCCStudents.Application.Services {
             IStudentGroupRepository studentGroupRepo,
             IStudentSubGroupRepository studentSubGroupRepo,
             ILoggerRepository loggerRepository,
-            ISmsService smsService)
+            ISmsService smsService,
+            IUpStreamChangeTracker upStreamChangeTracker,
+            IConfigurationService configService)
         {
             _paymentRepo = paymentRepo;
             _studentRepo = studentRepo;
@@ -35,6 +35,8 @@ namespace BCCStudents.Application.Services {
             _studentSubGroupRepo = studentSubGroupRepo;
             _loggerRepository = loggerRepository;
             _smsService = smsService ?? throw new ArgumentNullException(nameof(smsService));
+            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
+            _configService = configService ?? throw new ArgumentNullException(nameof(configService));
         }
 
         /// <summary>
@@ -60,7 +62,7 @@ namespace BCCStudents.Application.Services {
             try
             {
                 // ==================== 1. ვალიდაცია ====================
-                
+
                 // 1.1. მოსწავლის არსებობის შემოწმება
                 var student = _studentRepo.GetStudentById(studentId);
                 if (student == null)
@@ -77,6 +79,7 @@ namespace BCCStudents.Application.Services {
                 {
                     return new PaymentResult(false, "NoGroups", new List<string> { "სტუდენტს არ აქვს აქტიური ჯგუფები" });
                 }
+                int groupCount = groups.Count;
 
                 // ==================== 2. ბალანსის გამოთვლა ====================
                 // balance = მიმდინარე ბალანსი + ახლად ჩარიცხული თანხა
@@ -84,17 +87,18 @@ namespace BCCStudents.Application.Services {
                 decimal initialBalance = student.Balance;
                 decimal balance = initialBalance + paymentAmount;
                 string paymentSource = paymentAmount > 0 ? $"ახალი თანხა: {paymentAmount} ₾" : "ბალანსიდან";
-                
+
                 var logs = new List<string>();
                 var paymentResults = new List<PaymentDetail>();
                 bool paymentMade = false;      // სრული გადახდა მოხდა
                 bool partialPayment = false;  // ნაწილობრივი გადახდა მოხდა
                 bool onlyCredited = false;    // მხოლოდ ბალანსზე დაკრედიტება
 
-                // ==================== 3. გადახდის პროცესი - რამდენიმე თვის გადასახადის გადახდა ====================
-                // ვაგროვებთ ყველა ჯგუფს, რომელთაც დადგა გადახდის დრო და არ არის გადახდილი
-                var eligibleGroups = new List<(StudentGroups group, decimal finalFee, DateTime dateOfPayment)>();
-                
+                // ==================== 3. გადახდის პროცესი - ვადაგადაცილებული თვეების დაფარვა ====================
+                // ვაგროვებთ ყველა ჯგუფს და ყველა ვადაგადაცილებულ თვეს (DateOfPayment-დან დღემდე)
+                var dueItems = new List<(StudentGroups group, decimal finalFee, DateTime dueDate)>();
+                var groupStates = new Dictionary<int, GroupPaymentState>();
+
                 foreach (var group in groups.OrderBy(g => g.DateOfPayment))
                 {
                     // ==================== 3.1. გადახდის თარიღის შემოწმება ====================
@@ -110,200 +114,227 @@ namespace BCCStudents.Application.Services {
                         continue; // გამოტოვება - ჯერ არ დადგა დრო
                     }
 
-                    // ==================== 3.2. გადახდილია თუ არა შემოწმება ====================
-                    // შეამოწმებს Payments ცხრილში არის თუ არა გადახდა ამ პერიოდისთვის
-                    // პერიოდი = DateOfPayment თვის/წლის ფარგლებში
-                    if (_paymentRepo.IsGroupPaidForPeriod(studentId, group.GroupId, group.DateOfPayment.Value))
-                    {
-                        logs.Add($"ჯგუფი {group.GroupId}: უკვე გადახდილია ამ თვეში");
-                        continue; // გამოტოვება - უკვე გადახდილია
-                    }
-
-                    // ==================== 3.3. ფასდაკლების გამოთვლა ====================
+                    // ==================== 3.2. ფასდაკლების გამოთვლა ====================
                     // ⚠️ მნიშვნელოვანი: group.Price არის Groups.Price (GetForPayment-ში გადაიწერა)
                     // group.Discount არის StudentGroups.Discount (ფასდაკლების პროცენტი)
                     decimal discount = (group.Discount > 0) ? group.Price * (decimal)group.Discount / 100m : 0m;
                     decimal finalFee = group.Price - discount; // ფასდაკლებული საბოლოო ფასი
 
-                    eligibleGroups.Add((group, finalFee, group.DateOfPayment.Value));
+                    var state = new GroupPaymentState
+                    {
+                        Group = group,
+                        FinalFee = finalFee
+                    };
+
+                    // ==================== 3.3. ვადაგადაცილებული თვეების ამოღება ====================
+                    // პერიოდები: DateOfPayment-დან დღემდე, თვეებით
+                    var dueDate = group.DateOfPayment.Value.Date;
+                    while (dueDate <= DateTime.Today)
+                    {
+                        state.DueDates.Add(dueDate);
+
+                        // უკვე გადახდილია თუ არა ამ თვისთვის
+                        if (_paymentRepo.IsGroupPaidForPeriod(studentId, group.GroupId, dueDate))
+                        {
+                            state.PaidDueDates.Add(dueDate);
+                        }
+                        else
+                        {
+                            dueItems.Add((group, finalFee, dueDate));
+                        }
+
+                        dueDate = dueDate.AddMonths(1);
+                    }
+
+                    groupStates[group.GroupId] = state;
                 }
 
-                // ==================== 3.4. რამდენიმე თვის გადასახადის გადახდა ====================
-                if (eligibleGroups.Any())
+                // ==================== 3.4. ვადაგადაცილებული თვეების გადახდა ====================
+                int totalDueCount = dueItems.Count;
+                int paidMonthsCount = 0;
+                var paidDueDatesThisRun = new List<DateTime>();
+                var remainingDueDates = new List<DateTime>();
+
+                if (dueItems.Any())
                 {
-                    // ვითვლით რამდენი თვის გადასახადს ფარავს balance
-                    int monthsToPay = 0;
-                    decimal totalAmount = 0;
-                    var paidMonths = new List<DateTime>();
-                    var lastPaymentDate = DateTime.MinValue;
+                    int processedItems = 0;
+                    int maxItems = useFullBalance ? int.MaxValue : 1;
 
-                    // თუ useFullBalance = false, მხოლოდ ერთი თვე
-                    int maxMonths = useFullBalance ? eligibleGroups.Count : 1;
-
-                    foreach (var (group, finalFee, dateOfPayment) in eligibleGroups)
+                    foreach (var (group, finalFee, dueDate) in dueItems
+                        .OrderBy(i => i.dueDate)
+                        .ThenBy(i => i.group.GroupId))
                     {
-                        // თუ useFullBalance = false, მხოლოდ პირველი თვე
-                        if (monthsToPay >= maxMonths)
+                        if (processedItems >= maxItems)
                         {
                             break;
                         }
 
-                        if (balance >= totalAmount + finalFee)
+                        if (balance <= 0)
                         {
-                            monthsToPay++;
-                            totalAmount += finalFee;
-                            paidMonths.Add(dateOfPayment);
-                            lastPaymentDate = dateOfPayment;
+                            break;
+                        }
+
+                        string groupName = _groupRepo.GetGroupNameById(group.GroupId);
+                        var state = groupStates[group.GroupId];
+
+                        if (balance >= finalFee)
+                        {
+                            // სრულად გადახდა კონკრეტული თვისთვის
+                            string description = $"ჯგუფი: {groupName} | " +
+                                              $"თვე: {dueDate:yyyy-MM} | " +
+                                              $"თანხა: {finalFee} ₾ | " +
+                                              $"წყარო: {paymentSource} | " +
+                                              $"თავდაპირველი ბალანსი: {initialBalance} ₾";
+
+                            var payment = new Payment
+                            {
+                                StudentId = studentId,
+                                GroupId = group.GroupId,
+                                Amount = finalFee,
+                                PaymentDate = dueDate,
+                                PaymentStatus = "Paid",
+                                Description = description
+                            };
+
+                            var paymentId = _paymentRepo.InsertPayment(payment);
+                            if (paymentId > 0)
+                            {
+                                payment.Id = paymentId;
+                                await _upStreamChangeTracker.TrackPaymentChangeAsync(paymentId, SyncOperationType.Insert, payment);
+
+                                balance -= finalFee;
+                                paymentMade = true;
+                                paidMonthsCount++;
+                                paidDueDatesThisRun.Add(dueDate);
+                                state.PaidDueDatesThisRun.Add(dueDate);
+                                state.HasNewPayment = true;
+                                state.PaidDueDates.Add(dueDate);
+                                processedItems++;
+
+                                paymentResults.Add(new PaymentDetail
+                                {
+                                    GroupId = group.GroupId,
+                                    GroupName = groupName,
+                                    Amount = finalFee,
+                                    Status = "Paid",
+                                    PaymentDate = dueDate,
+                                    Note = $"თვე: {dueDate:yyyy-MM}"
+                                });
+
+                                logs.Add($"ჯგუფი {group.GroupId}: გადახდილია {dueDate:yyyy-MM} ({finalFee} ₾)");
+                            }
                         }
                         else
                         {
-                            break; // ბალანსი აღარ საკმარისია
-                        }
-                    }
-
-                    if (monthsToPay > 0)
-                    {
-                        // ========== 3.4.1. რამდენიმე თვის გადასახადის გადახდა ==========
-                        var firstGroup = eligibleGroups[0].group;
-                        string groupName = _groupRepo.GetGroupNameById(firstGroup.GroupId);
-                        
-                        // დეტალური Description-ის შექმნა
-                        var monthDetails = new List<string>();
-                        decimal runningTotal = 0;
-                        foreach (var (group, finalFee, dateOfPayment) in eligibleGroups.Take(monthsToPay))
-                        {
-                            runningTotal += finalFee;
-                            monthDetails.Add($"{dateOfPayment:yyyy-MM} ({finalFee} ₾)");
-                        }
-                        
-                        decimal remainingBalance = balance - totalAmount;
-                        string description = $"ჯგუფი: {groupName} | " +
-                                          $"დაიფარა {monthsToPay} თვის გადასახადი: {totalAmount} ₾ | " +
-                                          $"თვეები: {string.Join(", ", monthDetails)} | " +
-                                          $"წყარო: {paymentSource} | " +
-                                          $"თავდაპირველი ბალანსი: {initialBalance} ₾ | " +
-                                          $"დარჩენილი ბალანსი: {remainingBalance:F2} ₾";
-                        
-                        // 3.4.1.1. Payment ცხრილში ჩანაწერის დამატება
-                        var payment = new Payment
-                        {
-                            StudentId = studentId,
-                            GroupId = firstGroup.GroupId,
-                            Amount = totalAmount, // რამდენიმე თვის გადასახადის ჯამი
-                            PaymentDate = DateTime.Now,
-                            PaymentStatus = "Paid",
-                            Description = description
-                        };
-
-                        if (_paymentRepo.InsertPayment(payment))
-                        {
-                            // 3.4.1.2. შემდეგი გადახდის თარიღის გამოთვლა (ბოლო გადახდილი თვე + 1 თვე)
-                            var nextPaymentDate = lastPaymentDate.AddMonths(1);
-                            
-                            // 3.4.1.3. StudentGroups ცხრილში განახლება
-                            // PaymentStatus = "Paid", DateOfPayment = nextPaymentDate
-                            _studentGroupRepo.UpdatePaymentStatusAndDate(studentId, firstGroup.GroupId, "Paid", nextPaymentDate);
-
-                            // 3.4.1.4. StudentSubGroups ცხრილში განახლება (თუ არსებობს)
-                            if (firstGroup.SubGroupId.HasValue)
+                            if (!_configService.AllowPartialPayments)
                             {
-                                _studentSubGroupRepo.UpdatePaymentStatus(studentId, firstGroup.GroupId, firstGroup.SubGroupId.Value, "Paid");
+                                logs.Add($"ჯგუფი {group.GroupId}: ნაწილობრივი გადახდა გამორთულია, თანხა დარჩება ბალანსზე ({balance} ₾)");
+                                break;
                             }
 
-                            // 3.4.1.5. ბალანსის განახლება
-                            balance -= totalAmount;
-                            paymentMade = true;
-                            
-                            // 3.4.1.6. შედეგის დამატება
-                            paymentResults.Add(new PaymentDetail
+                            // ნაწილობრივი გადახდა კონკრეტული თვისთვის
+                            decimal remainingAmount = finalFee - balance;
+                            string description = $"ჯგუფი: {groupName} | " +
+                                              $"თვე: {dueDate:yyyy-MM} | " +
+                                              $"ნაწილობრივი გადახდა: {balance} ₾ | " +
+                                              $"დარჩენილი: {remainingAmount} ₾ | " +
+                                              $"წყარო: {paymentSource} | " +
+                                              $"თავდაპირველი ბალანსი: {initialBalance} ₾";
+
+                            var payment = new Payment
                             {
-                                GroupId = firstGroup.GroupId,
-                                GroupName = _groupRepo.GetGroupNameById(firstGroup.GroupId),
-                                Amount = totalAmount,
-                                Status = "Paid",
-                                NextPaymentDate = nextPaymentDate,
-                                PaymentDate = DateTime.Now,
-                                Note = $"დაიფარა {monthsToPay} თვის გადასახადი"
-                            });
-
-                            // 3.4.1.7. SMS გაგზავნა
-                            var smsResult = await SendPaymentSms(student, firstGroup, totalAmount, true);
-                            _loggerRepository.LogSMSAction("Payment SMS", smsResult.Success ? "Success" : "Failed", smsResult.Status, student.PhoneNumber);
-
-                            logs.Add($"ჯგუფი {firstGroup.GroupId}: დაიფარა {monthsToPay} თვის გადასახადი ({totalAmount} ₾)");
-                        }
-                    }
-                    // ========== 3.4.2. ნაწილობრივი გადახდა ==========
-                    else if (balance > 0)
-                    {
-                        // ბალანსი არ არის საკმარისი სრული გადახდისთვის, მაგრამ > 0
-                        var firstGroup = eligibleGroups[0].group;
-                        var firstFinalFee = eligibleGroups[0].finalFee;
-                        string groupName = _groupRepo.GetGroupNameById(firstGroup.GroupId);
-                        decimal remainingAmount = firstFinalFee - balance;
-                        decimal remainingBalance = 0; // ბალანსი გამოიყენება სრულად
-                        
-                        // დეტალური Description-ის შექმნა
-                        string description = $"ჯგუფი: {groupName} | " +
-                                          $"ნაწილობრივი გადახდა: {balance} ₾ | " +
-                                          $"სრული თანხა: {firstFinalFee} ₾ | " +
-                                          $"დარჩენილი: {remainingAmount} ₾ | " +
-                                          $"თვე: {eligibleGroups[0].dateOfPayment:yyyy-MM} | " +
-                                          $"წყარო: {paymentSource} | " +
-                                          $"თავდაპირველი ბალანსი: {initialBalance} ₾ | " +
-                                          $"დარჩენილი ბალანსი: {remainingBalance:F2} ₾";
-                        
-                        // 3.4.2.1. Payment ცხრილში ჩანაწერის დამატება (Status = "Partial")
-                        var payment = new Payment
-                        {
-                            StudentId = studentId,
-                            GroupId = firstGroup.GroupId,
-                            Amount = balance, // მხოლოდ ის რაც ბალანსზეა
-                            PaymentDate = DateTime.Now,
-                            PaymentStatus = "Partial",
-                            Description = description,
-                            Note = $"ნაწილობრივი გადახდა (დარჩენილი: {remainingAmount} ₾)"
-                        };
-
-                        if (_paymentRepo.InsertPayment(payment))
-                        {
-                            // 3.4.2.2. StudentGroups ცხრილში განახლება
-                            // PaymentStatus = "PartiallyPaid", DateOfPayment არ იცვლება (იგივე თარიღი რჩება)
-                            _studentGroupRepo.UpdatePaymentStatusAndDate(studentId, firstGroup.GroupId, "PartiallyPaid", eligibleGroups[0].dateOfPayment);
-
-                            // 3.4.2.3. StudentSubGroups ცხრილში განახლება
-                            if (firstGroup.SubGroupId.HasValue)
-                            {
-                                _studentSubGroupRepo.UpdatePaymentStatus(studentId, firstGroup.GroupId, firstGroup.SubGroupId.Value, "PartiallyPaid");
-                            }
-
-                            // 3.4.2.4. შედეგის დამატება
-                            paymentResults.Add(new PaymentDetail
-                            {
-                                GroupId = firstGroup.GroupId,
-                                GroupName = _groupRepo.GetGroupNameById(firstGroup.GroupId),
+                                StudentId = studentId,
+                                GroupId = group.GroupId,
                                 Amount = balance,
-                                Status = "Partial",
-                                RemainingAmount = firstFinalFee - balance, // დარჩენილი თანხა
-                                PaymentDate = DateTime.Now,
-                                Note = payment.Note
-                            });
+                                PaymentDate = dueDate,
+                                PaymentStatus = "Partial",
+                                Description = description,
+                                Note = $"ნაწილობრივი გადახდა (დარჩენილი: {remainingAmount} ₾)"
+                            };
 
-                            // 3.4.2.5. SMS გაგზავნა
-                            var smsResult = await SendPaymentSms(student, firstGroup, balance, false);
-                            _loggerRepository.LogSMSAction("Payment SMS", smsResult.Success ? "Success" : "Failed", smsResult.Status, student.PhoneNumber);
+                            var paymentId = _paymentRepo.InsertPayment(payment);
+                            if (paymentId > 0)
+                            {
+                                payment.Id = paymentId;
+                                await _upStreamChangeTracker.TrackPaymentChangeAsync(paymentId, SyncOperationType.Insert, payment);
 
-                            logs.Add($"ჯგუფი {firstGroup.GroupId}: ნაწილობრივად გადახდილია {balance} ₾ (დარჩენილი: {firstFinalFee - balance} ₾)");
-                            
-                            // 3.4.2.6. ბალანსის განულება (ყველაფერი გამოყენებულია)
-                            balance = 0;
-                            partialPayment = true;
+                                state.HasNewPayment = true;
+                                state.HasPartial = true;
+                                state.PartialDueDate = dueDate;
+
+                                paymentResults.Add(new PaymentDetail
+                                {
+                                    GroupId = group.GroupId,
+                                    GroupName = groupName,
+                                    Amount = balance,
+                                    Status = "Partial",
+                                    RemainingAmount = remainingAmount,
+                                    PaymentDate = dueDate,
+                                    Note = payment.Note
+                                });
+
+                                logs.Add($"ჯგუფი {group.GroupId}: ნაწილობრივად გადახდილია {balance} ₾ ({dueDate:yyyy-MM})");
+
+                                balance = 0;
+                                partialPayment = true;
+                            }
                         }
                     }
+
+                    // ==================== 3.5. StudentGroups/StudentSubGroups სტატუსის განახლება ====================
+                    foreach (var state in groupStates.Values.Where(s => s.HasNewPayment || s.HasPartial))
+                    {
+                        if (!state.DueDates.Any())
+                        {
+                            continue;
+                        }
+
+                        var unpaidDueDates = state.DueDates
+                            .Where(d => !state.PaidDueDates.Contains(d))
+                            .OrderBy(d => d)
+                            .ToList();
+
+                        DateTime? nextPaymentDate;
+                        string status;
+
+                        if (unpaidDueDates.Any())
+                        {
+                            nextPaymentDate = unpaidDueDates.First();
+                            status = "PartiallyPaid";
+                        }
+                        else
+                        {
+                            var lastDueDate = state.DueDates.Max();
+                            nextPaymentDate = lastDueDate.AddMonths(1);
+                            status = "Paid";
+                        }
+
+                        _studentGroupRepo.UpdatePaymentStatusAndDate(studentId, state.Group.GroupId, status, nextPaymentDate);
+                        var updatedStudentGroup = _studentGroupRepo.GetByStudentAndGroup(studentId, state.Group.GroupId);
+                        if (updatedStudentGroup != null)
+                        {
+                            await _upStreamChangeTracker.TrackStudentGroupChangeAsync(updatedStudentGroup.Id, SyncOperationType.Update, updatedStudentGroup);
+                        }
+
+                        if (state.Group.SubGroupId.HasValue)
+                        {
+                            _studentSubGroupRepo.UpdatePaymentStatus(studentId, state.Group.GroupId, state.Group.SubGroupId.Value, status);
+                            var updatedStudentSubGroup = _studentSubGroupRepo.GetByStudentAndGroup(studentId, state.Group.GroupId);
+                            if (updatedStudentSubGroup != null)
+                            {
+                                await _upStreamChangeTracker.TrackStudentSubGroupChangeAsync(updatedStudentSubGroup.Id, SyncOperationType.Update, updatedStudentSubGroup);
+                            }
+                        }
+                    }
+
+                    remainingDueDates = groupStates.Values
+                        .SelectMany(s => s.DueDates.Where(d => !s.PaidDueDates.Contains(d)))
+                        .OrderBy(d => d)
+                        .ToList();
                 }
                 else
                 {
-                    // თუ eligibleGroups ცარიელია, მაგრამ paymentAmount > 0, ბალანსზე უნდა დაემატოს
+                    // თუ dueItems ცარიელია, მაგრამ paymentAmount > 0, ბალანსზე უნდა დაემატოს
                     if (paymentAmount > 0)
                     {
                         onlyCredited = true;
@@ -315,12 +346,14 @@ namespace BCCStudents.Application.Services {
                 // განახლება მხოლოდ თუ გადახდა მოხდა ან ბალანსზე დაკრედიტდა
                 // ⚠️ მნიშვნელოვანი: UpdateStudentBalance აყენებს აბსოლუტურ ბალანსს
                 // balance ცვლადი შეიცავს დარჩენილ ბალანსს (ან 0 თუ ყველაფერი გადაიხადა)
-                
+
                 // ⚠️ მნიშვნელოვანი: თუ ყველა ჯგუფი გამოტოვებულია (DateOfPayment არ არის, ან ჯერ არ დადგა დრო, ან უკვე გადახდილია),
                 // მაგრამ paymentAmount > 0, მაშინ ბალანსზე უნდა დაემატოს თანხა
+                bool balanceUpdated = false;
                 if (paymentMade || partialPayment || onlyCredited)
                 {
                     _studentRepo.UpdateStudentBalance(studentId, balance);
+                    balanceUpdated = true;
                 }
                 else if (paymentAmount > 0 && !paymentMade && !partialPayment)
                 {
@@ -329,6 +362,16 @@ namespace BCCStudents.Application.Services {
                     _studentRepo.UpdateStudentBalance(studentId, balance);
                     logs.Add($"ყველა ჯგუფი გამოტოვებულია (თარიღი არ არის, ან ჯერ არ დადგა დრო, ან უკვე გადახდილია). თანხა დაემატა ბალანსზე: {paymentAmount} ₾");
                     onlyCredited = true; // რომ Status იყოს "Credited"
+                    balanceUpdated = true;
+                }
+
+                if (balanceUpdated)
+                {
+                    var updatedStudent = _studentRepo.GetStudentById(studentId);
+                    if (updatedStudent != null)
+                    {
+                        await _upStreamChangeTracker.TrackStudentChangeAsync(studentId, SyncOperationType.Update, updatedStudent);
+                    }
                 }
 
                 // ==================== 5. ლოგირება ====================
@@ -338,6 +381,76 @@ namespace BCCStudents.Application.Services {
                     $"სტუდენტი: {student.FirstName} {student.LastName}, ID: {studentId}\n" + $"გადახდის დეტალები:\n{string.Join("\n", paymentResults.Select(p => $"ჯგუფი {p.GroupName}: {p.Amount} ₾ ({p.Status})" + (p.RemainingAmount.HasValue ? $", დარჩენილი: {p.RemainingAmount} ₾" : "") + (p.NextPaymentDate.HasValue ? $", შემდეგი გადახდა: {p.NextPaymentDate:dd.MM.yyyy}" : "")))}",
                     "System"
                 );
+
+                // ==================== 5.1 SMS შეტყობინება ====================
+                if (paymentMade || partialPayment)
+                {
+                    if (groupCount > 1)
+                    {
+                        foreach (var state in groupStates.Values.Where(s => s.HasNewPayment || s.HasPartial))
+                        {
+                            decimal groupTotalPaid = paymentResults
+                                .Where(r => r.GroupId == state.Group.GroupId)
+                                .Sum(r => r.Amount);
+
+                            if (groupTotalPaid <= 0)
+                            {
+                                continue;
+                            }
+
+                            var unpaidDueDates = state.DueDates
+                                .Where(d => !state.PaidDueDates.Contains(d))
+                                .OrderBy(d => d)
+                                .ToList();
+
+                            bool isFullPayment = unpaidDueDates.Count == 0;
+                            int paidMonths = state.PaidDueDatesThisRun.Count;
+                            int remainingMonths = unpaidDueDates.Count;
+
+                            string paidMonthsText = FormatMonthList(state.PaidDueDatesThisRun);
+                            string remainingMonthsText = FormatMonthList(unpaidDueDates);
+
+                            var smsResult = await SendGroupPaymentSummarySms(
+                                student,
+                                state.Group.Name,
+                                groupTotalPaid,
+                                isFullPayment,
+                                paidMonths,
+                                remainingMonths,
+                                paidMonthsText,
+                                remainingMonthsText);
+
+                            _loggerRepository.LogSMSAction(
+                                "Payment SMS",
+                                smsResult.Success ? "Success" : "Failed",
+                                smsResult.Status,
+                                student.PhoneNumber);
+                        }
+                    }
+                    else
+                    {
+                        decimal totalPaid = paymentResults.Sum(r => r.Amount);
+                        bool isFullPayment = paymentMade && !partialPayment;
+                        int? remainingMonths = null;
+                        string paidMonthsText = null;
+                        string remainingMonthsText = null;
+                        if (!isFullPayment)
+                        {
+                            remainingMonths = Math.Max(0, totalDueCount - paidMonthsCount);
+                            paidMonthsText = FormatMonthList(paidDueDatesThisRun);
+                            remainingMonthsText = FormatMonthList(remainingDueDates);
+                        }
+                        var smsResult = await SendPaymentSummarySms(
+                            student,
+                            totalPaid,
+                            isFullPayment,
+                            paidMonthsCount,
+                            remainingMonths,
+                            paidMonthsText,
+                            remainingMonthsText);
+                        _loggerRepository.LogSMSAction("Payment SMS", smsResult.Success ? "Success" : "Failed", smsResult.Status, student.PhoneNumber);
+                    }
+                }
 
                 // ==================== 6. შედეგის დაბრუნება ====================
                 return new PaymentResult(
@@ -361,15 +474,113 @@ namespace BCCStudents.Application.Services {
         /// <summary>
         /// SMS გაგზავნა გადახდის შემდეგ
         /// </summary>
-        private async Task<SmsSendResult> SendPaymentSms(Student student, StudentGroups group, decimal amount, bool isFullPayment)
+        private class GroupPaymentState
+        {
+            public StudentGroups Group { get; set; }
+            public decimal FinalFee { get; set; }
+            public List<DateTime> DueDates { get; } = new List<DateTime>();
+            public HashSet<DateTime> PaidDueDates { get; } = new HashSet<DateTime>();
+            public List<DateTime> PaidDueDatesThisRun { get; } = new List<DateTime>();
+            public bool HasNewPayment { get; set; }
+            public bool HasPartial { get; set; }
+            public DateTime? PartialDueDate { get; set; }
+        }
+
+        private async Task<SmsSendResult> SendPaymentSummarySms(
+            Student student,
+            decimal amount,
+            bool isFullPayment,
+            int? paidMonths,
+            int? remainingMonths,
+            string paidMonthsText,
+            string remainingMonthsText)
         {
             string message = $"გამარჯობა {student.FirstName}!\n" +
-                           $"თქვენი გადახდა {group.Name} ჯგუფისთვის შესრულდა.\n" +
+                           $"თქვენი გადახდა შესრულდა.\n" +
                            $"თანხა: {amount} ₾\n" +
-                           $"სტატუსი: {(isFullPayment ? "სრული გადახდა" : "ნაწილობრივი გადახდა")}\n" +
+                           $"სტატუსი: {(isFullPayment ? "სრული გადახდა" : "ნაწილობრივი გადახდა")}\n";
+
+            if (!isFullPayment && paidMonths.HasValue && remainingMonths.HasValue)
+            {
+                message += $"გადახდილი თვეები: {paidMonths}\n" +
+                           $"დარჩენილი თვეები: {remainingMonths}\n";
+
+                if (!string.IsNullOrWhiteSpace(paidMonthsText) || !string.IsNullOrWhiteSpace(remainingMonthsText))
+                {
+                    message += $"დაიფარა: {(!string.IsNullOrWhiteSpace(paidMonthsText) ? paidMonthsText : "-")}\n" +
+                               $"გადასახდელია: {(!string.IsNullOrWhiteSpace(remainingMonthsText) ? remainingMonthsText : "-")}\n";
+                }
+            }
+
+            message +=
                            $"თარიღი: {DateTime.Now:dd.MM.yyyy HH:mm}";
 
             return await _smsService.SendSmsAsync(student.PhoneNumber, message);
+        }
+
+        private async Task<SmsSendResult> SendGroupPaymentSummarySms(
+            Student student,
+            string groupName,
+            decimal amount,
+            bool isFullPayment,
+            int paidMonths,
+            int remainingMonths,
+            string paidMonthsText,
+            string remainingMonthsText)
+        {
+            string message = $"გამარჯობა {student.FirstName}!\n" +
+                           $"თქვენი გადახდა შესრულდა.\n" +
+                           $"ჯგუფი: {groupName}\n" +
+                           $"თანხა: {amount} ₾\n" +
+                           $"სტატუსი: {(isFullPayment ? "სრული გადახდა" : "ნაწილობრივი გადახდა")}\n";
+
+            if (!isFullPayment)
+            {
+                message += $"გადახდილი თვეები: {paidMonths}\n" +
+                           $"დარჩენილი თვეები: {remainingMonths}\n" +
+                           $"დაიფარა: {(!string.IsNullOrWhiteSpace(paidMonthsText) ? paidMonthsText : "-")}\n" +
+                           $"გადასახდელია: {(!string.IsNullOrWhiteSpace(remainingMonthsText) ? remainingMonthsText : "-")}\n";
+            }
+
+            message += $"თარიღი: {DateTime.Now:dd.MM.yyyy HH:mm}";
+
+            return await _smsService.SendSmsAsync(student.PhoneNumber, message);
+        }
+
+        private static string FormatMonthList(IReadOnlyCollection<DateTime> dates)
+        {
+            if (dates == null || dates.Count == 0)
+            {
+                return null;
+            }
+
+            var ordered = dates.OrderBy(d => d).ToList();
+            bool multipleYears = ordered.Select(d => d.Year).Distinct().Count() > 1;
+
+            return string.Join(
+                ", ",
+                ordered.Select(d => multipleYears ? $"{GetGeorgianMonthName(d.Month)} {d.Year}" : GetGeorgianMonthName(d.Month))
+            );
+        }
+
+        private static string GetGeorgianMonthName(int month)
+        {
+            switch (month)
+            {
+                case 1: return "იანვარი";
+                case 2: return "თებერვალი";
+                case 3: return "მარტი";
+                case 4: return "აპრილი";
+                case 5: return "მაისი";
+                case 6: return "ივნისი";
+                case 7: return "ივლისი";
+                case 8: return "აგვისტო";
+                case 9: return "სექტემბერი";
+                case 10: return "ოქტომბერი";
+                case 11: return "ნოემბერი";
+                case 12: return "დეკემბერი";
+                default: return month.ToString();
+            }
         }
 
         /// <summary>
@@ -387,7 +598,7 @@ namespace BCCStudents.Application.Services {
             var students = _studentRepo.GetAllActiveStudents();
             int total = students.Count;
             int current = 0;
-            
+
             foreach (var student in students)
             {
                 // მხოლოდ მოსწავლეებს რომელთაც აქვთ ბალანსი > 0
@@ -404,6 +615,11 @@ namespace BCCStudents.Application.Services {
         public List<PaymentSummary> GetPaymentSummaries()
         {
             return _paymentRepo.GetPaymentSummaries();
+        }
+
+        public List<PaymentSummary> GetPendingPayments()
+        {
+            return _paymentRepo.GetPendingPayments();
         }
     }
 }

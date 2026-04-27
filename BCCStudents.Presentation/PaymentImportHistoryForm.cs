@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BCCStudents.Domain.Interfaces;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services;
-using BCCStudents;
 
 namespace BCCStudents.Presentation
 {
@@ -23,7 +15,7 @@ namespace BCCStudents.Presentation
             InitializeComponent();
             _paymentRepository = paymentRepository;
             _importService = importService;
-            
+
             InitializeForm();
             SetupDataGridViews();
             LoadData();
@@ -31,42 +23,45 @@ namespace BCCStudents.Presentation
 
         private void InitializeForm()
         {
-            FormTitleHelper.SetTitle(this, "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡ áƒ˜áƒ¡áƒ¢áƒáƒ áƒ˜áƒ");
-            
-            // áƒ¢áƒáƒ‘áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ
+            FormTitleHelper.SetTitle(this, "გადახდების იმპორტის ისტორია");
+
+            // ტაბების ინიციალიზაცია
             tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
-            
-            // áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¦áƒ˜áƒšáƒáƒ™áƒ˜
+
+            // განახლების ღილაკი
             btnRefresh.Click += BtnRefresh_Click;
-            
-            // áƒ¤áƒ˜áƒšáƒ¢áƒ áƒ˜áƒ¡ áƒ•áƒ”áƒšáƒ”áƒ‘áƒ˜
+
+            // ფილტრის ველები
             dtpFrom.Value = DateTime.Today.AddMonths(-1);
             dtpTo.Value = DateTime.Today;
             dtpFrom.ValueChanged += Filter_Changed;
             dtpTo.ValueChanged += Filter_Changed;
-            
-            // áƒ«áƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ
-            txtSearch.Text = "áƒ«áƒ˜áƒ”áƒ‘áƒ...";
+
+            // ძიების ველის ინიციალიზაცია
+            txtSearch.Text = "ძიება...";
             txtSearch.ForeColor = Color.Gray;
-            
-            txtSearch.Enter += (s, e) => {
-                if (txtSearch.Text == "áƒ«áƒ˜áƒ”áƒ‘áƒ...")
+
+            txtSearch.Enter += (s, e) =>
+            {
+                if (txtSearch.Text == "ძიება...")
                 {
                     txtSearch.Text = "";
                     txtSearch.ForeColor = Color.Black;
                 }
             };
-            
-            txtSearch.Leave += (s, e) => {
+
+            txtSearch.Leave += (s, e) =>
+            {
                 if (string.IsNullOrWhiteSpace(txtSearch.Text))
                 {
-                    txtSearch.Text = "áƒ«áƒ˜áƒ”áƒ‘áƒ...";
+                    txtSearch.Text = "ძიება...";
                     txtSearch.ForeColor = Color.Gray;
                 }
             };
-            
-            txtSearch.TextChanged += (s, e) => {
-                if (txtSearch.Text != "áƒ«áƒ˜áƒ”áƒ‘áƒ...")
+
+            txtSearch.TextChanged += (s, e) =>
+            {
+                if (txtSearch.Text != "ძიება...")
                 {
                     FilterPayments();
                 }
@@ -75,100 +70,100 @@ namespace BCCStudents.Presentation
 
         private void SetupDataGridViews()
         {
-            // áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒªáƒ®áƒ áƒ˜áƒšáƒ˜
+            // წარმატებული გადახდების ცხრილი
             dgvSuccessful.AutoGenerateColumns = false;
             dgvSuccessful.Columns.Clear();
-            
+
             dgvSuccessful.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PaymentDate",
-                HeaderText = "áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜",
+                HeaderText = "თარიღი",
                 DataPropertyName = "PaymentDate",
                 Width = 100
             });
-            
+
             dgvSuccessful.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Amount",
-                HeaderText = "áƒ—áƒáƒœáƒ®áƒ",
+                HeaderText = "თანხა",
                 DataPropertyName = "Amount",
                 Width = 100,
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" }
             });
-            
+
             dgvSuccessful.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "StudentName",
-                HeaderText = "áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”",
+                HeaderText = "მოსწავლე",
                 DataPropertyName = "StudentName",
                 Width = 200
             });
-            
+
             dgvSuccessful.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "GroupName",
-                HeaderText = "áƒ¯áƒ’áƒ£áƒ¤áƒ˜",
+                HeaderText = "ჯგუფი",
                 DataPropertyName = "GroupName",
                 Width = 150
             });
-            
+
             dgvSuccessful.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Description",
-                HeaderText = "áƒáƒ¦áƒ¬áƒ”áƒ áƒ",
+                HeaderText = "აღწერა",
                 DataPropertyName = "Description",
                 Width = 300
             });
 
-            // áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒªáƒ®áƒ áƒ˜áƒšáƒ˜
+            // ვერ შესრულებული გადახდების ცხრილი
             dgvFailed.AutoGenerateColumns = false;
             dgvFailed.Columns.Clear();
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "RowNumber",
-                HeaderText = "áƒ¡áƒ¢áƒ áƒ˜áƒ¥áƒáƒœáƒ˜",
+                HeaderText = "სტრიქონი",
                 DataPropertyName = "RowNumber",
                 Width = 80
             });
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PaymentDate",
-                HeaderText = "áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜",
+                HeaderText = "თარიღი",
                 DataPropertyName = "PaymentDate",
                 Width = 100
             });
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Amount",
-                HeaderText = "áƒ—áƒáƒœáƒ®áƒ",
+                HeaderText = "თანხა",
                 DataPropertyName = "Amount",
                 Width = 100,
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" }
             });
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PersonalId",
-                HeaderText = "áƒžáƒ˜áƒ áƒáƒ“áƒ˜ áƒœáƒáƒ›áƒ”áƒ áƒ˜",
+                HeaderText = "პირადი ნომერი",
                 DataPropertyName = "PersonalId",
                 Width = 120
             });
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Description",
-                HeaderText = "áƒáƒ¦áƒ¬áƒ”áƒ áƒ",
+                HeaderText = "აღწერა",
                 DataPropertyName = "Description",
                 Width = 300
             });
-            
+
             dgvFailed.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Reason",
-                HeaderText = "áƒ›áƒ˜áƒ–áƒ”áƒ–áƒ˜",
+                HeaderText = "მიზეზი",
                 DataPropertyName = "Reason",
                 Width = 200
             });
@@ -178,7 +173,7 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ
+                // წარმატებული გადახდების ჩატვირთვა
                 var successfulPayments = _paymentRepository.GetImportHistory()
                     .Where(p => p.NextPaymentDate >= dtpFrom.Value && p.NextPaymentDate <= dtpTo.Value)
                     .ToList();
@@ -203,10 +198,10 @@ namespace BCCStudents.Presentation
 
                 dgvSuccessful.DataSource = _successfulPayments;
 
-                // áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ
+                // ვერ შესრულებული გადახდების ჩატვირთვა
                 var failedPayments = _importService.GetFailedPayments();
-                    /*.Where(p => p.PaymentDate >= dtpFrom.Value && p.PaymentDate <= dtpTo.Value)
-                    .ToList();*/
+                /*.Where(p => p.PaymentDate >= dtpFrom.Value && p.PaymentDate <= dtpTo.Value)
+                .ToList();*/
 
                 _failedPayments = new DataTable();
                 _failedPayments.Columns.Add("RowNumber", typeof(int));
@@ -230,13 +225,13 @@ namespace BCCStudents.Presentation
 
                 dgvFailed.DataSource = _failedPayments;
 
-                // áƒ’áƒáƒœáƒ•áƒáƒáƒ®áƒšáƒáƒ— áƒ¡áƒ¢áƒáƒ¢áƒ˜áƒ¡áƒ¢áƒ˜áƒ™áƒ
+                // განვაახლოთ სტატისტიკა
                 UpdateStatistics();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ›áƒáƒœáƒáƒªáƒ”áƒ›áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"შეცდომა მონაცემების ჩატვირთვის დროს: {ex.Message}",
+                    "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -247,7 +242,7 @@ namespace BCCStudents.Presentation
             var totalAmount = _successfulPayments?.AsEnumerable()
                 .Sum(row => row.Field<decimal>("Amount")) ?? 0;
 
-            lblStatistics.Text = $"áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜: {totalSuccessful} | áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜: {totalFailed} | áƒ¯áƒáƒ›áƒ£áƒ áƒ˜ áƒ—áƒáƒœáƒ®áƒ: {totalAmount:N2} â‚¾";
+            lblStatistics.Text = $"წარმატებული: {totalSuccessful} | ვერ შესრულებული: {totalFailed} | ჯამური თანხა: {totalAmount:N2} ₾";
         }
 
         private void FilterPayments()
@@ -256,18 +251,18 @@ namespace BCCStudents.Presentation
             {
                 var searchText = txtSearch.Text?.ToLower() ?? "";
                 var fromDate = dtpFrom.Value.Date;
-                var toDate = dtpTo.Value.Date.AddDays(1).AddSeconds(-1); // áƒ“áƒáƒ•áƒáƒ›áƒáƒ¢áƒáƒ— áƒ“áƒ¦áƒ˜áƒ¡ áƒ‘áƒáƒšáƒáƒ›áƒ“áƒ”
+                var toDate = dtpTo.Value.Date.AddDays(1).AddSeconds(-1); // დავამატოთ დღის ბოლომდე
 
-                // áƒ›áƒ˜áƒ•áƒ˜áƒ¦áƒáƒ— áƒ§áƒ•áƒ”áƒšáƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ
+                // მივიღოთ ყველა გადახდა
                 var allPayments = _paymentRepository.GetAllPayments();
 
-                // áƒ’áƒáƒ•áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒ— áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜
+                // გავფილტროთ გადახდები
                 var filteredPayments = allPayments.Where(p =>
                 {
-                    // áƒ«áƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒªáƒ˜áƒ
-                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "áƒ«áƒ˜áƒ”áƒ‘áƒ...")
+                    // ძიების ტექსტის ფილტრაცია
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "ძიება...")
                     {
-                        var matchesSearch = 
+                        var matchesSearch =
                             (p.Description?.ToLower().Contains(searchText) ?? false) ||
                             (p.PayerName?.ToLower().Contains(searchText) ?? false) ||
                             (p.PersonalId?.ToString().Contains(searchText) ?? false) ||
@@ -276,39 +271,39 @@ namespace BCCStudents.Presentation
                         if (!matchesSearch) return false;
                     }
 
-                    // áƒ—áƒáƒ áƒ˜áƒ¦áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒªáƒ˜áƒ
+                    // თარიღების ფილტრაცია
                     if (p.PaymentDate < fromDate || p.PaymentDate > toDate)
                         return false;
 
                     return true;
                 }).ToList();
 
-                // áƒ’áƒáƒœáƒ•áƒáƒáƒ®áƒšáƒáƒ— áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒªáƒ®áƒ áƒ˜áƒšáƒ˜
+                // განვაახლოთ წარმატებული გადახდების ცხრილი
                 _successfulPayments.Clear();
                 foreach (var payment in filteredPayments)
                 {
                     _successfulPayments.Rows.Add(
                         payment.PaymentDate,
                         payment.Amount,
-                        payment.PayerName ?? "áƒ£áƒªáƒœáƒáƒ‘áƒ˜",
-                        payment.GroupName ?? "áƒ£áƒªáƒœáƒáƒ‘áƒ˜",
+                        payment.PayerName ?? "უცნობი",
+                        payment.GroupName ?? "უცნობი",
                         payment.Description ?? ""
                     );
                 }
 
-                // áƒ’áƒáƒœáƒ•áƒáƒáƒ®áƒšáƒáƒ— áƒ¡áƒ¢áƒáƒ¢áƒ˜áƒ¡áƒ¢áƒ˜áƒ™áƒ
+                // განვაახლოთ სტატისტიკა
                 UpdateStatistics();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒ˜áƒšáƒ¢áƒ áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"შეცდომა გადახდების ფილტრაციის დროს: {ex.Message}",
+                    "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void UpdateStatusLabel(int count)
         {
-            // áƒáƒ› áƒ›áƒ”áƒ—áƒáƒ“áƒ¡ áƒ•áƒáƒ¨áƒáƒ áƒ”áƒ‘áƒ—, áƒ áƒáƒ“áƒ’áƒáƒœ lblStatus áƒáƒ  áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡
+            // ამ მეთოდს ვაშორებთ, რადგან lblStatus არ არსებობს
         }
 
         private void Filter_Changed(object sender, EventArgs e)
@@ -326,4 +321,4 @@ namespace BCCStudents.Presentation
             LoadData();
         }
     }
-} 
+}

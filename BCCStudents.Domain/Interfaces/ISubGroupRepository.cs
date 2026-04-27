@@ -1,8 +1,6 @@
 ﻿using BCCStudents.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Data;
 using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Domain.Interfaces
 {

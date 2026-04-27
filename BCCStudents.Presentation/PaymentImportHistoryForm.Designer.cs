@@ -69,7 +69,7 @@
             this.tabSuccessful.Padding = new System.Windows.Forms.Padding(3);
             this.tabSuccessful.Size = new System.Drawing.Size(1351, 602);
             this.tabSuccessful.TabIndex = 0;
-            this.tabSuccessful.Text = "áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜";
+            this.tabSuccessful.Text = "წარმატებული გადახდები";
             this.tabSuccessful.UseVisualStyleBackColor = true;
             // 
             // dgvSuccessful
@@ -97,7 +97,7 @@
             this.tabFailed.Padding = new System.Windows.Forms.Padding(3);
             this.tabFailed.Size = new System.Drawing.Size(1159, 547);
             this.tabFailed.TabIndex = 1;
-            this.tabFailed.Text = "áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜";
+            this.tabFailed.Text = "ვერ შესრულებული გადახდები";
             this.tabFailed.UseVisualStyleBackColor = true;
             // 
             // dgvFailed
@@ -150,7 +150,7 @@
             this.btnRefresh.Name = "btnRefresh";
             this.btnRefresh.Size = new System.Drawing.Size(75, 23);
             this.btnRefresh.TabIndex = 6;
-            this.btnRefresh.Text = "áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ";
+            this.btnRefresh.Text = "განახლება";
             this.btnRefresh.UseVisualStyleBackColor = true;
             // 
             // txtSearch
@@ -167,7 +167,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(40, 13);
             this.label3.TabIndex = 4;
-            this.label3.Text = "áƒ«áƒ˜áƒ”áƒ‘áƒ:";
+            this.label3.Text = "ძებნა:";
             // 
             // dtpTo
             // 
@@ -184,7 +184,7 @@
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(29, 13);
             this.label2.TabIndex = 2;
-            this.label2.Text = "áƒ“áƒáƒœ";
+            this.label2.Text = "დან";
             // 
             // dtpFrom
             // 
@@ -201,7 +201,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(124, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ“áƒ˜áƒáƒžáƒáƒ–áƒáƒœáƒ˜:";
+            this.label1.Text = "თარიღის დიაპაზონი:";
             // 
             // PaymentImportHistoryForm
             // 
@@ -213,7 +213,7 @@
             this.MinimumSize = new System.Drawing.Size(800, 400);
             this.Name = "PaymentImportHistoryForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡ áƒ˜áƒ¡áƒ¢áƒáƒ áƒ˜áƒ";
+            this.Text = "გადახდების იმპორტის ისტორია";
             this.tabControl.ResumeLayout(false);
             this.tabSuccessful.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvSuccessful)).EndInit();

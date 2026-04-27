@@ -1,17 +1,20 @@
-﻿using System;
-using System.Windows.Forms;
-
-namespace BCCStudents.Presentation
+﻿namespace BCCStudents.Presentation
 {
     public class AdminCodePrompt : Form
     {
         private TextBox txtCode;
         private Button btnOK;
         private Button btnCancel;
+
+        private void InitializeComponent()
+        {
+
+        }
+
         public string EnteredCode => txtCode.Text;
         public AdminCodePrompt()
         {
-            this.Text = "áƒáƒ“áƒ›áƒ˜áƒœáƒ˜áƒ¡áƒ¢áƒ áƒáƒ¢áƒáƒ áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜";
+            this.Text = "ადმინის კოდი";
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterParent;
             this.Width = 300;
@@ -26,4 +29,4 @@ namespace BCCStudents.Presentation
             this.CancelButton = btnCancel;
         }
     }
-} 
+}

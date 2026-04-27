@@ -1,45 +1,40 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Interfaces;
-using System.Data;
+﻿using BCCStudents.Application.Interfaces;
 // Services will be moved to Application layer
 
-using System.Runtime.CompilerServices;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
+using System.Text.RegularExpressions;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public class PaymentRepository : IPaymentRepository
     {
-        private readonly DatabaseHelper _dbHelper;
-        public PaymentRepository(DatabaseHelper dbHelper)
+        private readonly IDatabaseConnectionProvider _connectionProvider;
+        public PaymentRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
         public static Payment payment = new Payment();
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ Payments áƒªáƒ®áƒ áƒ˜áƒšáƒ¨áƒ˜
+        /// გადახდის ჩანაწერის დამატება Payments ცხრილში
         /// </summary>
-        /// <param name="payment">áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜</param>
-        /// <returns>true áƒ—áƒ£ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ</returns>
+        /// <param name="payment">გადახდის ობიექტი</param>
+        /// <returns>true თუ წარმატებულია</returns>
         /// <remarks>
-        /// âš ï¸ áƒ¨áƒ”áƒœáƒ˜áƒ¨áƒ•áƒœáƒ: 
-        /// - PaymentMethod áƒ“áƒ Note áƒ•áƒ”áƒšáƒ”áƒ‘áƒ˜ áƒáƒ  áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ (áƒ™áƒáƒ›áƒ”áƒœáƒ¢áƒáƒ áƒ”áƒ‘áƒ¨áƒ˜áƒ)
-        /// - áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ: StudentId, GroupId, Amount, PaymentDate, PaymentStatus
+        /// Note:
+        /// - PaymentMethod და Note ველები არ ინახება (კომენტარებშია)
+        /// - ინახება: StudentId, GroupId, Amount, PaymentDate, PaymentStatus
         /// </remarks>
-        public bool InsertPayment(Payment payment)
+        public int InsertPayment(Payment payment)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 var query = @"INSERT INTO Payments 
-        (StudentId, GroupId, Amount, PaymentDate, PaymentStatus)
-        VALUES (@StudentId, @GroupId, @Amount, @PaymentDate, @PaymentStatus)";
+        (StudentId, GroupId, Amount, PaymentDate, PaymentStatus, Description)
+        VALUES (@StudentId, @GroupId, @Amount, @PaymentDate, @PaymentStatus, @Description);
+        SELECT LAST_INSERT_ID();";
                 connection.Open();
                 using (var cmd = new MySqlCommand(query, connection))
                 {
@@ -47,18 +42,20 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@GroupId", payment.GroupId);
                     cmd.Parameters.AddWithValue("@Amount", payment.Amount);
                     cmd.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
-                    //cmd.Parameters.AddWithValue("@PaymentMethod", payment.PaymentMethod); // áƒáƒ  áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ
+                    //cmd.Parameters.AddWithValue("@PaymentMethod", payment.PaymentMethod); // არ ინახება
                     cmd.Parameters.AddWithValue("@PaymentStatus", payment.PaymentStatus);
-                    //cmd.Parameters.AddWithValue("@Note", payment.Note ?? (object)DBNull.Value); // áƒáƒ  áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ
-                    cmd.ExecuteNonQuery();
+                    cmd.Parameters.AddWithValue("@Description", (object)payment.Description ?? DBNull.Value);
+                    //cmd.Parameters.AddWithValue("@Note", payment.Note ?? (object)DBNull.Value); // არ ინახება
+                    var id = Convert.ToInt32(cmd.ExecuteScalar());
+                    payment.Id = id;
+                    return id;
                 }
             }
-            return true;
         }
         public List<PaymentSummary> GetPendingPayments()
         {
             var list = new List<PaymentSummary>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -104,25 +101,25 @@ namespace BCCStudents.Infrastructure.Repositories
             return list;
         }
         /// <summary>
-        /// áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒšáƒ˜áƒ áƒ—áƒ£ áƒáƒ áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒ™áƒáƒœáƒ™áƒ áƒ”áƒ¢áƒ£áƒšáƒ˜ áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+        /// შეამოწმებს გადახდილია თუ არა ჯგუფი კონკრეტული პერიოდისთვის
         /// </summary>
-        /// <param name="studentId">áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ ID</param>
-        /// <param name="groupId">áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID</param>
-        /// <param name="periodDate">áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ (áƒ—áƒ•áƒ”/áƒ¬áƒ”áƒšáƒ˜ áƒ’áƒáƒ›áƒáƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ)</param>
-        /// <returns>true áƒ—áƒ£ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒšáƒ˜áƒ (PaymentStatus = 'Paid')</returns>
+        /// <param name="studentId">მოსწავლის ID</param>
+        /// <param name="groupId">ჯგუფის ID</param>
+        /// <param name="periodDate">პერიოდის თარიღი (თვე/წელი გამოყენება)</param>
+        /// <returns>true თუ გადახდილია (PaymentStatus = 'Paid')</returns>
         /// <remarks>
-        /// âš ï¸ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ•áƒáƒœáƒ˜:
-        /// - áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ Payments áƒªáƒ®áƒ áƒ˜áƒšáƒ¨áƒ˜ áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ
-        /// - áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ˜ = periodDate áƒ—áƒ•áƒ˜áƒ¡/áƒ¬áƒšáƒ˜áƒ¡ áƒ¤áƒáƒ áƒ’áƒšáƒ”áƒ‘áƒ¨áƒ˜
-        /// - áƒ›áƒ®áƒáƒšáƒáƒ“ PaymentStatus = 'Paid' áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜ áƒ˜áƒ—áƒ•áƒšáƒ”áƒ‘áƒ (áƒáƒ áƒ "Partial")
-        /// - áƒ’áƒáƒ›áƒáƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ PaymentService-áƒ¨áƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡ áƒ“áƒ£áƒ‘áƒšáƒ˜áƒ™áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒ—áƒáƒ•áƒ˜áƒ“áƒáƒœ áƒáƒ¡áƒáƒªáƒ˜áƒšáƒ”áƒ‘áƒšáƒáƒ“
+        /// Note:
+        /// - ამოწმებს Payments ცხრილში არის თუ არა გადახდა
+        /// - პერიოდი = periodDate თვის/წლის ფარგლებში
+        /// - მხოლოდ PaymentStatus = 'Paid' ითვლება (არა "Partial")
+        /// - გამოიყენება PaymentService-ში გადახდის დროს დუბლიკატების ასაცილებლად
         /// </remarks>
         public bool IsGroupPaidForPeriod(int studentId, int groupId, DateTime periodDate)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ’áƒáƒ“áƒáƒ®áƒ“áƒáƒ¡ áƒáƒ› áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡, áƒáƒ› áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡, áƒ—áƒ•áƒ”/áƒ¬áƒ”áƒšáƒ˜ áƒ”áƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ periodDate-áƒ¡
+                // ვეძებთ გადახდას ამ სტუდენტისთვის, ამ ჯგუფისთვის, თვე/წელი ემთხვევა periodDate-ს
                 string sql = @"
         SELECT COUNT(*) FROM Payments
         WHERE StudentId = @studentId
@@ -144,16 +141,16 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ”áƒ¥áƒ¡áƒ”áƒšáƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ“áƒáƒœ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒáƒ›áƒáƒ¦áƒ”áƒ‘áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ”áƒ‘áƒ˜
+        /// ექსელის ფაილიდან გადახდების ამოღების კოდები
         /// </summary>
         /// <param name="description"></param>
         /// <returns></returns>
-        // ðŸ” áƒ›áƒáƒ«áƒ”áƒ‘áƒœáƒáƒ¡ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜ áƒáƒ¦áƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—
+        // ვეძებთ სტუდენტის აღრიცხვას აღწერის მიხედვით
         public List<int> FindStudentsByDescription(string description)
         {
             List<int> studentIds = new List<int>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 string query = "SELECT id, CONCAT(FirstName, ' ', LastName) AS FullName FROM Students";
@@ -192,7 +189,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var list = new List<PaymentSummary>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -221,7 +218,7 @@ namespace BCCStudents.Infrastructure.Repositories
                             LastName = reader.GetString("LastName"),
                             GroupName = reader.GetString("GroupName"),
                             TotalPaid = reader.GetDecimal("PaidAmount"),
-                            NextPaymentDate = reader.GetDateTime("PaymentDate") // áƒáƒœ áƒ¡áƒ®áƒ•áƒ áƒ•áƒ”áƒšáƒ˜
+                            NextPaymentDate = reader.GetDateTime("PaymentDate") // ან სხვა ველი
                         });
                     }
                 }
@@ -231,11 +228,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public void AddPayment(int studentId, decimal amount)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
 
-                // 1. áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒáƒ¡ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ˜ (áƒ›áƒáƒ áƒ¢áƒ˜áƒ•áƒáƒ“ áƒ•áƒ˜áƒ¦áƒ”áƒ‘áƒ— áƒžáƒ˜áƒ áƒ•áƒ”áƒš áƒ¯áƒ’áƒ£áƒ¤áƒ¡ â€” áƒ¡áƒ£áƒ áƒ•áƒ˜áƒšáƒ˜áƒ¡áƒáƒ›áƒ”áƒ‘áƒ  áƒ¨áƒ”áƒ’áƒ˜áƒ«áƒšáƒ˜áƒ áƒ›áƒáƒ“áƒ˜áƒ¤áƒ˜áƒªáƒ˜áƒ áƒ”áƒ‘áƒ)
+                // 1. მოვიძიოთ სტუდენტის ჯგუფი (მარტივად ვიღებთ პირველ ჯგუფს — სურვილისამებრ შეიძლება მოდიფიცირება)
                 int groupId = 0;
                 using (var cmd = new MySqlCommand("SELECT GroupId FROM StudentGroups WHERE StudentId = @StudentId LIMIT 1", connection))
                 {
@@ -245,7 +242,7 @@ namespace BCCStudents.Infrastructure.Repositories
                         groupId = Convert.ToInt32(result);
                 }
 
-                // 2. áƒ©áƒáƒ¬áƒ”áƒ áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒªáƒ®áƒ áƒ˜áƒšáƒ¨áƒ˜
+                // 2. ჩაწერა გადახდების ცხრილში
                 var insertQuery = @"
             INSERT INTO Payments (StudentId, GroupId, Amount, PaymentDate, PaymentStatus)
             VALUES (@StudentId, @GroupId, @Amount, @PaymentDate, @PaymentStatus);";
@@ -262,23 +259,23 @@ namespace BCCStudents.Infrastructure.Repositories
                 }
             }
         }
-        
+
         /// <summary>
-        /// áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ™áƒáƒšáƒ”áƒœáƒ“áƒáƒ áƒ£áƒšáƒ˜ áƒ—áƒ•áƒ˜áƒ¡ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მიმდინარე კალენდარული თვის გადახდების მიღება
         /// </summary>
-        /// <param name="studentId">áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ ID</param>
-        /// <returns>áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ—áƒ•áƒ˜áƒ¡ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒ</returns>
+        /// <param name="studentId">მოსწავლის ID</param>
+        /// <returns>მიმდინარე თვის გადახდების სია</returns>
         /// <remarks>
-        /// âš ï¸ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ•áƒáƒœáƒ˜:
-        /// - áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒ›áƒ®áƒáƒšáƒáƒ“ áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ™áƒáƒšáƒ”áƒœáƒ“áƒáƒ áƒ£áƒš áƒ—áƒ•áƒ”áƒ¡ (CURRENT_DATE())
-        /// - áƒáƒ áƒ áƒ™áƒáƒœáƒ™áƒ áƒ”áƒ¢áƒ£áƒšáƒ˜ DateOfPayment-áƒ˜áƒ¡ áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ˜áƒ¡
-        /// - áƒ’áƒáƒ›áƒáƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ PaymentService-áƒ¨áƒ˜ áƒ“áƒ£áƒ‘áƒšáƒ˜áƒ™áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒ—áƒáƒ•áƒ˜áƒ“áƒáƒœ áƒáƒ¡áƒáƒªáƒ˜áƒšáƒ”áƒ‘áƒšáƒáƒ“
-        /// - áƒ’áƒáƒœáƒ¡áƒ®áƒ•áƒáƒ•áƒ”áƒ‘áƒ IsGroupPaidForPeriod-áƒ˜áƒ¡áƒ’áƒáƒœ: áƒ”áƒ¡ áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒ™áƒáƒšáƒ”áƒœáƒ“áƒáƒ áƒ£áƒš áƒ—áƒ•áƒ”áƒ¡, áƒ˜áƒ¡ áƒ™áƒ˜ DateOfPayment-áƒ˜áƒ¡ áƒ—áƒ•áƒ”áƒ¡
+        /// Note:
+        /// - ამოწმებს მხოლოდ მიმდინარე კალენდარულ თვეს (CURRENT_DATE())
+        /// - არა კონკრეტული DateOfPayment-ის პერიოდის
+        /// - გამოიყენება PaymentService-ში დუბლიკატების ასაცილებლად
+        /// - განსხვავდება IsGroupPaidForPeriod-ისგან: ის ამოწმებს კალენდარულ თვეს, ეს კი DateOfPayment-ის თვეს
         /// </remarks>
         public async Task<List<Payment>> GetCurrentMonthPayments(int studentId)
         {
             var payments = new List<Payment>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -317,7 +314,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Payment> GetStudentPayments(int studentId)
         {
             var payments = new List<Payment>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -353,7 +350,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public decimal GetTotalPaidAmount(int studentId, int groupId, DateTime startDate, DateTime endDate)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -379,7 +376,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public async Task<bool> AddPayments(IEnumerable<Payment> payments)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -423,7 +420,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public bool PaymentExists(DateTime paymentDate, decimal amount, long? personalId, string description)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -440,7 +437,7 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@amount", amount);
                     cmd.Parameters.AddWithValue("@description", description);
 
-                    // áƒ—áƒ£ áƒžáƒ˜áƒ áƒáƒ“áƒ˜ áƒœáƒáƒ›áƒ”áƒ áƒ˜ áƒáƒ áƒ˜áƒ¡, áƒ“áƒáƒ•áƒáƒ›áƒáƒ¢áƒáƒ— áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ—áƒ˜ áƒžáƒ˜áƒ áƒáƒ‘áƒ
+                    // თუ პირადი ნომერი არის, დავამატოთ დამატებითი პირობა
                     if (personalId.HasValue)
                     {
                         query += " AND s.Id_Numb = @personalId";
@@ -455,7 +452,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public List<PaymentSummary> GetPaymentSummaries()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -486,7 +483,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                 StudentCode = reader.GetString("StudentCode"),
                                 PaymentDate = reader.GetDateTime("PaymentDate"),
                                 Amount = reader.GetDecimal("Amount"),
-                                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? "áƒ’áƒáƒ“áƒáƒ®áƒ“áƒáƒ–áƒ” áƒáƒ¦áƒ¬áƒ”áƒ áƒ áƒáƒ  áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡" : reader .GetString("Description"),
+                                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? "გადახდაზე აღწერა არ არსებობს" : reader.GetString("Description"),
                                 FirstName = reader.GetString("FirstName"),
                                 LastName = reader.GetString("LastName"),
                                 GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString("GroupName"),
@@ -501,7 +498,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public IEnumerable<SuccessfulPayment> GetImportHistory()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -542,7 +539,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public int SaveFailedPayment(FailedPayment payment)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand())
@@ -573,7 +570,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public IEnumerable<FailedPayment> GetFailedPayments()
         {
             var failedPayments = new List<FailedPayment>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand())
@@ -608,7 +605,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public FailedPayment GetFailedPaymentById(int id)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand())
@@ -645,7 +642,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public void ClearFailedPayments()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand())
@@ -659,7 +656,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public void DeleteFailedPayment(DateTime paymentDate, decimal amount, long? personalId, string description)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var command = new MySqlCommand())
@@ -669,11 +666,11 @@ namespace BCCStudents.Infrastructure.Repositories
                                            WHERE PaymentDate = @paymentDate 
                                            AND Amount = @amount 
                                            AND Description = @description";
-                    
+
                     command.Parameters.AddWithValue("@paymentDate", paymentDate);
                     command.Parameters.AddWithValue("@amount", amount);
                     command.Parameters.AddWithValue("@description", description);
-                    
+
                     if (personalId.HasValue)
                     {
                         command.CommandText += " AND PersonalId = @personalId";
@@ -683,7 +680,7 @@ namespace BCCStudents.Infrastructure.Repositories
                     {
                         command.CommandText += " AND PersonalId IS NULL";
                     }
-                    
+
                     command.ExecuteNonQuery();
                 }
             }
@@ -692,7 +689,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<Payment> GetAllPayments()
         {
             var payments = new List<Payment>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -739,10 +736,10 @@ namespace BCCStudents.Infrastructure.Repositories
             return payments;
         }
 
-        // ImportedPaymentsLog-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+        // ImportedPaymentsLog-ისთვის
         public bool CheckImportedPaymentDuplicate(DateTime paymentDate, decimal amount, long? personalId, string description)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(*) FROM ImportedPaymentsLog WHERE PaymentDate = @paymentDate AND Amount = @amount AND Description = @description";
@@ -764,7 +761,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public int AddImportedPaymentLog(DateTime paymentDate, decimal amount, long? personalId, string description, string importSource)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO ImportedPaymentsLog (PaymentDate, Amount, PersonalId, Description, ImportSource, CreatedAt) VALUES (@paymentDate, @amount, @personalId, @description, @importSource, @createdAt);
@@ -785,7 +782,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public ImportedPaymentLog GetImportedPaymentLogById(int id)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, PaymentDate, Amount, PersonalId, Description, ImportSource, CreatedAt 
@@ -817,7 +814,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public bool CheckFailedPaymentDuplicate(DateTime paymentDate, decimal amount, long? personalId, string description)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(*) FROM FailedPayments WHERE PaymentDate = @paymentDate AND Amount = @amount AND Description = @description";

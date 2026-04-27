@@ -1,9 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using BCCStudents.Domain.Interfaces;
 using System.Text;
-using System.Threading;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync
 {
@@ -40,7 +36,7 @@ namespace BCCStudents.Application.Services.Sync
             }
             catch
             {
-                // áƒáƒ áƒáƒ¤áƒ”áƒ áƒ¡ áƒ•áƒáƒ™áƒ”áƒ—áƒ”áƒ‘áƒ— â€“ áƒáƒ  áƒ£áƒœáƒ“áƒ áƒ“áƒáƒ‘áƒšáƒáƒ™áƒáƒ¡ áƒáƒžáƒšáƒ˜áƒ™áƒáƒªáƒ˜áƒ.
+                // არაფერს ვაკეთებთ – არ უნდა დაბლოკოს აპლიკაცია.
             }
             finally
             {

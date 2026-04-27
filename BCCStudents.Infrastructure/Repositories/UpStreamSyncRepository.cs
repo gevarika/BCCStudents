@@ -1,33 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using BCCStudents.Infrastructure.Data;
-using MySql.Data.MySqlClient;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Infrastructure.Repositories.UpStream
 {
     /// <summary>
-    /// SyncOutbox áƒªáƒ®áƒ áƒ˜áƒšáƒ—áƒáƒœ áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ (áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ áƒ˜áƒ’áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ, áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ˜áƒ¡ áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ áƒ“áƒ áƒ.áƒ¨.).
+    /// SyncOutbox ცხრილთან მუშაობა (ჩანაწერების რიგში დამატება, შეცდომის ლოგირება და ა.შ.).
     /// </summary>
     public class UpStreamSyncRepository : IUpStreamSyncRepository
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
         private readonly object _schemaLock = new object();
         private bool _schemaEnsured;
 
-        public UpStreamSyncRepository(DatabaseHelper databaseHelper, ISyncLogger logger)
+        public UpStreamSyncRepository(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
-        /// SyncOutbox-áƒ¨áƒ˜ áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ¡ áƒáƒ®áƒáƒš áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ¡ áƒ›áƒáƒ¨áƒ˜áƒœ, áƒ áƒáƒªáƒ áƒ›áƒáƒ›áƒ”áƒœáƒ¢áƒáƒšáƒ£áƒ áƒ˜ áƒ¡áƒ˜áƒœáƒ¥áƒ˜ áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ“áƒ.
+        /// SyncOutbox-ში ამატებს ახალ ჩანაწერს მაშინ, როცა მომენტალური სინქრონიზაცია ვერ შესრულდა.
         /// </summary>
         public Task<long> EnqueueChangeAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
         {
@@ -38,7 +33,7 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
 
             try
             {
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
                     var sql = @"INSERT INTO SyncOutbox (TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, Status) 
@@ -52,24 +47,24 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
                         command.Parameters.AddWithValue("@RecordKey", payload.RecordKey);
                         command.Parameters.AddWithValue("@Operation", payload.Operation.ToString().ToUpperInvariant());
                         command.Parameters.AddWithValue("@PayloadJson", payload.PayloadJson);
-                        command.Parameters.AddWithValue("@OccurredAt", payload.CreatedAtUtc);
+                        command.Parameters.AddWithValue("@OccurredAt", payload.CreatedAt);
 
                         var result = command.ExecuteScalar();
                         var id = Convert.ToInt64(result);
-                        _logger.Info($"SyncOutbox â†’ áƒ“áƒáƒ›áƒáƒ¢áƒ“áƒ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜ #{id} ({payload.TableName}/{payload.Operation}/{payload.RecordKey}).");
+                        _logger.Info($"SyncOutbox → დაემატა ჩანაწერი #{id} ({payload.TableName}/{payload.Operation}/{payload.RecordKey}).");
                         return Task.FromResult(id);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.Error($"SyncOutbox-áƒ¨áƒ˜ áƒ©áƒáƒ¬áƒ”áƒ áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ ({payload.TableName}/{payload.RecordKey}).", ex);
+                _logger.Error($"SyncOutbox-ში ჩაწერა ვერ მოხერხდა ({payload.TableName}/{payload.RecordKey}).", ex);
                 throw;
             }
         }
 
         /// <summary>
-        /// áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ¡ Pending (Status = 0) áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ”áƒ‘áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ˜áƒ¡ áƒ“áƒ áƒáƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—.
+        /// აბრუნებს Pending (Status = 0) ჩანაწერებს შექმნის დროის მიხედვით.
         /// </summary>
         public async Task<IReadOnlyList<SyncOutboxItem>> GetPendingItemsAsync(int limit = 50, CancellationToken cancellationToken = default)
         {
@@ -80,7 +75,7 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
 
             try
             {
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                     var sql = @"SELECT Id, TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, LastError
@@ -122,14 +117,14 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
         }
 
         /// <summary>
-        /// áƒ›áƒáƒœáƒ˜áƒ¨áƒ•áƒœáƒ˜áƒ¡áƒáƒ¡ Status = 1, áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜ áƒáƒ¦áƒáƒ áƒáƒ áƒ›áƒáƒ¡áƒ˜áƒ’áƒœáƒáƒšáƒ˜ retry-áƒ–áƒ”.
+        /// მონიშვნისას Status = 1, ჩანაწერი აღარაა მოსიგნალე retry-ზე.
         /// </summary>
         public async Task MarkAsSuccessAsync(long outboxId, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             EnsureSchema();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 var sql = @"UPDATE SyncOutbox
@@ -144,14 +139,14 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
         }
 
         /// <summary>
-        /// áƒ¬áƒáƒ áƒ£áƒ›áƒáƒ¢áƒ”áƒ‘áƒ”áƒšáƒ˜ áƒ›áƒªáƒ“áƒ”áƒšáƒáƒ‘áƒ˜áƒ¡ áƒœáƒ˜áƒ¨áƒœáƒáƒ“ Attempts áƒ˜áƒ–áƒ áƒ“áƒ”áƒ‘áƒ áƒ“áƒ áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ áƒ‘áƒáƒšáƒ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ.
+        /// წარუმატებელი მცდელობისას Attempts იზრდება და ინახება ბოლო შეცდომა.
         /// </summary>
         public async Task MarkAsFailedAsync(long outboxId, string errorMessage, bool giveUp, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             EnsureSchema();
 
-            using (var connection = _databaseHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 var sql = @"UPDATE SyncOutbox
@@ -177,7 +172,7 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
             {
                 if (_schemaEnsured) return;
 
-                using (var connection = _databaseHelper.GetLocalConnection())
+                using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
 
@@ -201,17 +196,17 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
                         command.ExecuteNonQuery();
                     }
 
-                    // áƒ—áƒ£ áƒ«áƒ•áƒ”áƒšáƒ˜ áƒ•áƒ”áƒ áƒ¡áƒ˜áƒ˜áƒ¡ SyncOutbox áƒªáƒ®áƒ áƒ˜áƒšáƒ˜ áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ RecordKey-áƒ˜áƒ¡ áƒ’áƒáƒ áƒ”áƒ¨áƒ” â€“ áƒ“áƒáƒ•áƒáƒ›áƒáƒ¢áƒáƒ— áƒ¡áƒ•áƒ”áƒ¢áƒ˜
+                    // თუ ძველი ვერსიის SyncOutbox ცხრილი არ არსებობს RecordKey-ის გარეშე – დავამატოთ სვეტი
                     try
                     {
-                        // áƒ¨áƒ”áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒáƒ—, áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ áƒ—áƒ£ áƒáƒ áƒ RecordKey áƒ¡áƒ•áƒ”áƒ¢áƒ˜
+                        // შევამოწმოთ, არსებობს თუ არა RecordKey სვეტი
                         var checkColumnSql = @"
                             SELECT COUNT(*) 
                             FROM INFORMATION_SCHEMA.COLUMNS 
                             WHERE TABLE_SCHEMA = DATABASE() 
                             AND TABLE_NAME = 'SyncOutbox' 
                             AND COLUMN_NAME = 'RecordKey';";
-                        
+
                         using (var checkCmd = new MySqlCommand(checkColumnSql, connection))
                         {
                             var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
@@ -229,8 +224,8 @@ namespace BCCStudents.Infrastructure.Repositories.UpStream
                     }
                     catch (Exception ex)
                     {
-                        // áƒ—áƒ£ áƒ áƒáƒ›áƒ” áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ›áƒáƒ®áƒ“áƒ, áƒ•áƒ£áƒ’áƒ£áƒšáƒ”áƒ‘áƒ”áƒšáƒ§áƒáƒ¤áƒ— (áƒ¡áƒ•áƒ”áƒ¢áƒ˜ áƒ¨áƒ”áƒ˜áƒ«áƒšáƒ”áƒ‘áƒ áƒ£áƒ™áƒ•áƒ” áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ“áƒ”áƒ¡)
-                        _logger.Error("RecordKey áƒ¡áƒ•áƒ”áƒ¢áƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ/áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ", ex);
+                        // თუ რამე შეცდომა მოხდა, ვუგულებელვყოფთ (სვეტი შეიძლება უკვე არსებობდეს)
+                        _logger.Error("RecordKey სვეტის შექმნა/დამატება ვერ მოხდა", ex);
                     }
                 }
 

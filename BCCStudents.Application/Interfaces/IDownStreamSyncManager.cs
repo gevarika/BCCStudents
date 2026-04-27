@@ -1,4 +1,3 @@
-using System;
 using BCCStudents.Application.Services.Sync;
 
 namespace BCCStudents.Application.Interfaces

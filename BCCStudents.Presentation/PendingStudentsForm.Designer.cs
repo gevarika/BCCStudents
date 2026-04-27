@@ -29,102 +29,116 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PendingStudentsForm));
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.btnApprove = new System.Windows.Forms.Button();
-            this.btnDelete = new System.Windows.Forms.Button();
-            this.btnSaveChanges = new System.Windows.Forms.Button();
-            this.btnDownloadAll = new System.Windows.Forms.Button();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.lblSelection = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
-            this.SuspendLayout();
+            dataGridView1 = new DataGridView();
+            btnApprove = new Button();
+            btnDelete = new Button();
+            btnSaveChanges = new Button();
+            btnDownloadAll = new Button();
+            progressBar1 = new ProgressBar();
+            lblSelection = new Label();
+            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            SuspendLayout();
             // 
             // dataGridView1
             // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(12, 44);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(776, 362);
-            this.dataGridView1.TabIndex = 0;
-            this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
-            this.dataGridView1.CurrentCellDirtyStateChanged += new System.EventHandler(this.dataGridView1_CurrentCellDirtyStateChanged);
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AllowUserToDeleteRows = false;
+            dataGridView1.BorderStyle = BorderStyle.None;
+            dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridView1.EditMode = DataGridViewEditMode.EditProgrammatically;
+            dataGridView1.Location = new Point(14, 51);
+            dataGridView1.Margin = new Padding(4, 3, 4, 3);
+            dataGridView1.MultiSelect = false;
+            dataGridView1.Name = "dataGridView1";
+            dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView1.Size = new Size(905, 418);
+            dataGridView1.TabIndex = 0;
+            dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+            dataGridView1.CurrentCellDirtyStateChanged += dataGridView1_CurrentCellDirtyStateChanged;
             // 
             // btnApprove
             // 
-            this.btnApprove.Location = new System.Drawing.Point(690, 415);
-            this.btnApprove.Name = "btnApprove";
-            this.btnApprove.Size = new System.Drawing.Size(98, 23);
-            this.btnApprove.TabIndex = 1;
-            this.btnApprove.Text = "დადასტურება";
-            this.btnApprove.UseVisualStyleBackColor = true;
-            this.btnApprove.Click += new System.EventHandler(this.btnApprove_Click);
+            btnApprove.Location = new Point(805, 479);
+            btnApprove.Margin = new Padding(4, 3, 4, 3);
+            btnApprove.Name = "btnApprove";
+            btnApprove.Size = new Size(114, 27);
+            btnApprove.TabIndex = 1;
+            btnApprove.Text = "დადასტურება";
+            btnApprove.UseVisualStyleBackColor = true;
+            btnApprove.Click += btnApprove_Click;
             // 
             // btnDelete
             // 
-            this.btnDelete.Location = new System.Drawing.Point(586, 415);
-            this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(98, 23);
-            this.btnDelete.TabIndex = 1;
-            this.btnDelete.Text = "წაშლა";
-            this.btnDelete.UseVisualStyleBackColor = true;
-            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+            btnDelete.Location = new Point(684, 479);
+            btnDelete.Margin = new Padding(4, 3, 4, 3);
+            btnDelete.Name = "btnDelete";
+            btnDelete.Size = new Size(114, 27);
+            btnDelete.TabIndex = 1;
+            btnDelete.Text = "წაშლა";
+            btnDelete.UseVisualStyleBackColor = true;
+            btnDelete.Click += btnDelete_Click;
             // 
             // btnSaveChanges
             // 
-            this.btnSaveChanges.Location = new System.Drawing.Point(12, 415);
-            this.btnSaveChanges.Name = "btnSaveChanges";
-            this.btnSaveChanges.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveChanges.TabIndex = 2;
-            this.btnSaveChanges.Text = "შენახვა";
-            this.btnSaveChanges.UseVisualStyleBackColor = true;
-            this.btnSaveChanges.Click += new System.EventHandler(this.btnSaveChanges_Click);
+            btnSaveChanges.Location = new Point(14, 479);
+            btnSaveChanges.Margin = new Padding(4, 3, 4, 3);
+            btnSaveChanges.Name = "btnSaveChanges";
+            btnSaveChanges.Size = new Size(88, 27);
+            btnSaveChanges.TabIndex = 2;
+            btnSaveChanges.Text = "შენახვა";
+            btnSaveChanges.UseVisualStyleBackColor = true;
+            btnSaveChanges.Click += btnSaveChanges_Click;
             // 
             // btnDownloadAll
             // 
-            this.btnDownloadAll.Location = new System.Drawing.Point(12, 15);
-            this.btnDownloadAll.Name = "btnDownloadAll";
-            this.btnDownloadAll.Size = new System.Drawing.Size(158, 23);
-            this.btnDownloadAll.TabIndex = 3;
-            this.btnDownloadAll.Text = "ფაილების ჩამოტვირთვა";
-            this.btnDownloadAll.UseVisualStyleBackColor = true;
-            this.btnDownloadAll.Click += new System.EventHandler(this.btnDownloadAll_Click);
+            btnDownloadAll.Location = new Point(14, 17);
+            btnDownloadAll.Margin = new Padding(4, 3, 4, 3);
+            btnDownloadAll.Name = "btnDownloadAll";
+            btnDownloadAll.Size = new Size(184, 27);
+            btnDownloadAll.TabIndex = 3;
+            btnDownloadAll.Text = "ფაილების ჩამოტვირთვა";
+            btnDownloadAll.UseVisualStyleBackColor = true;
+            btnDownloadAll.Click += btnDownloadAll_Click;
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(121, 415);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(404, 23);
-            this.progressBar1.TabIndex = 4;
+            progressBar1.Location = new Point(141, 479);
+            progressBar1.Margin = new Padding(4, 3, 4, 3);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(471, 27);
+            progressBar1.TabIndex = 4;
             // 
             // lblSelection
             // 
-            this.lblSelection.AutoSize = true;
-            this.lblSelection.Location = new System.Drawing.Point(583, 25);
-            this.lblSelection.Name = "lblSelection";
-            this.lblSelection.Size = new System.Drawing.Size(35, 13);
-            this.lblSelection.TabIndex = 5;
-            this.lblSelection.Text = "label1";
+            lblSelection.AutoSize = true;
+            lblSelection.Location = new Point(680, 29);
+            lblSelection.Margin = new Padding(4, 0, 4, 0);
+            lblSelection.Name = "lblSelection";
+            lblSelection.Size = new Size(38, 15);
+            lblSelection.TabIndex = 5;
+            lblSelection.Text = "label1";
             // 
             // PendingStudentsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.lblSelection);
-            this.Controls.Add(this.progressBar1);
-            this.Controls.Add(this.btnDownloadAll);
-            this.Controls.Add(this.btnSaveChanges);
-            this.Controls.Add(this.btnDelete);
-            this.Controls.Add(this.btnApprove);
-            this.Controls.Add(this.dataGridView1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "PendingStudentsForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "PendingStudentsForm";
-            this.Load += new System.EventHandler(this.PendingStudentsForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(933, 519);
+            Controls.Add(lblSelection);
+            Controls.Add(progressBar1);
+            Controls.Add(btnDownloadAll);
+            Controls.Add(btnSaveChanges);
+            Controls.Add(btnDelete);
+            Controls.Add(btnApprove);
+            Controls.Add(dataGridView1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "PendingStudentsForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "PendingStudentsForm";
+            Load += PendingStudentsForm_Load;
+            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 

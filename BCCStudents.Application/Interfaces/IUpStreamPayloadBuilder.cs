@@ -1,5 +1,4 @@
 using BCCStudents.Domain.Entities;
-using BCCStudents;
 
 namespace BCCStudents.Application.Interfaces
 {
@@ -42,6 +41,16 @@ namespace BCCStudents.Application.Interfaces
         /// ქმნის იმპორტირებული გადახდის ლოგის payload-ს
         /// </summary>
         SyncChangePayload BuildImportedPaymentLogPayload(int importedPaymentLogId, SyncOperationType operation, ImportedPaymentLog importedPaymentLog);
+
+        /// <summary>
+        /// ქმნის გადახდის payload-ს
+        /// </summary>
+        SyncChangePayload BuildPaymentPayload(int paymentId, SyncOperationType operation, Payment payment);
+
+        /// <summary>
+        /// ქმნის მომხმარებლის payload-ს
+        /// </summary>
+        SyncChangePayload BuildUserPayload(int userId, SyncOperationType operation, UserModel user);
     }
 }
 

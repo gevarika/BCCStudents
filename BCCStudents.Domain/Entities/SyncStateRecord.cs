@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BCCStudents.Domain.Entities
+﻿namespace BCCStudents.Domain.Entities
 {
     public class SyncStateRecord
     {

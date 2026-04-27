@@ -1,8 +1,4 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using BCCStudents.Domain.Entities;
-using BCCStudents;
 
 namespace BCCStudents.Application.Interfaces
 {
@@ -52,6 +48,18 @@ namespace BCCStudents.Application.Interfaces
         Task TrackImportedPaymentLogChangeAsync(int importedPaymentLogId, string operation, ImportedPaymentLog snapshot, CancellationToken cancellationToken = default);
         void TrackImportedPaymentLogChange(int importedPaymentLogId, SyncOperationType operation, ImportedPaymentLog snapshot);
         void TrackImportedPaymentLogChange(int importedPaymentLogId, string operation, ImportedPaymentLog snapshot);
+
+        // Payments
+        Task TrackPaymentChangeAsync(int paymentId, SyncOperationType operation, Payment snapshot, CancellationToken cancellationToken = default);
+        Task TrackPaymentChangeAsync(int paymentId, string operation, Payment snapshot, CancellationToken cancellationToken = default);
+        void TrackPaymentChange(int paymentId, SyncOperationType operation, Payment snapshot);
+        void TrackPaymentChange(int paymentId, string operation, Payment snapshot);
+
+        // Users
+        Task TrackUserChangeAsync(int userId, SyncOperationType operation, UserModel snapshot, CancellationToken cancellationToken = default);
+        Task TrackUserChangeAsync(int userId, string operation, UserModel snapshot, CancellationToken cancellationToken = default);
+        void TrackUserChange(int userId, SyncOperationType operation, UserModel snapshot);
+        void TrackUserChange(int userId, string operation, UserModel snapshot);
     }
 }
 

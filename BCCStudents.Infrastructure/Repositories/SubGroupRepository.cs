@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using BCCStudents.Infrastructure.Data;
+using System.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
@@ -14,11 +12,11 @@ namespace BCCStudents.Infrastructure.Repositories
     /// </summary>
     public class SubGroupRepository : ISubGroupRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public SubGroupRepository(DatabaseHelper dbHelper)
+        public SubGroupRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         #region ==================== INSERT - ქვეჯგუფის ჩასმა ====================
@@ -28,11 +26,11 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int AddSubGroup(SubGroup subGroup)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                var query = @"INSERT INTO SubGroups (Name, GroupId, TuitionFee, StudentCount, Status, UpdatedAt) 
-                              VALUES (@Name, @GroupId, @TuitionFee, @StudentCount, @Status, @UpdatedAt);
+                var query = @"INSERT INTO SubGroups (Name, GroupId, TuitionFee, MaxStudents, StudentCount, Status, UpdatedAt) 
+                              VALUES (@Name, @GroupId, @TuitionFee, @MaxStudents, @StudentCount, @Status, @UpdatedAt);
                               SELECT LAST_INSERT_ID();";
 
                 using (var cmd = new MySqlCommand(query, connection))
@@ -40,6 +38,7 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@Name", subGroup.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@GroupId", subGroup.GroupId);
                     cmd.Parameters.AddWithValue("@TuitionFee", subGroup.TuitionFee);
+                    cmd.Parameters.AddWithValue("@MaxStudents", subGroup.MaxStudents);
                     cmd.Parameters.AddWithValue("@StudentCount", subGroup.StudentCount);
                     cmd.Parameters.AddWithValue("@Status", subGroup.Status);
                     cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
@@ -88,7 +87,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public SubGroup GetSubGroupById(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -116,7 +115,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public SubGroup GetSubGroupByNumber(int groupId, int subGroupNumber)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -145,7 +144,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public SubGroup GetSubGroupByName(int groupId, string name)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -174,7 +173,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public SubGroup GetFirstSubGroupByGroupId(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -205,7 +204,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<SubGroup> GetAllSubGroups()
         {
             var subGroups = new List<SubGroup>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -231,7 +230,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<SubGroup> GetAllActiveSubGroups()
         {
             var subGroups = new List<SubGroup>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -258,7 +257,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<SubGroup> GetSubGroupsByGroupId(int groupId)
         {
             var subGroups = new List<SubGroup>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -287,7 +286,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetAllSubGroupsFor()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.Id, sg.Name, sg.TuitionFee, sg.StudentCount, sg.Status, 
@@ -312,7 +311,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<SubGroup> GetStudentSubGroupsByStudentId(int studentId)
         {
             var subGroups = new List<SubGroup>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.*, g.Name AS ParentGroupName 
@@ -343,7 +342,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetCurrentStudentSubGroupId(int studentId, int groupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT SubGroupId FROM StudentSubGroups 
@@ -366,7 +365,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetStudentCountInSubGroup(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(*) FROM StudentSubGroups 
@@ -386,7 +385,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool SubGroupExists(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(*) FROM SubGroups WHERE Id = @Id";
@@ -404,7 +403,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool SubGroupExistsByName(int groupId, string name)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(*) FROM SubGroups WHERE GroupId = @GroupId AND Name = @Name";
@@ -427,7 +426,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroup(SubGroup subGroup)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE SubGroups SET 
@@ -458,7 +457,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroupName(int subGroupId, string newName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET Name = @Name, UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -479,7 +478,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroupTuitionFee(int subGroupId, decimal newFee)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET TuitionFee = @TuitionFee, UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -500,7 +499,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroupStatus(int subGroupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET Status = @Status, UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -521,7 +520,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroupsStatusByGroupId(int groupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET Status = @Status, UpdatedAt = @UpdatedAt WHERE GroupId = @GroupId";
@@ -546,7 +545,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateSubGroupStudentCount(int subGroupId, int count)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET StudentCount = @Count, UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -568,7 +567,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public bool IncrementSubGroupCount(int subGroupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null)
         {
             bool useExternal = externalConnection != null;
-            var connection = useExternal ? externalConnection : _dbHelper.GetLocalConnection();
+            var connection = useExternal ? externalConnection : _connectionProvider.GetLocalConnection();
 
             try
             {
@@ -596,7 +595,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DecreaseStudentCount(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET StudentCount = GREATEST(StudentCount - 1, 0), UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -620,7 +619,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentSubGroup(int studentId, int groupId, int newSubGroupId, int oldSubGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentSubGroups SET SubGroupId = @NewSubGroupId, UpdatedAt = @UpdatedAt
@@ -645,7 +644,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentSubGroupPaymentStatus(int studentId, int groupId, int subGroupId, string status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentSubGroups SET PaymentStatus = @Status, UpdatedAt = @UpdatedAt
@@ -670,7 +669,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public void UpdateStudentSubGroupPaymentDate(int studentId, int groupId, int subGroupId, DateTime paymentDate)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentSubGroups SET DateOfPayment = @PaymentDate, UpdatedAt = @UpdatedAt
@@ -695,7 +694,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateStudentSubGroupStatus(int groupId, int studentId, int subGroupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentSubGroups SET Status = @Status, UpdatedAt = @UpdatedAt
@@ -723,7 +722,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DeleteSubGroup(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE SubGroups SET Status = 0, UpdatedAt = @UpdatedAt WHERE Id = @Id";
@@ -743,7 +742,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool HardDeleteSubGroup(int subGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "DELETE FROM SubGroups WHERE Id = @Id";
@@ -762,7 +761,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DeleteStudentFromSubGroup(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentSubGroups SET Status = 0, IsDeleted = 1, UpdatedAt = @UpdatedAt
@@ -796,7 +795,7 @@ namespace BCCStudents.Infrastructure.Repositories
                 TuitionFee = reader.IsDBNull(reader.GetOrdinal("TuitionFee")) ? 0 : reader.GetDecimal("TuitionFee"),
                 StudentCount = reader.IsDBNull(reader.GetOrdinal("StudentCount")) ? 0 : reader.GetInt32("StudentCount"),
                 Status = !reader.IsDBNull(reader.GetOrdinal("Status")) && reader.GetBoolean("Status"),
-                ParentGroupName = HasColumn(reader, "ParentGroupName") && !reader.IsDBNull(reader.GetOrdinal("ParentGroupName")) 
+                ParentGroupName = HasColumn(reader, "ParentGroupName") && !reader.IsDBNull(reader.GetOrdinal("ParentGroupName"))
                     ? reader.GetString("ParentGroupName") : null,
                 UpdatedAt = reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? DateTime.MinValue : reader.GetDateTime("UpdatedAt")
             };

@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Newtonsoft.Json;
 using BCCStudents.Domain.Entities;
+using Newtonsoft.Json;
 
 namespace BCCStudents.Infrastructure.Data.JSON
 {

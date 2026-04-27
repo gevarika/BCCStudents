@@ -29,55 +29,64 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FailedStudentsForm));
-            this.dataGridViewStudents = new System.Windows.Forms.DataGridView();
-            this.btnDeleteStudent = new System.Windows.Forms.Button();
-            this.btnAddStudent = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewStudents)).BeginInit();
-            this.SuspendLayout();
+            dataGridViewStudents = new DataGridView();
+            btnDeleteStudent = new Button();
+            btnAddStudent = new Button();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).BeginInit();
+            SuspendLayout();
             // 
             // dataGridViewStudents
             // 
-            this.dataGridViewStudents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewStudents.Location = new System.Drawing.Point(12, 12);
-            this.dataGridViewStudents.Name = "dataGridViewStudents";
-            this.dataGridViewStudents.Size = new System.Drawing.Size(542, 217);
-            this.dataGridViewStudents.TabIndex = 0;
-            this.dataGridViewStudents.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridViewStudents_CellEndEdit);
+            dataGridViewStudents.AllowUserToAddRows = false;
+            dataGridViewStudents.AllowUserToDeleteRows = false;
+            dataGridViewStudents.BorderStyle = BorderStyle.None;
+            dataGridViewStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewStudents.EditMode = DataGridViewEditMode.EditProgrammatically;
+            dataGridViewStudents.EnableHeadersVisualStyles = false;
+            dataGridViewStudents.Location = new Point(14, 14);
+            dataGridViewStudents.Margin = new Padding(4, 3, 4, 3);
+            dataGridViewStudents.Name = "dataGridViewStudents";
+            dataGridViewStudents.Size = new Size(810, 705);
+            dataGridViewStudents.TabIndex = 0;
+            dataGridViewStudents.CellEndEdit += dataGridViewStudents_CellEndEdit;
             // 
             // btnDeleteStudent
             // 
-            this.btnDeleteStudent.Location = new System.Drawing.Point(595, 36);
-            this.btnDeleteStudent.Name = "btnDeleteStudent";
-            this.btnDeleteStudent.Size = new System.Drawing.Size(75, 23);
-            this.btnDeleteStudent.TabIndex = 1;
-            this.btnDeleteStudent.Text = "წაშლა";
-            this.btnDeleteStudent.UseVisualStyleBackColor = true;
-            this.btnDeleteStudent.Click += new System.EventHandler(this.btnDeleteStudent_Click);
+            btnDeleteStudent.Location = new Point(832, 14);
+            btnDeleteStudent.Margin = new Padding(4, 3, 4, 3);
+            btnDeleteStudent.Name = "btnDeleteStudent";
+            btnDeleteStudent.Size = new Size(88, 27);
+            btnDeleteStudent.TabIndex = 1;
+            btnDeleteStudent.Text = "წაშლა";
+            btnDeleteStudent.UseVisualStyleBackColor = true;
+            btnDeleteStudent.Click += btnDeleteStudent_Click;
             // 
             // btnAddStudent
             // 
-            this.btnAddStudent.Location = new System.Drawing.Point(595, 65);
-            this.btnAddStudent.Name = "btnAddStudent";
-            this.btnAddStudent.Size = new System.Drawing.Size(75, 23);
-            this.btnAddStudent.TabIndex = 1;
-            this.btnAddStudent.Text = "დამატება";
-            this.btnAddStudent.UseVisualStyleBackColor = true;
-            this.btnAddStudent.Click += new System.EventHandler(this.btnAddStudent_Click);
+            btnAddStudent.Location = new Point(832, 47);
+            btnAddStudent.Margin = new Padding(4, 3, 4, 3);
+            btnAddStudent.Name = "btnAddStudent";
+            btnAddStudent.Size = new Size(88, 27);
+            btnAddStudent.TabIndex = 1;
+            btnAddStudent.Text = "დამატება";
+            btnAddStudent.UseVisualStyleBackColor = true;
+            btnAddStudent.Click += btnAddStudent_Click;
             // 
             // FailedStudentsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 306);
-            this.Controls.Add(this.btnAddStudent);
-            this.Controls.Add(this.btnDeleteStudent);
-            this.Controls.Add(this.dataGridViewStudents);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "FailedStudentsForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FailedStudentsForm";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewStudents)).EndInit();
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(933, 760);
+            Controls.Add(btnAddStudent);
+            Controls.Add(btnDeleteStudent);
+            Controls.Add(dataGridViewStudents);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "FailedStudentsForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "FailedStudentsForm";
+            ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).EndInit();
+            ResumeLayout(false);
 
         }
 

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Windows.Forms;
-using BCCStudents.Application.Services.Sync;
-using BCCStudents.Application.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
     /// <summary>
-    /// Base Form áƒ áƒáƒ›áƒ”áƒšáƒ˜áƒª áƒ¨áƒ”áƒ˜áƒªáƒáƒ•áƒ¡ áƒ¡áƒ˜áƒœáƒ¥áƒ áƒáƒœáƒ˜áƒ–áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ™áƒáƒœáƒ¢áƒ áƒáƒšáƒ¡
+    /// BaseForm - საერთო ბაზური ფორმა, რომელიც შეიცავს სინქრონიზაციის სტატუსის კონტროლს.
     /// </summary>
     public partial class BaseForm : Form
     {
@@ -14,11 +11,11 @@ namespace BCCStudents.Presentation
         protected StatusStrip StatusStrip { get; private set; }
 
         /// <summary>
-        /// áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ áƒ¡áƒ˜áƒœáƒ¥áƒ áƒáƒœáƒ˜áƒ–áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ™áƒáƒœáƒ¢áƒ áƒáƒšáƒ˜áƒ—
+        /// სინქრონიზაციის სტატუსის კონტროლის ინიციალიზაცია.
         /// </summary>
         protected void InitializeSyncStatus(IDownStreamSyncManager downStreamManager, IUpStreamSyncManager upStreamManager)
         {
-            // áƒ•áƒ¥áƒ›áƒœáƒ˜áƒ— StatusStrip-áƒ¡ áƒ—áƒ£ áƒáƒ  áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡
+            // თუ StatusStrip ჯერ არ არის შექმნილი, ვქმნით
             if (StatusStrip == null)
             {
                 StatusStrip = new StatusStrip
@@ -29,19 +26,19 @@ namespace BCCStudents.Presentation
                 this.Controls.Add(StatusStrip);
             }
 
-            // áƒ•áƒ¥áƒ›áƒœáƒ˜áƒ— SyncStatusControl-áƒ¡
+            // ვქმნით SyncStatusControl-ს
             SyncStatusControl = new SyncStatusControl();
-            // áƒ•áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ— Control-áƒ¡ Invoke-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+            // ვუთითებთ Control-ს, რომელსაც გამოიყენებს Invoke-სთვის
             SyncStatusControl.SetInvokeControl(StatusStrip);
             var statusItems = SyncStatusControl.GetStatusItems();
 
-            // áƒ•áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ— statusStrip-áƒ–áƒ”
+            // ვამატებთ მიღებულ StatusItem-ებს StatusStrip-ში
             foreach (var item in statusItems)
             {
                 StatusStrip.Items.Add(item);
             }
 
-            // Event handlers-áƒ˜áƒ¡ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ
+            // ვამაგრებთ Event handler-ებს DownStream / UpStream სინქისთვის
             if (downStreamManager != null)
             {
                 downStreamManager.SyncCompleted += (sender, args) =>

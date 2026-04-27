@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Linq;
+﻿using System.Data;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace BCCStudents.Presentation
 {
@@ -21,7 +16,7 @@ namespace BCCStudents.Presentation
 
         public LogViewerForm()
         {
-            this.Text = "áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒšáƒáƒ’áƒ”áƒ‘áƒ˜áƒ¡ áƒœáƒáƒ®áƒ•áƒ";
+            this.Text = "სტუდენტების ლოგების ნახვა";
             this.Width = 1100;
             this.Height = 700;
             InitializeComponents();
@@ -55,16 +50,16 @@ namespace BCCStudents.Presentation
             dtFrom = new DateTimePicker { Format = DateTimePickerFormat.Short, Width = 110, Left = 610, Top = 10 };
             dtTo = new DateTimePicker { Format = DateTimePickerFormat.Short, Width = 110, Left = 730, Top = 10 };
             cmbStatus = new ComboBox { Width = 120, Left = 850, Top = 10, DropDownStyle = ComboBoxStyle.DropDownList };
-            btnFilter = new Button { Text = "áƒ’áƒáƒ¤áƒ˜áƒšáƒ¢áƒ áƒ”", Left = 980, Top = 10, Width = 90 };
-            btnClear = new Button { Text = "áƒ’áƒáƒ¡áƒ£áƒ¤áƒ—áƒáƒ•áƒ”áƒ‘áƒ", Left = 1080, Top = 10, Width = 100 };
+            btnFilter = new Button { Text = "გაფილტრე", Left = 980, Top = 10, Width = 90 };
+            btnClear = new Button { Text = "გასუფთავება", Left = 1080, Top = 10, Width = 100 };
 
-            cmbUser.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ›áƒ®áƒ›áƒáƒ áƒ”áƒ‘áƒ”áƒšáƒ˜");
+            cmbUser.Items.Add("ყველა მომხმარებელი");
             cmbUser.SelectedIndex = 0;
             cmbUser.SelectedIndexChanged += (s, e) => ApplyFilter();
-            cmbOperation.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ");
+            cmbOperation.Items.Add("ყველა ოპერაცია");
             cmbOperation.SelectedIndex = 0;
             cmbOperation.SelectedIndexChanged += (s, e) => ApplyFilter();
-            cmbStatus.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜");
+            cmbStatus.Items.Add("ყველა სტატუსი");
             cmbStatus.SelectedIndex = 0;
             cmbStatus.SelectedIndexChanged += (s, e) => ApplyFilter();
 
@@ -101,14 +96,14 @@ namespace BCCStudents.Presentation
             bool codeActive = !string.IsNullOrWhiteSpace(txtStudentCode.Text);
             bool opActive = cmbOperation != null && cmbOperation.SelectedIndex > 0;
             bool statusActive = cmbStatus != null && cmbStatus.SelectedIndex > 0;
-            
-            // áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ” áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ allLogs áƒªáƒáƒ áƒ˜áƒ”áƒšáƒ˜
+
+            // შევამოწმოთ არის თუ არა allLogs ცარიელი
             bool dateActive = false;
             if (allLogs.Any())
             {
                 dateActive = dtFrom.Value.Date > allLogs.Min(l => l.Date.Date) || dtTo.Value.Date < allLogs.Max(l => l.Date.Date);
             }
-            
+
             return userActive || codeActive || opActive || statusActive || dateActive;
         }
 
@@ -147,21 +142,21 @@ namespace BCCStudents.Presentation
             // Populate status ComboBox
             var statuses = allLogs.Select(l => l.Status).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s).ToList();
             cmbStatus.Items.Clear();
-            cmbStatus.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜");
+            cmbStatus.Items.Add("ყველა სტატუსი");
             foreach (var status in statuses) cmbStatus.Items.Add(status);
             cmbStatus.SelectedIndex = 0;
 
             // Populate user ComboBox
             var users = allLogs.Select(l => l.User).Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().OrderBy(u => u).ToList();
             cmbUser.Items.Clear();
-            cmbUser.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ›áƒ®áƒ›áƒáƒ áƒ”áƒ‘áƒ”áƒšáƒ˜");
+            cmbUser.Items.Add("ყველა მომხმარებელი");
             foreach (var user in users) cmbUser.Items.Add(user);
             cmbUser.SelectedIndex = 0;
 
             // Populate operation ComboBox
             var operations = allLogs.Select(l => l.Operation).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().OrderBy(o => o).ToList();
             cmbOperation.Items.Clear();
-            cmbOperation.Items.Add("áƒ§áƒ•áƒ”áƒšáƒ áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ");
+            cmbOperation.Items.Add("ყველა ოპერაცია");
             foreach (var op in operations) cmbOperation.Items.Add(op);
             cmbOperation.SelectedIndex = 0;
 
@@ -177,7 +172,7 @@ namespace BCCStudents.Presentation
                 dtTo.Value = DateTime.Today;
             }
 
-            // áƒ—áƒ£ áƒáƒ áƒªáƒ”áƒ áƒ—áƒ˜ áƒ¤áƒ˜áƒšáƒ¢áƒ áƒ˜ áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜, áƒáƒ©áƒ•áƒ”áƒœáƒ” áƒ§áƒ•áƒ”áƒšáƒ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜
+            // თუ არცერთი ფილტრი არ არის აქტიური, აჩვენე ყველა ჩანაწერი
             if (!IsAnyFilterActive())
                 dgvLogs.DataSource = allLogs.Select(l => new { l.Date, l.Operation, l.User, l.Status, l.Details }).ToList();
             else
@@ -209,4 +204,4 @@ namespace BCCStudents.Presentation
             public string Details { get; set; }
         }
     }
-} 
+}

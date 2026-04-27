@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using BCCStudents.Application.Services;
 
 namespace BCCStudents.Application.Interfaces
@@ -28,7 +26,7 @@ namespace BCCStudents.Application.Interfaces
         PaymentDateStatus GetPaymentStatus(int studentId, int groupId);
 
         // გადახდის თარიღის ხელით ცვლილება
-        void UpdateNextPaymentDate(DateTime studyStartDate);
+        void UpdateNextPaymentDate(DateTime paymentDate);
         bool ManuallySetPaymentDate(int studentId, int groupId, DateTime newPaymentDate);
         bool ChangePaymentDayOfMonth(int studentId, int groupId, int newDayOfMonth);
 

@@ -18,7 +18,7 @@ namespace BCCStudents.Infrastructure.Services
         /// <param name="databaseHelper">DatabaseHelper ინსტანსი კავშირის შესამოწმებლად</param>
         public DatabaseConnectionChecker(DatabaseHelper databaseHelper)
         {
-            _databaseHelper = databaseHelper ?? throw new System.ArgumentNullException(nameof(databaseHelper));
+            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
         }
 
         /// <summary>

@@ -1,15 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using BCCStudents.Application.Interfaces;
 using Newtonsoft.Json;
-
-using BCCStudents.Application.Interfaces;
+using System.Reflection;
+using System.Text;
 
 namespace BCCStudents.Application.Services.Update
 {
@@ -72,14 +64,14 @@ namespace BCCStudents.Application.Services.Update
         public bool IsUpdateRequired(Version latest, Version current)
         {
             if (latest == null || current == null) return false;
-            
-            // áƒ›áƒáƒŸáƒáƒ  áƒ•áƒ”áƒ áƒ¡áƒ˜áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ˜áƒ¡áƒáƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+
+            // მაჟორ ვერსიის შეცვლისას აუცილებელია განახლება
             if (latest.Major > current.Major) return true;
-            
-            // áƒ›áƒ˜áƒœáƒáƒ  áƒ•áƒ”áƒ áƒ¡áƒ˜áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ˜áƒ¡áƒáƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+
+            // მინორ ვერსიის შეცვლისას აუცილებელია განახლება
             if (latest.Major == current.Major && latest.Minor > current.Minor) return true;
-            
-            // Build áƒ“áƒ Revision áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ”áƒ‘áƒ˜ áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜
+
+            // Build და Revision ცვლილებები არ არის აუცილებელი
             return false;
         }
 
@@ -154,15 +146,15 @@ namespace BCCStudents.Application.Services.Update
 
             var ps = new StringBuilder();
 
-            // Log path - áƒ’áƒáƒ“áƒáƒ•áƒªáƒ”áƒ— áƒ áƒáƒ’áƒáƒ áƒª áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ˜ áƒ áƒáƒ› UAC-elevated PowerShell-áƒ›áƒ áƒ˜áƒªáƒáƒ“áƒ”áƒ¡ áƒ¡áƒáƒ“ áƒ©áƒáƒ¬áƒ”áƒ áƒáƒ¡
+            // Log path - გადავცეთ როგორც პარამეტრი რომ UAC-elevated PowerShell-მაც იცოდეს სად ჩაწეროს
             var userLogDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
             Directory.CreateDirectory(userLogDir);
 
-            // áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜ (MUST be first line in PowerShell script!)
+            // პარამეტრები (MUST be first line in PowerShell script!)
             ps.AppendLine("param([string]$zip, [string]$exeName, [int]$targetPid, [string]$userLogDir)");
             ps.AppendLine("");
-            
-            ps.AppendLine("# áƒ“áƒ”áƒ‘áƒáƒ’áƒ˜áƒœáƒ’áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ - áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒ•áƒ”áƒœáƒ”áƒ‘áƒ");
+
+            ps.AppendLine("# დებაგინგისთვის - პარამეტრების ჩვენება");
             ps.AppendLine("Write-Host '=== BCCStudents Update Script Started ===' -ForegroundColor Cyan");
             ps.AppendLine("Write-Host \"PID to wait for: $targetPid\"");
             ps.AppendLine("Write-Host \"ZIP file: $zip\"");
@@ -170,18 +162,18 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("Write-Host \"Log directory: $userLogDir\"");
             ps.AppendLine("");
 
-            // áƒáƒ“áƒ›áƒ˜áƒœáƒ˜áƒ¡áƒ¢áƒ áƒáƒ¢áƒáƒ áƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ
+            // ადმინისტრატორის შემოწმება
             ps.AppendLine("if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {");
             ps.AppendLine("    Write-Host 'ERROR: This script requires Administrator privileges!' -ForegroundColor Red");
             ps.AppendLine("    Write-Host 'Press Enter to close...'");
             ps.AppendLine("    $null = Read-Host");
             ps.AppendLine("    exit 1");
             ps.AppendLine("}");
-            ps.AppendLine("Write-Host 'Running with Administrator privileges âœ“' -ForegroundColor Green");
+            ps.AppendLine("Write-Host 'Running with Administrator privileges OK' -ForegroundColor Green");
             ps.AppendLine("");
 
-            // áƒšáƒáƒ’áƒ˜ (áƒ’áƒáƒ›áƒáƒ•áƒ˜áƒ§áƒ”áƒœáƒáƒ— áƒ’áƒáƒ“áƒáƒªáƒ”áƒ›áƒ£áƒšáƒ˜ user log directory UAC-áƒ˜áƒ¡ áƒžáƒ áƒáƒ‘áƒšáƒ”áƒ›áƒ˜áƒ¡ áƒ’áƒáƒ“áƒáƒ¡áƒáƒ­áƒ áƒ”áƒšáƒáƒ“)
-            ps.AppendLine("# áƒ’áƒáƒ›áƒáƒ•áƒ˜áƒ§áƒ”áƒœáƒáƒ— áƒ’áƒáƒ“áƒáƒªáƒ”áƒ›áƒ£áƒšáƒ˜ log directory (áƒáƒ áƒ $env:LOCALAPPDATA áƒ áƒáƒ›áƒ”áƒšáƒ˜áƒª UAC-áƒ¨áƒ˜ Administrator-áƒ˜áƒ¡ áƒ˜áƒ¥áƒœáƒ”áƒ‘áƒ!)");
+            // ლოგი (გამოვიყენოთ გადაცემული user log directory UAC-ის პრობლემის გადასაჭრელად)
+            ps.AppendLine("# გამოვიყენოთ გადაცემული log directory (არა $env:LOCALAPPDATA რომელიც UAC-ში Administrator-ის იქნება!)");
             ps.AppendLine("if (!(Test-Path $userLogDir)) { ");
             ps.AppendLine("    try { New-Item -ItemType Directory -Path $userLogDir -Force | Out-Null } catch { }");
             ps.AppendLine("}");
@@ -202,9 +194,9 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("Write-Log \"Log file: $logFile\" 'Cyan'");
             ps.AppendLine("");
 
-            // áƒžáƒ áƒáƒªáƒ”áƒ¡áƒ˜áƒ¡ áƒ“áƒáƒ®áƒ£áƒ áƒ•áƒ˜áƒ¡ áƒ›áƒáƒšáƒáƒ“áƒ˜áƒœáƒ˜
+            // პროცესის დახურვის მოლოდინი
             ps.AppendLine("Write-Log \"Waiting for process (PID: $targetPid) to exit...\" 'Yellow'");
-            ps.AppendLine("$maxWait = 30"); // 30 áƒ¬áƒáƒ›áƒ˜ áƒ›áƒáƒ¥áƒ¡áƒ˜áƒ›áƒ£áƒ›
+            ps.AppendLine("$maxWait = 30"); // 30 წამი მაქსიმუმ
             ps.AppendLine("$waited = 0");
             ps.AppendLine("while ((Get-Process -Id $targetPid -ErrorAction SilentlyContinue) -and ($waited -lt $maxWait)) {");
             ps.AppendLine("    Start-Sleep -Milliseconds 500");
@@ -221,11 +213,11 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    Write-Log \"Process exited after $waited checks!\" 'Green'");
             ps.AppendLine("}");
             ps.AppendLine("Write-Log 'Waiting for file handles to release...' 'Yellow'");
-            ps.AppendLine("Start-Sleep -Seconds 5"); // áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ•áƒáƒœáƒ˜: Windows-áƒ¡ áƒ¡áƒ­áƒ˜áƒ áƒ“áƒ”áƒ‘áƒ áƒ“áƒ áƒ file handles-áƒ˜áƒ¡ áƒ’áƒáƒ¡áƒáƒ—áƒáƒ•áƒ˜áƒ¡áƒ£áƒ¤áƒšáƒ”áƒ‘áƒšáƒáƒ“
+            ps.AppendLine("Start-Sleep -Seconds 5"); // მნიშვნელოვანი: Windows-ს სჭირდება დრო file handles-ის გასათავისუფლებლად
 
-            // Target áƒ¤áƒáƒšáƒ“áƒ”áƒ áƒ˜ (áƒ“áƒ˜áƒœáƒáƒ›áƒ˜áƒ£áƒ áƒ˜ áƒžáƒáƒ—áƒ˜)
+            // Target ფოლდერი (დინამიური პათი)
             ps.AppendLine($"$target = '{targetDir.Replace("\\", "\\\\")}'");
-            
+
             ps.AppendLine("Write-Host \"Target: $target\"");
             ps.AppendLine("if (!(Test-Path $target)) { ");
             ps.AppendLine("    Write-Host 'Creating target directory...'");
@@ -239,7 +231,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("Write-Host \"Creating staging folder: $staging\"");
             ps.AppendLine("try {");
             ps.AppendLine("    New-Item -ItemType Directory -Path $staging -Force | Out-Null");
-            ps.AppendLine("    Write-Host 'Staging folder created âœ“' -ForegroundColor Green");
+            ps.AppendLine("    Write-Host 'Staging folder created OK' -ForegroundColor Green");
             ps.AppendLine("} catch {");
             ps.AppendLine("    Write-Host \"ERROR: Could not create staging folder: $($_.Exception.Message)\" -ForegroundColor Red");
             ps.AppendLine("    Write-Host 'Press Enter to close...'");
@@ -248,7 +240,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("}");
             ps.AppendLine("");
 
-            // ZIP áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ
+            // ZIP არსებობის შემოწმება
             ps.AppendLine("Write-Log \"Checking ZIP file: $zip\" 'Cyan'");
             ps.AppendLine("if (!(Test-Path $zip)) {");
             ps.AppendLine("    Write-Log \"ERROR: ZIP file not found: $zip\" 'Red'");
@@ -256,10 +248,10 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    $null = Read-Host");
             ps.AppendLine("    exit 1");
             ps.AppendLine("}");
-            ps.AppendLine("Write-Log 'ZIP file found âœ“' 'Green'");
+            ps.AppendLine("Write-Log 'ZIP file found OK' 'Green'");
             ps.AppendLine("");
 
-            // ZIP áƒ’áƒáƒ®áƒ¡áƒœáƒ
+            // ZIP გახსნა
             ps.AppendLine("Write-Log 'Extracting ZIP archive...' 'Yellow'");
             ps.AppendLine("try { ");
             ps.AppendLine("    Expand-Archive -Path $zip -DestinationPath $staging -Force; ");
@@ -273,7 +265,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("}");
             ps.AppendLine("");
 
-            // Source path áƒ’áƒáƒœáƒ¡áƒáƒ–áƒ¦áƒ•áƒ áƒ
+            // Source path განსაზღვრა
             ps.AppendLine("$entries = Get-ChildItem -Path $staging");
             ps.AppendLine("if ($entries.Count -eq 1 -and $entries[0].PSIsContainer) { ");
             ps.AppendLine("    $src = $entries[0].FullName ");
@@ -282,7 +274,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("}");
             ps.AppendLine("Write-Host \"Source: $src\"");
 
-            // Backup app.config before update (áƒ›áƒáƒ›áƒ®áƒ›áƒáƒ áƒ”áƒ‘áƒšáƒ˜áƒ¡ áƒ™áƒáƒœáƒ¤áƒ˜áƒ’áƒ£áƒ áƒáƒªáƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒœáƒáƒ áƒ©áƒ£áƒœáƒ”áƒ‘áƒšáƒáƒ“)
+            // Backup app.config before update (მომხმარებლის კონფიგურაციების შესანარჩუნებლად)
             ps.AppendLine("$appConfigPath = Join-Path $target 'BCCStudents.exe.config'");
             ps.AppendLine("$appConfigBackup = Join-Path $target 'BCCStudents.exe.config.backup'");
             ps.AppendLine("if (Test-Path $appConfigPath) {");
@@ -290,13 +282,13 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    Copy-Item -Path $appConfigPath -Destination $appConfigBackup -Force");
             ps.AppendLine("}");
 
-            // Robocopy-áƒ˜áƒ— áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ (retry logic-áƒ˜áƒ—)
+            // Robocopy-ით ფაილების კოპირება (retry logic-ით)
             ps.AppendLine("Write-Host ''");
             ps.AppendLine("Write-Host '=== Copying Files ===' -ForegroundColor Cyan");
             ps.AppendLine("Write-Log 'Starting file copy with Robocopy...' 'Yellow'");
             ps.AppendLine("Write-Log \"Source: $src\" 'Cyan'");
             ps.AppendLine("Write-Log \"Target: $target\" 'Cyan'");
-            
+
             ps.AppendLine("$maxRetries = 3");
             ps.AppendLine("$retryCount = 0");
             ps.AppendLine("$exitCode = 16"); // default error
@@ -313,7 +305,7 @@ namespace BCCStudents.Application.Services.Update
             // /W:2 = wait 2 seconds between retries
             // /NP = no progress (cleaner output)
             // /NFL = no file list (cleaner output)
-            ps.AppendLine("    $robocopyArgs = @(\"$src\", \"$target\", '/E', '/XO', '/R:5', '/W:2', '/NP', '/NFL')");
+            ps.AppendLine("    $robocopyArgs = @(\"$src\", \"$target\", '/E', '/XO', '/R:5', '/W:2', '/NP', '/NFL', \"/LOG+:$logFile\", '/TEE')");
             ps.AppendLine("    $process = Start-Process -FilePath 'robocopy.exe' -ArgumentList $robocopyArgs -Wait -PassThru -NoNewWindow");
             ps.AppendLine("    $exitCode = $process.ExitCode");
             ps.AppendLine("    $color = if ($exitCode -lt 8) {'Green'} else {'Red'}");
@@ -326,7 +318,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    Write-Log 'Files may still be in use. Please close all instances of BCCStudents and try again.' 'Yellow'");
             ps.AppendLine("}");
 
-            // Robocopy exit code-áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ”áƒ¢áƒáƒšáƒ£áƒ áƒ˜ áƒáƒœáƒáƒšáƒ˜áƒ–áƒ˜
+            // Robocopy exit code-ების დეტალური ანალიზი
             ps.AppendLine("Write-Host ''");
             ps.AppendLine("Write-Host '=== Robocopy Result ===' -ForegroundColor Cyan");
             ps.AppendLine("switch ($exitCode) {");
@@ -343,18 +335,18 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    default { Write-Host \"ERROR: Unexpected exit code $exitCode\" -ForegroundColor Red }");
             ps.AppendLine("}");
             ps.AppendLine("");
-            
+
             // Success check
             ps.AppendLine("if ($exitCode -lt 8) {");
             ps.AppendLine("    Write-Log 'Update files copied successfully!' 'Green'");
             ps.AppendLine("    ");
-            ps.AppendLine("    # Restore app.config backup (áƒ›áƒáƒ›áƒ®áƒ›áƒáƒ áƒ”áƒ‘áƒšáƒ˜áƒ¡ áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒáƒ¦áƒ“áƒ’áƒ”áƒœáƒ)");
+            ps.AppendLine("    # Restore app.config backup (მომხმარებლის პარამეტრების აღდგენა)");
             ps.AppendLine("    if (Test-Path $appConfigBackup) {");
             ps.AppendLine("        Write-Host 'Restoring user App.config settings...' -ForegroundColor Yellow");
             ps.AppendLine("        try {");
             ps.AppendLine("            [xml]$oldConfig = Get-Content $appConfigBackup");
             ps.AppendLine("            [xml]$newConfig = Get-Content $appConfigPath");
-            ps.AppendLine("            # Merge appSettings (AutoFileDetection áƒ“áƒ áƒ¡áƒ®áƒ•áƒ áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜)");
+            ps.AppendLine("            # Merge appSettings (AutoFileDetection და სხვა პარამეტრები)");
             ps.AppendLine("            if ($oldConfig.configuration.appSettings -and $newConfig.configuration.appSettings) {");
             ps.AppendLine("                $oldConfig.configuration.appSettings.add | ForEach-Object {");
             ps.AppendLine("                    $key = $_.key");
@@ -383,7 +375,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("}");
             ps.AppendLine("");
 
-            // áƒáƒžáƒšáƒ˜áƒ™áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ’áƒáƒ¨áƒ•áƒ”áƒ‘áƒ
+            // აპლიკაციის გაშვება
             ps.AppendLine("Write-Host ''");
             ps.AppendLine("Write-Host '=== Restarting Application ===' -ForegroundColor Cyan");
             ps.AppendLine("if (-not [string]::IsNullOrEmpty($exeName)) {");
@@ -391,12 +383,12 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    Write-Host \"Looking for: $exePath\"");
             ps.AppendLine("    ");
             ps.AppendLine("    if (Test-Path $exePath) {");
-            ps.AppendLine("        Write-Log 'Executable found âœ“' 'Green'");
+            ps.AppendLine("        Write-Log 'Executable found OK' 'Green'");
             ps.AppendLine("        try {");
             ps.AppendLine("            Write-Log 'Starting application...' 'Yellow'");
             ps.AppendLine("            Start-Process -FilePath `\"$exePath`\" -WorkingDirectory `\"$target`\"");
-            ps.AppendLine("            Start-Sleep -Seconds 2"); // áƒ“áƒáƒ•áƒ áƒ¬áƒ›áƒ£áƒœáƒ“áƒ”áƒ— áƒ áƒáƒ› áƒžáƒ áƒáƒªáƒ”áƒ¡áƒ˜ áƒ©áƒáƒ˜áƒ¢áƒ•áƒ˜áƒ áƒ—áƒ
-            ps.AppendLine("            Write-Log 'Application restarted successfully! âœ“' 'Green'");
+            ps.AppendLine("            Start-Sleep -Seconds 2"); // დავრწმუნდეთ რომ პროცესი ჩაიტვირთა
+            ps.AppendLine("            Write-Log 'Application restarted successfully! OK' 'Green'");
             ps.AppendLine("        } catch {");
             ps.AppendLine("            Write-Log \"ERROR: Failed to start application: $($_.Exception.Message)\" 'Red'");
             ps.AppendLine("            Write-Host 'You can manually start the application from:' -ForegroundColor Yellow");
@@ -421,7 +413,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("Write-Host '=== UPDATE COMPLETED SUCCESSFULLY ===' -ForegroundColor Green");
             ps.AppendLine("Write-Log '=== UPDATE COMPLETED SUCCESSFULLY ===' 'Green'");
 
-            // áƒ™áƒáƒœáƒ¡áƒáƒšáƒ˜áƒ¡ áƒ“áƒáƒ§áƒáƒ•áƒœáƒ”áƒ‘áƒ
+            // კონსოლის დაყოვნება
             ps.AppendLine("Write-Host ''");
             ps.AppendLine("Write-Host 'Press Enter to close this window...' -ForegroundColor Gray");
             ps.AppendLine("$null = Read-Host");
@@ -439,19 +431,19 @@ namespace BCCStudents.Application.Services.Update
             {
                 UseShellExecute = true, // needed for Verb=runas
                 Verb = "runas",         // prompt for elevation (UAC)
-                WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal // áƒ®áƒ˜áƒšáƒ£áƒšáƒ˜ áƒ¤áƒáƒœáƒ¯áƒáƒ áƒ áƒ¢áƒ”áƒ¡áƒ¢áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal // ხილული ფანჯარა ტესტისთვის
             };
             Log($"Apply: zip={zipPath} target={targetDir} pid={pid}");
-            
-            // áƒ›áƒáƒ™áƒšáƒ” áƒ¨áƒ”áƒ¢áƒ§áƒáƒ‘áƒ˜áƒœáƒ”áƒ‘áƒ áƒ›áƒáƒ›áƒ®áƒ›áƒáƒ áƒ”áƒ‘áƒ”áƒšáƒ¡ BEFORE PowerShell-áƒ˜áƒ¡ áƒ’áƒáƒ¨áƒ•áƒ”áƒ‘áƒáƒ›áƒ“áƒ”
+
+            // მოკლე შეტყობინება მომხმარებელს BEFORE PowerShell-ის გაშვებამდე
             var result = MessageBox.Show(
-                "áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ áƒ›áƒ–áƒáƒ“ áƒáƒ áƒ˜áƒ¡ áƒ“áƒáƒ¡áƒáƒ¬áƒ§áƒ”áƒ‘áƒáƒ“!\n\n" +
-                "áƒ“áƒáƒáƒ­áƒ˜áƒ áƒ”áƒ— OK áƒ áƒáƒ›:\n" +
-                "1. áƒ’áƒáƒ˜áƒ®áƒ¡áƒœáƒáƒ¡ PowerShell Administrator áƒ áƒ”áƒŸáƒ˜áƒ›áƒ¨áƒ˜\n" +
-                "2. áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜ áƒ“áƒáƒ™áƒáƒžáƒ˜áƒ áƒ“áƒ”áƒ¡\n" +
-                "3. áƒžáƒ áƒáƒ’áƒ áƒáƒ›áƒ áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒáƒ“ áƒ®áƒ”áƒšáƒáƒ®áƒšáƒ áƒ©áƒáƒ˜áƒ¢áƒ•áƒ˜áƒ áƒ—áƒáƒ¡\n\n" +
-                "âš ï¸ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ•áƒáƒœáƒ˜: PowerShell áƒ¤áƒáƒœáƒ¯áƒáƒ áƒ áƒáƒ  áƒ“áƒáƒ®áƒ£áƒ áƒáƒ— áƒ®áƒ”áƒšáƒ˜áƒ—!",
-                "áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ¬áƒ§áƒ”áƒ‘áƒ",
+                "განახლება მზად არის დასაწყებად!\n\n" +
+                "დააჭირეთ OK რომ:\n" +
+                "1. გაიხსნას PowerShell Administrator რეჟიმში\n" +
+                "2. განახლების ფაილები დაკოპირდეს\n" +
+                "3. პროგრამა ავტომატურად ხელახლა ჩაიტვირთოს\n\n" +
+                "⚠️ მნიშვნელოვანი: PowerShell ფანჯარა არ დახუროთ ხელით!",
+                "განახლების დაწყება",
                 MessageBoxButtons.OKCancel,
                 MessageBoxIcon.Information);
 
@@ -466,36 +458,36 @@ namespace BCCStudents.Application.Services.Update
                 Log("Starting PowerShell updater with elevated privileges...");
                 var psProcess = System.Diagnostics.Process.Start(si);
                 Log($"PowerShell updater started successfully (PID: {psProcess?.Id})");
-                
-                // áƒ“áƒáƒ•áƒ”áƒšáƒáƒ“áƒáƒ— PowerShell-áƒ˜áƒ¡ áƒ¡áƒ áƒ£áƒšáƒáƒ“ áƒ’áƒáƒ¨áƒ•áƒ”áƒ‘áƒáƒ¡
+
+                // დაველოდოთ PowerShell-ის სრულად გაშვებას
                 await Task.Delay(2000);
             }
             catch (Exception ex)
             {
                 Log($"Failed to start PowerShell updater: {ex.Message}");
                 MessageBox.Show(
-                    $"áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ¬áƒ§áƒ”áƒ‘áƒ áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ:\n\n{ex.Message}\n\n" +
-                    "áƒ’áƒ—áƒ®áƒáƒ•áƒ— áƒ¡áƒªáƒáƒ“áƒ”áƒ—:\n" +
-                    "1. áƒžáƒ áƒáƒ’áƒ áƒáƒ›áƒ˜áƒ¡ Administrator-áƒ˜áƒ— áƒ’áƒáƒ¨áƒ•áƒ”áƒ‘áƒ\n" +
-                    "2. Antivirus-áƒ˜áƒ¡ áƒ“áƒ áƒáƒ”áƒ‘áƒ˜áƒ— áƒ’áƒáƒ›áƒáƒ áƒ—áƒ•áƒ", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", 
-                    MessageBoxButtons.OK, 
+                    $"განახლების დაწყება ვერ მოხერხდა:\n\n{ex.Message}\n\n" +
+                    "გთხოვთ სცადეთ:\n" +
+                    "1. პროგრამის Administrator-ით გაშვება\n" +
+                    "2. Antivirus-ის დროებით გამორთვა",
+                    "შეცდომა",
+                    MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
             }
 
             // Close current app to allow updater to replace files
             Log("Closing application for update...");
-            
-            // áƒ’áƒáƒ›áƒáƒ•áƒáƒ©áƒ˜áƒœáƒáƒ— áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ áƒ áƒáƒ› áƒžáƒ áƒáƒ’áƒ áƒáƒ›áƒ áƒ˜áƒ®áƒ£áƒ áƒ”áƒ‘áƒ
+
+            // გამოვაჩინოთ ინფორმაცია რომ პროგრამა იხურება
             owner?.BeginInvoke(new Action(() =>
             {
                 owner.Hide();
-                owner.Text = "áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ”áƒáƒ‘áƒ¡...";
+                owner.Text = "განახლება მიმდინარეობს...";
             }));
-            
-            await Task.Delay(1000); // 1 áƒ¬áƒáƒ›áƒ˜ PowerShell-áƒ¡ áƒ áƒáƒ› áƒ“áƒáƒáƒ¡áƒ¬áƒ áƒáƒ¡
-            
+
+            await Task.Delay(1000); // 1 წამი PowerShell-ს რომ დაასწროს
+
             try { System.Windows.Forms.Application.Exit(); } catch { }
             await Task.Delay(500);
             try { Environment.Exit(0); } catch { }

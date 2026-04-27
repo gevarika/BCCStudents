@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using System.Text.RegularExpressions;
 
-using BCCStudents.Application.Interfaces;
-
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class PaymentDescriptionAnalyzer : IPaymentDescriptionAnalyzer
     {
         private readonly IStudentRepository _studentRepository;
@@ -19,8 +15,8 @@ namespace BCCStudents.Application.Services {
         private const double LEVENSHTEIN_THRESHOLD = 0.8; // 80% similarity threshold
         private const double MATCH_THRESHOLD = 0.6; // 60% match threshold
         private const int MAX_LEVENSHTEIN_DISTANCE = 3;
-        private const double EXACT_MATCH_THRESHOLD = 0.75; // áƒ¨áƒ”áƒ•áƒªáƒ•áƒáƒšáƒ”áƒ— 0.95-áƒ“áƒáƒœ 0.75-áƒ–áƒ”
-        private const double PARTIAL_MATCH_THRESHOLD = 0.7; // áƒœáƒáƒ¬áƒ˜áƒšáƒáƒ‘áƒ áƒ˜áƒ•áƒ˜ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ˜áƒ¡ áƒ–áƒ¦áƒ•áƒáƒ áƒ˜
+        private const double EXACT_MATCH_THRESHOLD = 0.75; // შეცვალეთ 0.95-დან 0.75-ზე
+        private const double PARTIAL_MATCH_THRESHOLD = 0.7; // ნაწილობრივი დამთხვევის ზღვარი
 
         public PaymentDescriptionAnalyzer(
             IStudentRepository studentRepository,
@@ -34,32 +30,32 @@ namespace BCCStudents.Application.Services {
             // Initialize name variations dictionary
             _nameVariations = new Dictionary<string, string[]>
             {
-                { "áƒ’áƒ˜áƒáƒ áƒ’áƒ˜", new[] { "áƒ’áƒ˜áƒ", "áƒ’áƒ˜áƒáƒ áƒ’áƒ", "áƒ’áƒ˜áƒáƒ áƒ’áƒ˜áƒ", "áƒ’áƒ˜áƒáƒ áƒ’áƒ˜", "áƒ’áƒ˜áƒáƒ áƒ’áƒ˜áƒ™áƒ" } },
-                { "áƒ“áƒáƒ•áƒ˜áƒ—áƒ˜", new[] { "áƒ“áƒáƒ—áƒ", "áƒ“áƒáƒ—áƒ", "áƒ“áƒáƒ•áƒ˜áƒ—áƒ", "áƒ“áƒáƒ•áƒ˜áƒ—", "áƒ“áƒáƒ—áƒ£áƒœáƒ" } },
-                { "áƒœáƒ˜áƒ™áƒ", new[] { "áƒœáƒ˜áƒ™áƒáƒšáƒáƒ–áƒ˜", "áƒœáƒ˜áƒ™áƒáƒšáƒ", "áƒœáƒ˜áƒ™áƒ", "áƒœáƒ˜áƒ™áƒ£áƒ¨áƒ", "áƒœáƒ˜áƒ™áƒáƒšáƒáƒ˜" } },
-                { "áƒšáƒ”áƒ•áƒáƒœáƒ˜", new[] { "áƒšáƒ”áƒ•áƒ", "áƒšáƒ”áƒ•áƒáƒœáƒ", "áƒšáƒ”áƒ•áƒáƒœ", "áƒšáƒ”áƒ•áƒáƒœáƒ˜áƒ™áƒ" } },
-                { "áƒ¡áƒáƒœáƒ“áƒ áƒ", new[] { "áƒáƒšáƒ”áƒ¥áƒ¡áƒáƒœáƒ“áƒ áƒ”", "áƒáƒšáƒ”áƒ¥áƒ¡áƒáƒœáƒ“áƒ áƒ", "áƒáƒšáƒ”áƒ¥áƒ¡áƒ˜", "áƒ¡áƒáƒœáƒ“áƒ áƒ˜áƒ™áƒ", "áƒáƒšáƒ”áƒ¥áƒ" } },
-                { "áƒœáƒ˜áƒœáƒ", new[] { "áƒœáƒ˜áƒœáƒ", "áƒœáƒ˜áƒœáƒ˜", "áƒœáƒ˜áƒœáƒ£áƒ™áƒ", "áƒœáƒ˜áƒœáƒ£áƒ¨áƒ" } },
-                { "áƒ›áƒáƒ áƒ˜áƒáƒ›áƒ˜", new[] { "áƒ›áƒáƒ áƒ˜", "áƒ›áƒáƒ áƒ˜áƒ", "áƒ›áƒáƒ áƒ˜áƒ™áƒ", "áƒ›áƒáƒ áƒ˜áƒ™áƒ", "áƒ›áƒáƒ áƒ˜áƒáƒ›" } },
-                { "áƒáƒœáƒ", new[] { "áƒáƒœáƒ˜", "áƒáƒœáƒœáƒ", "áƒáƒœáƒ£áƒ™áƒ", "áƒáƒœáƒ£áƒ¨áƒ", "áƒáƒœáƒ”áƒ¢áƒ" } },
-                { "áƒ¡áƒáƒ¤áƒ", new[] { "áƒ¡áƒáƒ¤áƒ˜áƒ", "áƒ¡áƒáƒ¤áƒ˜áƒ™áƒ", "áƒ¡áƒáƒ¤áƒ˜áƒ™áƒ", "áƒ¡áƒáƒ¤áƒ" } },
-                { "áƒœáƒáƒ—áƒ˜áƒ", new[] { "áƒœáƒáƒ—áƒ", "áƒœáƒáƒ—áƒ˜áƒ™áƒ", "áƒœáƒáƒ—áƒ£áƒ™áƒ", "áƒœáƒáƒ—áƒ˜" } },
-                { "áƒšáƒ£áƒ™áƒ", new[] { "áƒšáƒ£áƒ™áƒ", "áƒšáƒ£áƒ™áƒ", "áƒšáƒ£áƒ™áƒáƒ¡", "áƒšáƒ£áƒ™áƒ˜áƒ™áƒ" } },
-                { "áƒ’áƒáƒ‘áƒ áƒ˜áƒ”áƒšáƒ˜", new[] { "áƒ’áƒáƒ‘áƒ", "áƒ’áƒáƒ‘áƒ áƒ˜áƒ”áƒš", "áƒ’áƒáƒ‘áƒ áƒ˜", "áƒ’áƒáƒ‘áƒ áƒ˜áƒ™áƒ" } },
-                { "áƒ”áƒšáƒ”áƒœáƒ”", new[] { "áƒ”áƒšáƒ”áƒœáƒ", "áƒ”áƒšáƒ”áƒœáƒ", "áƒ”áƒšáƒ”áƒœáƒ£áƒ™áƒ", "áƒ”áƒšáƒ”áƒœáƒ˜áƒ™áƒ" } },
-                { "áƒ“áƒ”áƒ›áƒ”áƒ¢áƒ áƒ”", new[] { "áƒ“áƒ”áƒ›áƒ", "áƒ“áƒ”áƒ›áƒ”áƒ¢áƒ áƒ˜", "áƒ“áƒ”áƒ›áƒ”áƒ¢áƒ áƒ˜áƒ™áƒ", "áƒ“áƒ”áƒ›áƒ£áƒ™áƒ" } }
+                { "გიორგი", new[] { "გიო", "გიორგა", "გიორგია", "გიორგი", "გიორგიკო" } },
+                { "დავით", new[] { "დათო", "დათა", "დავითა", "დავით", "დათუნა" } },
+                { "ნიკა", new[] { "ნიკოლოზი", "ნიკოლა", "ნიკო", "ნიკუშა", "ნიკოლაი" } },
+                { "ლევანი", new[] { "ლევა", "ლევანა", "ლევან", "ლევანიკო" } },
+                { "სანდრო", new[] { "ალექსანდრე", "ალექსანდრა", "ალექსი", "სანდრიკო", "ალექსო" } },
+                { "ნინო", new[] { "ნინა", "ნინი", "ნინუკა", "ნინუშა" } },
+                { "მარიამი", new[] { "მარი", "მარია", "მარიკო", "მარიკა", "მარიამ" } },
+                { "ანა", new[] { "ანი", "ანნა", "ანუკა", "ანუშა", "ანეტა" } },
+                { "სოფო", new[] { "სოფია", "სოფიკო", "სოფიკა", "სოფო" } },
+                { "ნათია", new[] { "ნათო", "ნათიკო", "ნათუკა", "ნათი" } },
+                { "ლუკა", new[] { "ლუკა", "ლუკა", "ლუკას", "ლუკიკო" } },
+                { "გაბრიელი", new[] { "გაბო", "გაბრიელ", "გაბრი", "გაბრიკო" } },
+                { "ელენე", new[] { "ელენა", "ელენა", "ელენუკა", "ელენიკო" } },
+                { "დემეტრე", new[] { "დემო", "დემეტრი", "დემეტრიკო", "დემუკა" } }
             };
 
             // Initialize group code variations
             _groupCodeVariations = new Dictionary<string, string[]>
             {
-                { "BCC", new[] { "BCC-", "BCC ", "BCC", "áƒ‘áƒªáƒª", "áƒ‘áƒªáƒª-", "áƒ‘áƒªáƒª " } },
-                { "1", new[] { "01", "1", "I", "áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜", "áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } },
-                { "2", new[] { "02", "2", "II", "áƒ›áƒ”áƒáƒ áƒ”", "áƒ›áƒ”áƒáƒ áƒ” áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } },
-                { "3", new[] { "03", "3", "III", "áƒ›áƒ”áƒ¡áƒáƒ›áƒ”", "áƒ›áƒ”áƒ¡áƒáƒ›áƒ” áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } },
-                { "4", new[] { "04", "4", "IV", "áƒ›áƒ”áƒáƒ—áƒ®áƒ”", "áƒ›áƒ”áƒáƒ—áƒ®áƒ” áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } },
-                { "5", new[] { "05", "5", "V", "áƒ›áƒ”áƒ®áƒ£áƒ—áƒ”", "áƒ›áƒ”áƒ®áƒ£áƒ—áƒ” áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } },
-                { "6", new[] { "06", "6", "VI", "áƒ›áƒ”áƒ”áƒ¥áƒ•áƒ¡áƒ”", "áƒ›áƒ”áƒ”áƒ¥áƒ•áƒ¡áƒ” áƒ¯áƒ’áƒ£áƒ¤áƒ˜" } }
+                { "BCC", new[] { "BCC-", "BCC ", "BCC", "ბცც", "ბცც-", "ბცც " } },
+                { "1", new[] { "01", "1", "I", "პირველი", "პირველი ჯგუფი" } },
+                { "2", new[] { "02", "2", "II", "მეორე", "მეორე ჯგუფი" } },
+                { "3", new[] { "03", "3", "III", "მესამე", "მესამე ჯგუფი" } },
+                { "4", new[] { "04", "4", "IV", "მეოთხე", "მეოთხე ჯგუფი" } },
+                { "5", new[] { "05", "5", "V", "მეხუთე", "მეხუთე ჯგუფი" } },
+                { "6", new[] { "06", "6", "VI", "მეექვსე", "მეექვსე ჯგუფი" } }
             };
         }
 
@@ -150,9 +146,9 @@ namespace BCCStudents.Application.Services {
         {
             var fullName = $"{studentFirstName} {studentLastName}".ToLower();
             var words = description.ToLower().Split(new[] { ' ', ',', '.', ';', ':', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-            
-            // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ–áƒ£áƒ¡áƒ¢ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒáƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡áƒ áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ¡
-            return words.Any(w => w == fullName) || 
+
+            // ვეძებთ ზუსტ დამთხვევას სახელისა და გვარის
+            return words.Any(w => w == fullName) ||
                    (words.Contains(studentFirstName.ToLower()) && words.Contains(studentLastName.ToLower()));
         }
 
@@ -167,7 +163,7 @@ namespace BCCStudents.Application.Services {
             if (string.IsNullOrWhiteSpace(description))
             {
                 _logger.LogPaymentAction("ANALYZE", "WARNING", "Empty payment description", "SYSTEM");
-                return new AnalyzedPayment { IsValid = false, ErrorMessage = "áƒ¨áƒ”áƒ¢áƒ§áƒáƒ‘áƒ˜áƒœáƒ”áƒ‘áƒ áƒªáƒáƒ áƒ˜áƒ”áƒšáƒ˜áƒ" };
+                return new AnalyzedPayment { IsValid = false, ErrorMessage = "შეტყობინება ცარიელია" };
             }
 
             _logger.LogPaymentAction("ANALYZE", "INFO", $"Starting analysis of description: {description}", "SYSTEM");
@@ -177,7 +173,7 @@ namespace BCCStudents.Application.Services {
                 var words = description.Split(new[] { ' ', ',', '.', ';', ':', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                 var matches = new List<(Student Student, double Score, string MatchType, string MatchDetails)>();
 
-                // 1. áƒžáƒ˜áƒ áƒ•áƒ”áƒš áƒ áƒ˜áƒ’áƒ¨áƒ˜ áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ¡
+                // 1. პირველ რიგში ვეძებთ სტუდენტის კოდს
                 var studentCode = ExtractStudentCode(description);
                 if (!string.IsNullOrEmpty(studentCode))
                 {
@@ -185,7 +181,7 @@ namespace BCCStudents.Application.Services {
                     if (studentByCode != null)
                     {
                         var fullName = $"{studentByCode.FirstName} {studentByCode.LastName}";
-                        _logger.LogPaymentAction("ANALYZE", "SUCCESS", 
+                        _logger.LogPaymentAction("ANALYZE", "SUCCESS",
                             $"Found exact match by student code: {studentByCode.Id} - {fullName}", "SYSTEM");
                         return new AnalyzedPayment
                         {
@@ -194,34 +190,34 @@ namespace BCCStudents.Application.Services {
                             StudentName = fullName,
                             GroupName = studentByCode.GroupName,
                             MatchConfidence = 1.0,
-                            MatchType = "áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜áƒ—",
-                            MatchDetails = $"áƒ›áƒáƒ¢áƒ©áƒ˜ áƒœáƒáƒžáƒáƒ•áƒœáƒ˜áƒ áƒ¡áƒ¢áƒ£áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜áƒ—: {studentByCode.StudentCode}",
+                            MatchType = "სტუდენტის კოდით",
+                            MatchDetails = $"მაჩი ნაპოვნია სტუდენტის კოდით: {studentByCode.StudentCode}",
                             RequiresReview = false
                         };
                     }
                 }
 
-                // 2. áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ–áƒ£áƒ¡áƒ¢ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒáƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡áƒ áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ¡, áƒáƒœ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡, áƒ’áƒ•áƒáƒ áƒ˜áƒ¡áƒ áƒ“áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡
+                // 2. ვეძებთ ზუსტ დამთხვევას სახელისა და გვარის, ან სახელის, გვარისა და ჯგუფის
                 var allStudents = _studentRepository.GetAllStudents();
                 foreach (var student in allStudents)
                 {
                     var matchDetails = new List<string>();
                     double score = 0;
-                    string matchType = "áƒœáƒáƒ¬áƒ˜áƒšáƒáƒ‘áƒ áƒ˜áƒ•áƒ˜";
+                    string matchType = "ნაწილობრივი";
 
-                    // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡áƒ áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ¡ áƒ–áƒ£áƒ¡áƒ¢ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒáƒ¡
+                    // ვამოწმებთ სახელისა და გვარის ზუსტ დამთხვევას
                     if (IsExactNameMatch(student.FirstName, student.LastName, description))
                     {
-                        score = 0.8; // áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡áƒ áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ¡ áƒ–áƒ£áƒ¡áƒ¢áƒ˜ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ˜áƒ¡ áƒ¥áƒ£áƒšáƒ
-                        matchType = "áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ— áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ—";
-                        matchDetails.Add($"áƒ–áƒ£áƒ¡áƒ¢áƒ˜ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡áƒ áƒ“áƒ áƒ’áƒ•áƒáƒ áƒ˜áƒ¡: {student.FirstName} {student.LastName}");
+                        score = 0.8; // სახელისა და გვარის ზუსტი დამთხვევის ქულა
+                        matchType = "სახელით და გვარით";
+                        matchDetails.Add($"ზუსტი დამთხვევა სახელისა და გვარის: {student.FirstName} {student.LastName}");
 
-                        // áƒ—áƒ£ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒª áƒ“áƒáƒ”áƒ›áƒ—áƒ®áƒ•áƒ, áƒ•áƒ–áƒ áƒ“áƒ˜áƒ— áƒ¥áƒ£áƒšáƒáƒ¡
+                        // თუ ჯგუფიც დაემთხვა, ვზრდით ქულას
                         if (!string.IsNullOrEmpty(student.GroupName) && IsExactGroupMatch(student.GroupName, description))
                         {
                             score = 1.0;
-                            matchType = "áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ—, áƒ’áƒ•áƒáƒ áƒ˜áƒ— áƒ“áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ—";
-                            matchDetails.Add($"áƒ–áƒ£áƒ¡áƒ¢áƒ˜ áƒ“áƒáƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡: {student.GroupName}");
+                            matchType = "სახელით, გვარით და ჯგუფით";
+                            matchDetails.Add($"ზუსტი დამთხვევა ჯგუფის: {student.GroupName}");
                         }
                     }
 
@@ -231,7 +227,7 @@ namespace BCCStudents.Application.Services {
                     }
                 }
 
-                // áƒ“áƒáƒ•áƒáƒšáƒáƒ’áƒáƒ— áƒ›áƒáƒ¢áƒ©áƒ”áƒ‘áƒ˜ áƒ¥áƒ£áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—
+                // დავალაგოთ მაჩები ქულის მიხედვით
                 matches = matches.OrderByDescending(m => m.Score).ToList();
 
                 if (matches.Any())
@@ -239,7 +235,7 @@ namespace BCCStudents.Application.Services {
                     var bestMatch = matches.First();
                     var requiresReview = bestMatch.Score < EXACT_MATCH_THRESHOLD;
 
-                    _logger.LogPaymentAction("ANALYZE", "SUCCESS", 
+                    _logger.LogPaymentAction("ANALYZE", "SUCCESS",
                         $"Selected best match: Student {bestMatch.Student.Id} - {bestMatch.Student.FirstName} {bestMatch.Student.LastName} " +
                         $"with score {bestMatch.Score} ({bestMatch.MatchDetails}). RequiresReview={requiresReview} because score {bestMatch.Score} < {EXACT_MATCH_THRESHOLD}", "SYSTEM");
 
@@ -256,28 +252,28 @@ namespace BCCStudents.Application.Services {
                     };
                 }
 
-                _logger.LogPaymentAction("ANALYZE", "WARNING", 
+                _logger.LogPaymentAction("ANALYZE", "WARNING",
                     $"No matches found for description: {description}", "SYSTEM");
-                return new AnalyzedPayment 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "áƒ›áƒáƒ¢áƒ©áƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ",
+                return new AnalyzedPayment
+                {
+                    IsValid = false,
+                    ErrorMessage = "მაჩი ვერ მოიძებნა",
                     RequiresReview = true
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogPaymentAction("ANALYZE", "ERROR", 
+                _logger.LogPaymentAction("ANALYZE", "ERROR",
                     $"Error analyzing description: {ex.Message}", "SYSTEM");
-                return new AnalyzedPayment 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = $"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒáƒœáƒáƒšáƒ˜áƒ–áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}",
+                return new AnalyzedPayment
+                {
+                    IsValid = false,
+                    ErrorMessage = $"შეცდომა ანალიზის დროს: {ex.Message}",
                     RequiresReview = true
                 };
             }
         }
     }
-} 
+}
 
 

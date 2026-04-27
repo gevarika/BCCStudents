@@ -1,20 +1,18 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class GroupRepository : IGroupRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public GroupRepository(DatabaseHelper dbHelper)
+        public GroupRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         #region ==================== INSERT - ჯგუფის ჩასმა ====================
@@ -26,7 +24,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <returns>ახალი ჯგუფის ID</returns>
         public int InsertGroup(Group group)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO `Groups` (Name, Price, Teacher, ContractTemplatePath, Status, StudentCount, MaxStudents, UpdatedAt) 
@@ -56,7 +54,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <returns>ახალი ჯგუფის ID</returns>
         public int InsertGroupByName(string name)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO `Groups` (Name, Price, Status, StudentCount, UpdatedAt) 
@@ -81,7 +79,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <returns>ახალი ჯგუფის ID</returns>
         public int InsertGroupWithPrice(string name, decimal price)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO `Groups` (Name, Price, Status, StudentCount, UpdatedAt) 
@@ -108,7 +106,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <returns>ახალი ჯგუფის ID</returns>
         public int InsertGroupWithTeacher(string name, decimal price, string teacher)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"INSERT INTO `Groups` (Name, Price, Teacher, Status, StudentCount, UpdatedAt) 
@@ -129,14 +127,14 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== READ - ჯგუფის წაკითხვა ====================
+        #region ==================== SELECT - ჯგუფის წაკითხვა ====================
 
         /// <summary>
         /// ჯგუფის მიღება ID-ით
         /// </summary>
         public Group GetGroupById(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, Name, Price, Teacher, Status, StudentCount, MaxStudents, ContractTemplatePath, UpdatedAt 
@@ -162,7 +160,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public Group GetGroupByName(string name)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, Name, Price, Teacher, Status, StudentCount, MaxStudents, ContractTemplatePath, UpdatedAt 
@@ -190,7 +188,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var groups = new List<Group>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, Name, Price, Teacher, Status, StudentCount, MaxStudents, ContractTemplatePath, UpdatedAt 
@@ -215,7 +213,7 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var groups = new List<Group>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, Name, Price, Teacher, Status, StudentCount,MaxStudents,  ContractTemplatePath, UpdatedAt 
@@ -241,7 +239,7 @@ namespace BCCStudents.Infrastructure.Repositories
             var groups = new List<Group>();
             if (ids == null || ids.Count == 0) return groups;
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var idList = string.Join(",", ids);
@@ -265,7 +263,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public string GetGroupNameById(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Name FROM `Groups` WHERE Id = @GroupId";
@@ -282,9 +280,9 @@ namespace BCCStudents.Infrastructure.Repositories
         /// <summary>
         /// ჯგუფის ფასის მიღება ID-ით
         /// </summary>
-        public decimal GetGroupPriceById(int groupId)
+        public decimal GetGroupPrice(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Price FROM `Groups` WHERE Id = @GroupId";
@@ -303,7 +301,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetGroupStudentCountById(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT StudentCount FROM `Groups` WHERE Id = @GroupId";
@@ -322,7 +320,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public int GetGroupStudentCountByName(string name)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT StudentCount FROM `Groups` WHERE Name = @Name";
@@ -341,7 +339,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public DataTable GetGroupsAsDataTable()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT Id, Name FROM `Groups` ORDER BY Name";
@@ -359,7 +357,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public void LoadGroupsToDictionary(Dictionary<string, List<int>> groupIds)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var cmd = new MySqlCommand("SELECT Id, Name FROM `Groups`", connection))
@@ -387,7 +385,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool IsGroupsTableEmpty()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var cmd = new MySqlCommand("SELECT EXISTS (SELECT 1 FROM `Groups` LIMIT 1)", connection);
@@ -405,7 +403,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroup(Group group)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE `Groups` 
@@ -439,7 +437,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupName(int groupId, string newName)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET Name = @Name, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -459,7 +457,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupPrice(int groupId, decimal newPrice)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET Price = @Price, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -479,7 +477,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupTeacher(int groupId, string newTeacher)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET Teacher = @Teacher, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -499,7 +497,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupStatus(int groupId, bool newStatus)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET Status = @Status, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -519,7 +517,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupContractTemplatePath(int groupId, string newPath)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET ContractTemplatePath = @Path, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -539,7 +537,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool UpdateGroupMaxStudents(int groupId, int newMaxStudents)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET MaxStudents = @MaxStudents, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -563,7 +561,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool IncrementStudentCount(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET StudentCount = StudentCount + 1, UpdatedAt = @UpdatedAt WHERE Id = @GroupId";
@@ -582,7 +580,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DecrementStudentCount(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "UPDATE `Groups` SET StudentCount = StudentCount - 1, UpdatedAt = @UpdatedAt WHERE Id = @GroupId AND StudentCount > 0";
@@ -602,7 +600,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public bool RecalculateStudentCount(int groupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null)
         {
             bool useExternal = externalConnection != null;
-            var connection = useExternal ? externalConnection : _dbHelper.GetLocalConnection();
+            var connection = useExternal ? externalConnection : _connectionProvider.GetLocalConnection();
 
             try
             {
@@ -646,7 +644,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool DeleteGroup(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -689,7 +687,7 @@ namespace BCCStudents.Infrastructure.Repositories
         /// </summary>
         public bool HardDeleteGroup(int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "DELETE FROM `Groups` WHERE Id = @GroupId";

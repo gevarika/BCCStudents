@@ -1,12 +1,7 @@
-﻿using BCCStudents.Infrastructure.Data;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services;
-using System;
 using System.Data;
-using System.Linq;
-using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
@@ -49,12 +44,12 @@ namespace BCCStudents.Presentation
         private void InitializeCharts()
         {
             // ყველა Chart-ის საერთო კონფიგურაცია
-            var charts = new[] 
-            { 
-                chartStudentCount, chartPayments, chartPaymentStatus, chartGender, 
-                chartAge, chartNames, chartRegistration, chartGroupDensity, 
-                chartAveragePayment, chartDiscounts, chartSubGroupDistribution, 
-                chartPaymentTrend, chartGroupEfficiency 
+            var charts = new[]
+            {
+                chartStudentCount, chartPayments, chartPaymentStatus, chartGender,
+                chartAge, chartNames, chartRegistration, chartGroupDensity,
+                chartAveragePayment, chartDiscounts, chartSubGroupDistribution,
+                chartPaymentTrend, chartGroupEfficiency
             };
 
             foreach (var chart in charts)
@@ -62,12 +57,12 @@ namespace BCCStudents.Presentation
                 chart.ChartAreas.Clear();
                 chart.Series.Clear();
                 chart.Legends.Clear();
-                
+
                 var chartArea = new ChartArea("MainArea");
                 chartArea.AxisX.Title = "კატეგორია";
                 chartArea.AxisY.Title = "რაოდენობა";
                 chart.ChartAreas.Add(chartArea);
-                
+
                 var legend = new Legend("MainLegend");
                 legend.Docking = Docking.Bottom;
                 chart.Legends.Add(legend);
@@ -224,7 +219,7 @@ namespace BCCStudents.Presentation
             foreach (DataRow row in data.Rows)
             {
                 series.Points.AddXY(
-                    row["გენდერი"].ToString(), 
+                    row["გენდერი"].ToString(),
                     Convert.ToInt32(row["რაოდენობა"])
                 );
             }

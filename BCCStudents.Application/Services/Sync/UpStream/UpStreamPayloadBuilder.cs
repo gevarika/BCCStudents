@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using BCCStudents.Domain.Entities;
-using BCCStudents;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Application.Services.Sync.UpStream
 {
     /// <summary>
-    /// áƒªáƒ®áƒ áƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ— áƒžáƒ”áƒ˜áƒšáƒáƒáƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒáƒ’áƒ”áƒ‘áƒ (Students, Groups, SubGroups, StudentGroups, StudentSubGroups).
+    /// ცხრილების მიხედვით payload-ების აგება (Students, Groups, SubGroups, StudentGroups, StudentSubGroups).
     /// </summary>
     public class UpStreamPayloadBuilder : IUpStreamPayloadBuilder
     {
@@ -32,10 +29,10 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 ["Info"] = student.Info,
                 ["User_Id"] = student.User_Id,
                 ["Balance"] = student.Balance,
-               // ["Discount"] = student.Discount,
-                ["Status"] = student.Status, // Students.Status áƒáƒ áƒ˜áƒ¡ bool
-               // ["PaymentStatus"] = student.PaymentStatus,
-               // ["DateOfPayment"] = student.DateOfPayment,
+                // ["Discount"] = student.Discount,
+                ["Status"] = student.Status, // Students.Status არის bool
+                                             // ["PaymentStatus"] = student.PaymentStatus,
+                                             // ["DateOfPayment"] = student.DateOfPayment,
                 ["UpdatedAt"] = EnsureUpdatedAt(student.UpdatedAt),
                 ["IdCardPath"] = student.IdCardPath,
                 ["AdditionalDocsPath"] = student.AdditionalDocsPath
@@ -57,6 +54,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 ["ContractTemplatePath"] = group.ContractTemplatePath,
                 ["Status"] = group.Status,
                 ["StudentCount"] = studentCount ?? group.StudentCount,
+                ["MaxStudents"] = group.MaxStudents,
                 ["UpdatedAt"] = EnsureUpdatedAt(group.UpdatedAt)
             };
 
@@ -74,6 +72,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 ["GroupId"] = subGroup.GroupId,
                 ["TuitionFee"] = subGroup.TuitionFee,
                 ["StudentCount"] = subGroup.StudentCount,
+                ["MaxStudents"] = subGroup.MaxStudents,
                 ["Status"] = subGroup.Status,
                 ["UpdatedAt"] = EnsureUpdatedAt(subGroup.UpdatedAt)
             };
@@ -135,6 +134,24 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             return new SyncChangePayload("StudentSubGroups", operation, data, recordId > 0 ? (int?)recordId : null, keys);
         }
 
+        public SyncChangePayload BuildPaymentPayload(int paymentId, SyncOperationType operation, Payment payment)
+        {
+            if (payment == null) throw new ArgumentNullException(nameof(payment));
+
+            var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Id"] = paymentId,
+                ["StudentId"] = payment.StudentId,
+                ["GroupId"] = payment.GroupId,
+                ["Amount"] = payment.Amount,
+                ["PaymentDate"] = EnsureDate(payment.PaymentDate),
+                ["PaymentStatus"] = payment.PaymentStatus,
+                ["Description"] = payment.Description ?? (object)DBNull.Value
+            };
+
+            return new SyncChangePayload("Payments", operation, data, paymentId);
+        }
+
         public SyncChangePayload BuildFailedPaymentPayload(int failedPaymentId, SyncOperationType operation, FailedPayment failedPayment)
         {
             if (failedPayment == null) throw new ArgumentNullException(nameof(failedPayment));
@@ -172,6 +189,26 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             return new SyncChangePayload("ImportedPaymentsLog", operation, data, importedPaymentLogId);
         }
 
+        public SyncChangePayload BuildUserPayload(int userId, SyncOperationType operation, UserModel user)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+
+            var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Id"] = userId,
+                ["Username"] = user.UserName,
+                ["Password"] = user.Password ?? (object)DBNull.Value,
+                ["FullName"] = user.FullName,
+                ["Email"] = user.Email ?? (object)DBNull.Value,
+                ["Role"] = user.Role,
+                ["Permissions"] = user.Permissions ?? (object)DBNull.Value,
+                ["CreatedAt"] = EnsureDate(user.CreatedAt ?? DateTime.Now),
+                ["LastLogin"] = user.LastLogin.HasValue && user.LastLogin.Value != DateTime.MinValue ? EnsureDate(user.LastLogin.Value) : (object)DBNull.Value
+            };
+
+            return new SyncChangePayload("Users", operation, data, userId);
+        }
+
         private static DateTime EnsureDate(DateTime input)
         {
             if (input == default || input < MinSqlDate)
@@ -183,8 +220,34 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
         private static DateTime EnsureUpdatedAt(DateTime input)
         {
-            // áƒ–áƒ£áƒ¡áƒ¢áƒáƒ“ áƒ˜áƒ¡ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ‘áƒ áƒ£áƒœáƒ“áƒ áƒ’áƒáƒ˜áƒ’áƒ–áƒáƒ•áƒœáƒáƒ¡, áƒ áƒáƒª áƒšáƒáƒ™áƒáƒšáƒ£áƒ  áƒ‘áƒáƒ–áƒáƒ¨áƒ˜ áƒ¬áƒ”áƒ áƒ˜áƒ
-            // áƒ•áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ— áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ£áƒš input-áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ˜áƒ¡ áƒ’áƒáƒ áƒ”áƒ¨áƒ”
+            // ლოკალურ ბაზაში UpdatedAt ინახება DateTime.Now-ით (local time, UTC+4, მაგ. 14:00)
+            // როცა წაიკითხავ MySQL-იდან, DateTime-ის Kind არის Unspecified
+            // NormalizeValue-ში ToUniversalTime() თუ Kind არის Unspecified, ფიქრობს როგორც Local და აკლებს 4 საათს (14:00 -> 10:00)
+            // ამიტომ, უნდა დავარწმუნდეთ რომ DateTime უკვე UTC-შია და SpecifyKind(Utc) დავაყენოთ
+            // რომ NormalizeValue-ში ToUniversalTime() არაფერს გააკეთოს (უკვე UTC-ია)
+
+            /*if (input == default || input == DateTime.MinValue)
+            {
+                return DateTime.UtcNow;
+            }*/
+
+            // თუ Kind არის Unspecified (MySQL-იდან წაკითხული), უნდა გარდავქმნათ Local-ად და შემდეგ UTC-ში
+            // რადგან ბაზაში ინახება local time (UTC+4, მაგ. 14:00), უნდა დავაბრუნოთ UTC time (10:00)
+            /*if (input.Kind == DateTimeKind.Unspecified)
+            {
+                // SpecifyKind როგორც Local, შემდეგ ToUniversalTime() სწორად გარდაქმნის local -> UTC
+                var utcTime = DateTime.SpecifyKind(input, DateTimeKind.Local).ToUniversalTime();
+                // დავაბრუნოთ როგორც UTC რომ NormalizeValue-ში ToUniversalTime() არაფერს გააკეთოს
+                return DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
+            }*/
+
+            // თუ უკვე UTC-შია, დავაბრუნოთ როგორც არის
+            /*if (input.Kind == DateTimeKind.Utc)
+            {
+                return input;
+            }*/
+
+            // თუ Local-ია, გარდავქმნათ UTC-ში
             return input;
         }
     }

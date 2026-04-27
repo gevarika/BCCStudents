@@ -1,13 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
-    <StartupObject>BCCStudents.Presentation.Program</StartupObject>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AssemblyName>BCCStudents.Presentation</AssemblyName>
+		<RootNamespace>BCCStudents.Presentation</RootNamespace>
+		<StartupObject>BCCStudents.Presentation.Program</StartupObject>
+		<Platforms>AnyCPU;x64</Platforms>
+		<RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<Version>1.0.2.4</Version>
+		<AssemblyVersion>1.0.2.4</AssemblyVersion>
+		<FileVersion>1.0.2.4</FileVersion>
+		<Company>ბოლნისის კულტურის ცენტრი</Company>
+		<Product>Student Management</Product>
+		<Copyright>Copyright ©  2025</Copyright>
+		<Description>მოსწავლეთა მართვის ელექტრონული პროგრამა</Description>
+	</PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BCCStudents.Domain\BCCStudents.Domain.csproj" />
@@ -16,8 +28,66 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />
+	  <PackageReference Include="ClosedXML" Version="0.104.2" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
+	  <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+	  <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
+	  <PackageReference Include="MySql.Data" Version="9.2.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+	  <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+	  <PackageReference Include="ToastNotifications.Messages" Version="2.5.1" />
+	  <PackageReference Include="Tools.InnoSetup" Version="6.4.3" />
+    <PackageReference Include="WinForms.DataVisualization" Version="1.10.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>BCCStudents.Presentation.Properties</CustomToolNamespace>
+    </EmbeddedResource>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+	<ItemGroup>
+		<Content Include="libmysql.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="libcrypto-1_1-x64.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="libssl-1_1-x64.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="libcrypto-1_1.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="libssl-1_1.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Database\db_init.sql">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="App.config" />
+		<None Include="Config\db.config.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Properties\Settings.settings">
+	    <Generator>SettingsSingleFileGenerator</Generator>
+	    <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+	  </None>
+	</ItemGroup>
 
 </Project>

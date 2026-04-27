@@ -1,23 +1,13 @@
-﻿using BCCStudents.Infrastructure.Data;
-using BCCStudents.Application.Services;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
     public partial class SetStudyStartDateForm : Form
     {
         public DateTime SelectedDate { get; private set; }
-        private readonly PaymentDateService _paymentDateService;
+        private readonly IPaymentDateService _paymentDateService;
 
-        public SetStudyStartDateForm(PaymentDateService paymentDateService)
+        public SetStudyStartDateForm(IPaymentDateService paymentDateService = null)
         {
             InitializeComponent();
             FormTitleHelper.SetTitle(this, "სწავლის დაწყების თარიღის დაყენება");
@@ -27,8 +17,8 @@ namespace BCCStudents.Presentation
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            SelectedDate = dtpStartDate.Value;
-            _paymentDateService.UpdateNextPaymentDate(SelectedDate);
+            SelectedDate = dtpStartDate.Value.Date;
+            // მხოლოდ თარიღის დაყენება, მოსწავლეების გადახდის თარიღების განახლება MainForm-ში ხდება
             DialogResult = DialogResult.OK;
             Close();
         }

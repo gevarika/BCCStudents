@@ -12,8 +12,8 @@ namespace BCCStudents.Presentation.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.5.0.0")]
-    public sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.14.0.0")]
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
         
@@ -157,18 +157,6 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
-        public bool AutoBackupEnabled {
-            get {
-                return ((bool)(this["AutoBackupEnabled"]));
-            }
-            set {
-                this["AutoBackupEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string MySqlDumpPath {
             get {
@@ -176,30 +164,6 @@ namespace BCCStudents.Presentation.Properties {
             }
             set {
                 this["MySqlDumpPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string ServerHost {
-            get {
-                return ((string)(this["ServerHost"]));
-            }
-            set {
-                this["ServerHost"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DatabaseName {
-            get {
-                return ((string)(this["DatabaseName"]));
-            }
-            set {
-                this["DatabaseName"] = value;
             }
         }
         
@@ -229,30 +193,6 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Username {
-            get {
-                return ((string)(this["Username"]));
-            }
-            set {
-                this["Username"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Password {
-            get {
-                return ((string)(this["Password"]));
-            }
-            set {
-                this["Password"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1900-01-01")]
         public global::System.DateTime LastBackupTime {
             get {
@@ -260,66 +200,6 @@ namespace BCCStudents.Presentation.Properties {
             }
             set {
                 this["LastBackupTime"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("false")]
-        public bool DbChangedSinceLastBackup {
-            get {
-                return ((bool)(this["DbChangedSinceLastBackup"]));
-            }
-            set {
-                this["DbChangedSinceLastBackup"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
-        public bool UseLocalDb {
-            get {
-                return ((bool)(this["UseLocalDb"]));
-            }
-            set {
-                this["UseLocalDb"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("false")]
-        public bool AutoDownstreamSyncEnabled {
-            get {
-                return ((bool)(this["AutoDownstreamSyncEnabled"]));
-            }
-            set {
-                this["AutoDownstreamSyncEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
-        public bool AutoUpstreamSyncEnabled {
-            get {
-                return ((bool)(this["AutoUpstreamSyncEnabled"]));
-            }
-            set {
-                this["AutoUpstreamSyncEnabled"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
-        public bool AutoUpdateEnabled {
-            get {
-                return ((bool)(this["AutoUpdateEnabled"]));
-            }
-            set {
-                this["AutoUpdateEnabled"] = value;
             }
         }
         
@@ -401,13 +281,145 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("false")]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool UseFullBalanceForAutoPayment {
             get {
                 return ((bool)(this["UseFullBalanceForAutoPayment"]));
             }
             set {
                 this["UseFullBalanceForAutoPayment"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoBackupEnabled {
+            get {
+                return ((bool)(this["AutoBackupEnabled"]));
+            }
+            set {
+                this["AutoBackupEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DbChangedSinceLastBackup {
+            get {
+                return ((bool)(this["DbChangedSinceLastBackup"]));
+            }
+            set {
+                this["DbChangedSinceLastBackup"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UseLocalDb {
+            get {
+                return ((bool)(this["UseLocalDb"]));
+            }
+            set {
+                this["UseLocalDb"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AutoDownstreamSyncEnabled {
+            get {
+                return ((bool)(this["AutoDownstreamSyncEnabled"]));
+            }
+            set {
+                this["AutoDownstreamSyncEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoUpstreamSyncEnabled {
+            get {
+                return ((bool)(this["AutoUpstreamSyncEnabled"]));
+            }
+            set {
+                this["AutoUpstreamSyncEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoUpdateEnabled {
+            get {
+                return ((bool)(this["AutoUpdateEnabled"]));
+            }
+            set {
+                this["AutoUpdateEnabled"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ColumnVisibilitySettings {
+            get {
+                return ((string)(this["ColumnVisibilitySettings"]));
+            }
+            set {
+                this["ColumnVisibilitySettings"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ColumnWidthsSettings {
+            get {
+                return ((string)(this["ColumnWidthsSettings"]));
+            }
+            set {
+                this["ColumnWidthsSettings"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool EnableCustomSubGroupMaxStudents {
+            get {
+                return ((bool)(this["EnableCustomSubGroupMaxStudents"]));
+            }
+            set {
+                this["EnableCustomSubGroupMaxStudents"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string UsedUsernames {
+            get {
+                return ((string)(this["UsedUsernames"]));
+            }
+            set {
+                this["UsedUsernames"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowPartialPayments {
+            get {
+                return ((bool)(this["AllowPartialPayments"]));
+            }
+            set {
+                this["AllowPartialPayments"] = value;
             }
         }
     }

@@ -1,26 +1,23 @@
-﻿using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class PendingStudentRepository : IPendingStudentRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public PendingStudentRepository(DatabaseHelper dbHelper)
+        public PendingStudentRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         public List<PendingStudent> GetAll()
         {
             var list = new List<PendingStudent>();
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 var cmd = new MySqlCommand("SELECT * FROM PendingStudents", conn);
@@ -44,7 +41,7 @@ namespace BCCStudents.Infrastructure.Repositories
                         //Status = Convert.ToBoolean(reader["status"]),
                         IdCardPath = reader["IdCardPath"]?.ToString(),
                         AdditionalDocsPath = reader["AdditionalDocsPath"]?.ToString()
-                    }) ;
+                    });
                 }
             }
             return list;
@@ -52,7 +49,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public void Delete(int id)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 var cmd = new MySqlCommand("DELETE FROM PendingStudents WHERE Id = @id", conn);
@@ -64,7 +61,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public PendingStudent GetById(int id)
         {
             var list = new List<PendingStudent>();
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 var query = @"SELECT 
@@ -117,7 +114,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public void Update(PendingStudent s)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 var cmd = new MySqlCommand(@"
@@ -140,7 +137,7 @@ namespace BCCStudents.Infrastructure.Repositories
             if (fields.Count == 0)
                 return;
 
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
 

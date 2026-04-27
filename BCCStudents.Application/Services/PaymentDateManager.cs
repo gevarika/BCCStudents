@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace BCCStudents.Application.Services
 {
     public static class PaymentDateManager
     {
-        private  static readonly string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "next_payment_date.dat");
+        private static readonly string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "next_payment_date.dat");
 
-        private  static string Encrypt(string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
-        private  static string Decrypt(string encryptedText) => Encoding.UTF8.GetString(Convert.FromBase64String(encryptedText));
+        private static string Encrypt(string plainText) => Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
+        private static string Decrypt(string encryptedText) => Encoding.UTF8.GetString(Convert.FromBase64String(encryptedText));
 
         public static void SaveNextPaymentDate(DateTime nextPaymentDate)
         {

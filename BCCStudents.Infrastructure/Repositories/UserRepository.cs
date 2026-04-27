@@ -1,30 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public UserRepository(DatabaseHelper dbHelper)
+        public UserRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
-        public void RegisterUser(RegisterUserModel user)
+        public int RegisterUser(RegisterUserModel user)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = @"INSERT INTO Users (Username, FullName, Email, Password, Role, CreatedAt, LastLogin) 
-                         VALUES (@Username, @FullName, @Email, @Password, @Role, @CreatedAt, @LastLogin)";
+                string query = @"INSERT INTO Users (Username, FullName, Email, Password, Role, Permissions, CreatedAt, LastLogin) 
+                         VALUES (@Username, @FullName, @Email, @Password, @Role, @Permissions, @CreatedAt, @LastLogin);
+                         SELECT LAST_INSERT_ID();";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Username", user.UserName);
@@ -33,15 +29,16 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@Password", user.Password);
                     cmd.Parameters.AddWithValue("@LastLogin", DBNull.Value);
                     cmd.Parameters.AddWithValue("@Role", user.Role);
+                    cmd.Parameters.AddWithValue("@Permissions", (object)user.Permissions ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@CreatedAt", user.CreatedAt);
-                    cmd.ExecuteNonQuery();
+                    return Convert.ToInt32(cmd.ExecuteScalar());
                 }
             }
         }
         // მომხმარებლის არსებობის შემოწმება
         public bool IsUserRegistered()
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(*) FROM Users";
@@ -54,7 +51,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public UserModel GetUserByUsername(string username)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 string query = "SELECT * FROM Users WHERE Username = @Username";
@@ -73,6 +70,7 @@ namespace BCCStudents.Infrastructure.Repositories
                                 FullName = reader["FullName"]?.ToString(),
                                 Email = reader["Email"]?.ToString(),
                                 Role = reader["Role"]?.ToString(),
+                                Permissions = reader["Permissions"]?.ToString(),
                                 LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : DateTime.MinValue
                             };
                         }
@@ -84,7 +82,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public void UpdateLastLogin(int userId, DateTime lastLogin)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 string query = "UPDATE Users SET LastLogin = @LastLogin WHERE Id = @Id";
@@ -98,7 +96,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public UserModel GetUserById(int id)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
 
@@ -115,11 +113,13 @@ namespace BCCStudents.Infrastructure.Repositories
                             {
                                 Id = Convert.ToInt32(reader["Id"]),
                                 UserName = reader["Username"].ToString(),
+                                Password = reader["Password"]?.ToString(),
                                 FullName = reader["FullName"].ToString(),
                                 Email = reader["Email"]?.ToString(),
                                 Role = reader["Role"]?.ToString(),
-                                //CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
-                                //LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null
+                                Permissions = reader["Permissions"]?.ToString(),
+                                CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
+                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null
                             };
                         }
                     }
@@ -130,7 +130,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
         public string GetFullName(int userId)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 var query = "SELECT FullName FROM Users WHERE Id = @UserId";
@@ -154,7 +154,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<UserModel> GetAllUsers()
         {
             var users = new List<UserModel>();
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
 
@@ -165,15 +165,17 @@ namespace BCCStudents.Infrastructure.Repositories
                     {
                         while (reader.Read())
                         {
-                            users.Add( new UserModel
+                            users.Add(new UserModel
                             {
                                 Id = Convert.ToInt32(reader["Id"]),
                                 UserName = reader["Username"].ToString(),
+                                Password = reader["Password"]?.ToString(),
                                 FullName = reader["FullName"].ToString(),
                                 Email = reader["Email"]?.ToString(),
                                 Role = reader["Role"]?.ToString(),
+                                Permissions = reader["Permissions"]?.ToString(),
                                 CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
-                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime( reader["LastLogin"]) : (DateTime?)null
+                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null
                             });
                         }
                     }
@@ -181,6 +183,60 @@ namespace BCCStudents.Infrastructure.Repositories
             }
 
             return users;
+        }
+
+        // Permissions Management
+        public void UpdatePermissions(int userId, string permissionsJson)
+        {
+            using (var conn = _connectionProvider.GetLocalConnection())
+            {
+                conn.Open();
+                string query = "UPDATE Users SET Permissions = @Permissions WHERE Id = @Id";
+                using (var cmd = new MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Permissions", (object)permissionsJson ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Id", userId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void UpdatePassword(int userId, string passwordHash)
+        {
+            using (var conn = _connectionProvider.GetLocalConnection())
+            {
+                conn.Open();
+                string query = "UPDATE Users SET Password = @Password WHERE Id = @Id";
+                using (var cmd = new MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Password", passwordHash);
+                    cmd.Parameters.AddWithValue("@Id", userId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void UpdateUser(int userId, string fullName, string email, string role, string permissionsJson)
+        {
+            using (var conn = _connectionProvider.GetLocalConnection())
+            {
+                conn.Open();
+                string query = @"UPDATE Users 
+                                SET FullName = @FullName, 
+                                    Email = @Email, 
+                                    Role = @Role, 
+                                    Permissions = @Permissions 
+                                WHERE Id = @Id";
+                using (var cmd = new MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@FullName", fullName);
+                    cmd.Parameters.AddWithValue("@Email", email ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Role", role);
+                    cmd.Parameters.AddWithValue("@Permissions", (object)permissionsJson ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Id", userId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BCCStudents.Presentation
+namespace BCCStudents.Presentation
 {
     partial class StudentsEditForm
     {
@@ -28,697 +28,773 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(StudentsEditForm));
-            this.dgvStudents = new System.Windows.Forms.DataGridView();
-            this.txtStudentSearch = new System.Windows.Forms.TextBox();
-            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.წაშლაToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.txtBalance = new System.Windows.Forms.TextBox();
-            this.chkBoxStatus = new System.Windows.Forms.CheckBox();
-            this.dgvGroupSubGroups = new System.Windows.Forms.DataGridView();
-            this.btnStudentActivation = new System.Windows.Forms.Button();
-            this.chlGroups = new System.Windows.Forms.CheckedListBox();
-            this.btnCancelChanges = new System.Windows.Forms.Button();
-            this.btnSaveChanges = new System.Windows.Forms.Button();
-            this.lblStatus = new System.Windows.Forms.Label();
-            this.label14 = new System.Windows.Forms.Label();
-            this.lblGroup = new System.Windows.Forms.Label();
-            this.label18 = new System.Windows.Forms.Label();
-            this.label12 = new System.Windows.Forms.Label();
-            this.lblStudentCode = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label17 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.txtPaymentDate = new System.Windows.Forms.TextBox();
-            this.txtPhone = new System.Windows.Forms.TextBox();
-            this.txtAddress = new System.Windows.Forms.TextBox();
-            this.txtPaymentStatus = new System.Windows.Forms.TextBox();
-            this.txtParent = new System.Windows.Forms.TextBox();
-            this.txtRegistrationDate = new System.Windows.Forms.TextBox();
-            this.txtAge = new System.Windows.Forms.TextBox();
-            this.txtPersonalId = new System.Windows.Forms.TextBox();
-            this.txtStatus = new System.Windows.Forms.TextBox();
-            this.txtLastName = new System.Windows.Forms.TextBox();
-            this.txtFirstName = new System.Windows.Forms.TextBox();
-            this.btndel = new System.Windows.Forms.Button();
-            this.cbGroups = new System.Windows.Forms.ComboBox();
-            this.btnClear = new System.Windows.Forms.Button();
-            this.label15 = new System.Windows.Forms.Label();
-            this.label16 = new System.Windows.Forms.Label();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.txtSearch = new System.Windows.Forms.TextBox();
-            this.rbByStCode = new System.Windows.Forms.RadioButton();
-            this.rbByAge = new System.Windows.Forms.RadioButton();
-            this.rbByIdNumber = new System.Windows.Forms.RadioButton();
-            this.rbByLastName = new System.Windows.Forms.RadioButton();
-            this.rbByAddress = new System.Windows.Forms.RadioButton();
-            this.rbByParent = new System.Windows.Forms.RadioButton();
-            this.rbByPhone = new System.Windows.Forms.RadioButton();
-            this.rbByName = new System.Windows.Forms.RadioButton();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvStudents)).BeginInit();
-            this.contextMenuStrip1.SuspendLayout();
-            this.groupBox1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroupSubGroups)).BeginInit();
-            this.groupBox2.SuspendLayout();
-            this.SuspendLayout();
+            dgvStudents = new DataGridView();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            წაშლაToolStripMenuItem = new ToolStripMenuItem();
+            სვეტებისმართვაToolStripMenuItem = new ToolStripMenuItem();
+            groupBox1 = new GroupBox();
+            txtBalance = new TextBox();
+            chkBoxStatus = new CheckBox();
+            dgvGroupSubGroups = new DataGridView();
+            btnStudentActivation = new Button();
+            chlGroups = new CheckedListBox();
+            btnCancelChanges = new Button();
+            btnSaveChanges = new Button();
+            lblStatus = new Label();
+            label14 = new Label();
+            lblGroup = new Label();
+            label18 = new Label();
+            label12 = new Label();
+            lblStudentCode = new Label();
+            label10 = new Label();
+            label8 = new Label();
+            label4 = new Label();
+            label7 = new Label();
+            label3 = new Label();
+            label6 = new Label();
+            label17 = new Label();
+            label11 = new Label();
+            label2 = new Label();
+            label5 = new Label();
+            label9 = new Label();
+            label13 = new Label();
+            label1 = new Label();
+            txtPaymentDate = new TextBox();
+            txtPhone = new TextBox();
+            txtAddress = new TextBox();
+            txtPaymentStatus = new TextBox();
+            txtParent = new TextBox();
+            txtRegistrationDate = new TextBox();
+            txtAge = new TextBox();
+            txtPersonalId = new TextBox();
+            txtStatus = new TextBox();
+            txtLastName = new TextBox();
+            txtFirstName = new TextBox();
+            btndel = new Button();
+            cbGroups = new ComboBox();
+            btnClear = new Button();
+            label15 = new Label();
+            groupBox2 = new GroupBox();
+            txtSearch = new TextBox();
+            rbByStCode = new RadioButton();
+            rbByAge = new RadioButton();
+            rbByIdNumber = new RadioButton();
+            rbByLastName = new RadioButton();
+            rbByAddress = new RadioButton();
+            rbByParent = new RadioButton();
+            rbByPhone = new RadioButton();
+            rbByName = new RadioButton();
+            groupBox3 = new GroupBox();
+            chkstudentsToGroups = new CheckBox();
+            ((System.ComponentModel.ISupportInitialize)dgvStudents).BeginInit();
+            contextMenuStrip1.SuspendLayout();
+            groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvGroupSubGroups).BeginInit();
+            groupBox2.SuspendLayout();
+            SuspendLayout();
             // 
             // dgvStudents
             // 
-            this.dgvStudents.AllowUserToAddRows = false;
-            this.dgvStudents.AllowUserToOrderColumns = true;
-            this.dgvStudents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvStudents.Location = new System.Drawing.Point(689, 57);
-            this.dgvStudents.Name = "dgvStudents";
-            this.dgvStudents.RowHeadersWidth = 51;
-            this.dgvStudents.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvStudents.Size = new System.Drawing.Size(569, 731);
-            this.dgvStudents.TabIndex = 17;
-            this.dgvStudents.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvStudents_CellContentClick);
-            this.dgvStudents.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvStudents_CellDoubleClick);
-            this.dgvStudents.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvStudents_CellValueChanged);
-            // 
-            // txtStudentSearch
-            // 
-            this.txtStudentSearch.Location = new System.Drawing.Point(976, 24);
-            this.txtStudentSearch.Name = "txtStudentSearch";
-            this.txtStudentSearch.Size = new System.Drawing.Size(118, 20);
-            this.txtStudentSearch.TabIndex = 13;
-            this.txtStudentSearch.TextChanged += new System.EventHandler(this.txtStudentsSearch_TextChanged);
+            dgvStudents.AllowUserToAddRows = false;
+            dgvStudents.AllowUserToOrderColumns = true;
+            dgvStudents.BorderStyle = BorderStyle.None;
+            dgvStudents.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvStudents.EditMode = DataGridViewEditMode.EditProgrammatically;
+            dgvStudents.Location = new Point(804, 14);
+            dgvStudents.Margin = new Padding(4, 3, 4, 3);
+            dgvStudents.MultiSelect = false;
+            dgvStudents.Name = "dgvStudents";
+            dgvStudents.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dgvStudents.RowHeadersVisible = false;
+            dgvStudents.RowHeadersWidth = 51;
+            dgvStudents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvStudents.Size = new Size(664, 849);
+            dgvStudents.TabIndex = 17;
+            dgvStudents.ContextMenuStrip = contextMenuStrip1;
+            dgvStudents.CellClick += dgvStudents_CellClick;
+            dgvStudents.CellContentClick += dgvStudents_CellContentClick;
+            dgvStudents.CellValueChanged += dgvStudents_CellValueChanged;
             // 
             // contextMenuStrip1
             // 
-            this.contextMenuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.წაშლაToolStripMenuItem});
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(116, 26);
+            contextMenuStrip1.ImageScalingSize = new Size(20, 20);
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { 
+                წაშლაToolStripMenuItem,
+                სვეტებისმართვაToolStripMenuItem
+            });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(200, 48);
             // 
             // წაშლაToolStripMenuItem
             // 
-            this.წაშლაToolStripMenuItem.Name = "წაშლაToolStripMenuItem";
-            this.წაშლაToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
-            this.წაშლაToolStripMenuItem.Text = "წაშლა";
+            წაშლაToolStripMenuItem.Name = "წაშლაToolStripMenuItem";
+            წაშლაToolStripMenuItem.Size = new Size(199, 22);
+            წაშლაToolStripMenuItem.Text = "წაშლა";
+            // 
+            // სვეტებისმართვაToolStripMenuItem
+            // 
+            სვეტებისმართვაToolStripMenuItem.Name = "სვეტებისმართვაToolStripMenuItem";
+            სვეტებისმართვაToolStripMenuItem.Size = new Size(199, 22);
+            სვეტებისმართვაToolStripMenuItem.Text = "სვეტების მართვა";
             // 
             // groupBox1
             // 
-            this.groupBox1.BackColor = System.Drawing.Color.DarkGray;
-            this.groupBox1.Controls.Add(this.txtBalance);
-            this.groupBox1.Controls.Add(this.chkBoxStatus);
-            this.groupBox1.Controls.Add(this.dgvGroupSubGroups);
-            this.groupBox1.Controls.Add(this.btnStudentActivation);
-            this.groupBox1.Controls.Add(this.chlGroups);
-            this.groupBox1.Controls.Add(this.btnCancelChanges);
-            this.groupBox1.Controls.Add(this.btnSaveChanges);
-            this.groupBox1.Controls.Add(this.lblStatus);
-            this.groupBox1.Controls.Add(this.label14);
-            this.groupBox1.Controls.Add(this.lblGroup);
-            this.groupBox1.Controls.Add(this.label18);
-            this.groupBox1.Controls.Add(this.label12);
-            this.groupBox1.Controls.Add(this.lblStudentCode);
-            this.groupBox1.Controls.Add(this.label10);
-            this.groupBox1.Controls.Add(this.label8);
-            this.groupBox1.Controls.Add(this.label4);
-            this.groupBox1.Controls.Add(this.label7);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.label6);
-            this.groupBox1.Controls.Add(this.label17);
-            this.groupBox1.Controls.Add(this.label11);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.label5);
-            this.groupBox1.Controls.Add(this.label9);
-            this.groupBox1.Controls.Add(this.label13);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.txtPaymentDate);
-            this.groupBox1.Controls.Add(this.txtPhone);
-            this.groupBox1.Controls.Add(this.txtAddress);
-            this.groupBox1.Controls.Add(this.txtPaymentStatus);
-            this.groupBox1.Controls.Add(this.txtParent);
-            this.groupBox1.Controls.Add(this.txtRegistrationDate);
-            this.groupBox1.Controls.Add(this.txtAge);
-            this.groupBox1.Controls.Add(this.txtPersonalId);
-            this.groupBox1.Controls.Add(this.txtStatus);
-            this.groupBox1.Controls.Add(this.txtLastName);
-            this.groupBox1.Controls.Add(this.txtFirstName);
-            this.groupBox1.Location = new System.Drawing.Point(2, 12);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(682, 764);
-            this.groupBox1.TabIndex = 3;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "მოსწავლის მონაცემები";
+            groupBox1.BackColor = Color.DarkGray;
+            groupBox1.Controls.Add(txtBalance);
+            groupBox1.Controls.Add(chkBoxStatus);
+            groupBox1.Controls.Add(dgvGroupSubGroups);
+            groupBox1.Controls.Add(btnStudentActivation);
+            groupBox1.Controls.Add(chlGroups);
+            groupBox1.Controls.Add(btnCancelChanges);
+            groupBox1.Controls.Add(btnSaveChanges);
+            groupBox1.Controls.Add(lblStatus);
+            groupBox1.Controls.Add(label14);
+            groupBox1.Controls.Add(lblGroup);
+            groupBox1.Controls.Add(label18);
+            groupBox1.Controls.Add(label12);
+            groupBox1.Controls.Add(lblStudentCode);
+            groupBox1.Controls.Add(label10);
+            groupBox1.Controls.Add(label8);
+            groupBox1.Controls.Add(label4);
+            groupBox1.Controls.Add(label7);
+            groupBox1.Controls.Add(label3);
+            groupBox1.Controls.Add(label6);
+            groupBox1.Controls.Add(label17);
+            groupBox1.Controls.Add(label11);
+            groupBox1.Controls.Add(label2);
+            groupBox1.Controls.Add(label5);
+            groupBox1.Controls.Add(label9);
+            groupBox1.Controls.Add(label13);
+            groupBox1.Controls.Add(label1);
+            groupBox1.Controls.Add(txtPaymentDate);
+            groupBox1.Controls.Add(txtPhone);
+            groupBox1.Controls.Add(txtAddress);
+            groupBox1.Controls.Add(txtPaymentStatus);
+            groupBox1.Controls.Add(txtParent);
+            groupBox1.Controls.Add(txtRegistrationDate);
+            groupBox1.Controls.Add(txtAge);
+            groupBox1.Controls.Add(txtPersonalId);
+            groupBox1.Controls.Add(txtStatus);
+            groupBox1.Controls.Add(txtLastName);
+            groupBox1.Controls.Add(txtFirstName);
+            groupBox1.Location = new Point(2, 14);
+            groupBox1.Margin = new Padding(4, 3, 4, 3);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(4, 3, 4, 3);
+            groupBox1.Size = new Size(796, 849);
+            groupBox1.TabIndex = 3;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "მოსწავლის მონაცემები";
             // 
             // txtBalance
             // 
-            this.txtBalance.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtBalance.Location = new System.Drawing.Point(477, 272);
-            this.txtBalance.Multiline = true;
-            this.txtBalance.Name = "txtBalance";
-            this.txtBalance.Size = new System.Drawing.Size(170, 38);
-            this.txtBalance.TabIndex = 16;
+            txtBalance.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtBalance.Location = new Point(556, 314);
+            txtBalance.Margin = new Padding(4, 3, 4, 3);
+            txtBalance.Multiline = true;
+            txtBalance.Name = "txtBalance";
+            txtBalance.Size = new Size(198, 43);
+            txtBalance.TabIndex = 16;
             // 
             // chkBoxStatus
             // 
-            this.chkBoxStatus.AutoSize = true;
-            this.chkBoxStatus.Location = new System.Drawing.Point(156, 413);
-            this.chkBoxStatus.Name = "chkBoxStatus";
-            this.chkBoxStatus.Size = new System.Drawing.Size(80, 17);
-            this.chkBoxStatus.TabIndex = 15;
-            this.chkBoxStatus.Text = "checkBox1";
-            this.chkBoxStatus.UseVisualStyleBackColor = true;
-            this.chkBoxStatus.CheckedChanged += new System.EventHandler(this.chkBoxStatus_CheckedChanged);
+            chkBoxStatus.AutoSize = true;
+            chkBoxStatus.Location = new Point(182, 477);
+            chkBoxStatus.Margin = new Padding(4, 3, 4, 3);
+            chkBoxStatus.Name = "chkBoxStatus";
+            chkBoxStatus.Size = new Size(82, 19);
+            chkBoxStatus.TabIndex = 15;
+            chkBoxStatus.Text = "checkBox1";
+            chkBoxStatus.UseVisualStyleBackColor = true;
+            chkBoxStatus.CheckedChanged += chkBoxStatus_CheckedChanged;
             // 
             // dgvGroupSubGroups
             // 
-            this.dgvGroupSubGroups.AllowUserToAddRows = false;
-            this.dgvGroupSubGroups.AllowUserToDeleteRows = false;
-            this.dgvGroupSubGroups.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvGroupSubGroups.Location = new System.Drawing.Point(86, 527);
-            this.dgvGroupSubGroups.Name = "dgvGroupSubGroups";
-            this.dgvGroupSubGroups.RowHeadersWidth = 51;
-            this.dgvGroupSubGroups.Size = new System.Drawing.Size(356, 144);
-            this.dgvGroupSubGroups.TabIndex = 2;
+            dgvGroupSubGroups.AllowUserToAddRows = false;
+            dgvGroupSubGroups.AllowUserToDeleteRows = false;
+            dgvGroupSubGroups.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvGroupSubGroups.EnableHeadersVisualStyles = false;
+            dgvGroupSubGroups.Location = new Point(100, 608);
+            dgvGroupSubGroups.Margin = new Padding(4, 3, 4, 3);
+            dgvGroupSubGroups.Name = "dgvGroupSubGroups";
+            dgvGroupSubGroups.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+            dgvGroupSubGroups.RowHeadersVisible = false;
+            dgvGroupSubGroups.RowHeadersWidth = 51;
+            dgvGroupSubGroups.Size = new Size(415, 166);
+            dgvGroupSubGroups.TabIndex = 2;
             // 
             // btnStudentActivation
             // 
-            this.btnStudentActivation.Location = new System.Drawing.Point(148, 727);
-            this.btnStudentActivation.Name = "btnStudentActivation";
-            this.btnStudentActivation.Size = new System.Drawing.Size(89, 23);
-            this.btnStudentActivation.TabIndex = 14;
-            this.btnStudentActivation.Text = "გააქტიურება";
-            this.btnStudentActivation.UseVisualStyleBackColor = true;
-            this.btnStudentActivation.Click += new System.EventHandler(this.btnStudentActivation_Click);
+            btnStudentActivation.Location = new Point(458, 808);
+            btnStudentActivation.Margin = new Padding(4, 3, 4, 3);
+            btnStudentActivation.Name = "btnStudentActivation";
+            btnStudentActivation.Size = new Size(104, 27);
+            btnStudentActivation.TabIndex = 14;
+            btnStudentActivation.Text = "გააქტიურება";
+            btnStudentActivation.UseVisualStyleBackColor = true;
+            btnStudentActivation.Click += btnStudentActivation_Click;
             // 
             // chlGroups
             // 
-            this.chlGroups.FormattingEnabled = true;
-            this.chlGroups.Location = new System.Drawing.Point(477, 187);
-            this.chlGroups.Name = "chlGroups";
-            this.chlGroups.Size = new System.Drawing.Size(170, 79);
-            this.chlGroups.TabIndex = 13;
-            this.chlGroups.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.chlGroups_ItemCheck);
+            chlGroups.FormattingEnabled = true;
+            chlGroups.Location = new Point(556, 216);
+            chlGroups.Margin = new Padding(4, 3, 4, 3);
+            chlGroups.Name = "chlGroups";
+            chlGroups.Size = new Size(198, 76);
+            chlGroups.TabIndex = 13;
+            chlGroups.ItemCheck += chlGroups_ItemCheck;
             // 
             // btnCancelChanges
             // 
-            this.btnCancelChanges.Location = new System.Drawing.Point(477, 727);
-            this.btnCancelChanges.Name = "btnCancelChanges";
-            this.btnCancelChanges.Size = new System.Drawing.Size(75, 23);
-            this.btnCancelChanges.TabIndex = 12;
-            this.btnCancelChanges.Text = "გაუქმება";
-            this.btnCancelChanges.UseVisualStyleBackColor = true;
-            this.btnCancelChanges.Click += new System.EventHandler(this.btnCancelChanges_Click);
+            btnCancelChanges.Location = new Point(668, 808);
+            btnCancelChanges.Margin = new Padding(4, 3, 4, 3);
+            btnCancelChanges.Name = "btnCancelChanges";
+            btnCancelChanges.Size = new Size(88, 27);
+            btnCancelChanges.TabIndex = 12;
+            btnCancelChanges.Text = "გაუქმება";
+            btnCancelChanges.UseVisualStyleBackColor = true;
+            btnCancelChanges.Click += btnCancelChanges_Click;
             // 
             // btnSaveChanges
             // 
-            this.btnSaveChanges.Location = new System.Drawing.Point(393, 727);
-            this.btnSaveChanges.Name = "btnSaveChanges";
-            this.btnSaveChanges.Size = new System.Drawing.Size(75, 23);
-            this.btnSaveChanges.TabIndex = 11;
-            this.btnSaveChanges.Text = "შენახვა";
-            this.btnSaveChanges.UseVisualStyleBackColor = true;
-            this.btnSaveChanges.Click += new System.EventHandler(this.btnSaveChanges_Click);
+            btnSaveChanges.Location = new Point(570, 808);
+            btnSaveChanges.Margin = new Padding(4, 3, 4, 3);
+            btnSaveChanges.Name = "btnSaveChanges";
+            btnSaveChanges.Size = new Size(88, 27);
+            btnSaveChanges.TabIndex = 11;
+            btnSaveChanges.Text = "შენახვა";
+            btnSaveChanges.UseVisualStyleBackColor = true;
+            btnSaveChanges.Click += btnSaveChanges_Click;
             // 
             // lblStatus
             // 
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(153, 20);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(13, 13);
-            this.lblStatus.TabIndex = 3;
-            this.lblStatus.Text = "1";
+            lblStatus.AutoSize = true;
+            lblStatus.Location = new Point(178, 23);
+            lblStatus.Margin = new Padding(4, 0, 4, 0);
+            lblStatus.Name = "lblStatus";
+            lblStatus.Size = new Size(13, 15);
+            lblStatus.TabIndex = 3;
+            lblStatus.Text = "1";
             // 
             // label14
             // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(95, 20);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(61, 13);
-            this.label14.TabIndex = 3;
-            this.label14.Text = "სტატუსი: ";
+            label14.AutoSize = true;
+            label14.Location = new Point(111, 23);
+            label14.Margin = new Padding(4, 0, 4, 0);
+            label14.Name = "label14";
+            label14.Size = new Size(68, 15);
+            label14.TabIndex = 3;
+            label14.Text = "სტატუსი: ";
             // 
             // lblGroup
             // 
-            this.lblGroup.AutoSize = true;
-            this.lblGroup.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblGroup.Location = new System.Drawing.Point(156, 379);
-            this.lblGroup.Name = "lblGroup";
-            this.lblGroup.Size = new System.Drawing.Size(0, 17);
-            this.lblGroup.TabIndex = 3;
+            lblGroup.AutoSize = true;
+            lblGroup.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblGroup.Location = new Point(182, 437);
+            lblGroup.Margin = new Padding(4, 0, 4, 0);
+            lblGroup.Name = "lblGroup";
+            lblGroup.Size = new Size(0, 17);
+            lblGroup.TabIndex = 3;
             // 
             // label18
             // 
-            this.label18.AutoSize = true;
-            this.label18.Location = new System.Drawing.Point(105, 379);
-            this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(45, 13);
-            this.label18.TabIndex = 3;
-            this.label18.Text = "ჯგუფი";
+            label18.AutoSize = true;
+            label18.Location = new Point(122, 437);
+            label18.Margin = new Padding(4, 0, 4, 0);
+            label18.Name = "label18";
+            label18.Size = new Size(51, 15);
+            label18.TabIndex = 3;
+            label18.Text = "ჯგუფი";
             // 
             // label12
             // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(416, 277);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(55, 13);
-            this.label12.TabIndex = 3;
-            this.label12.Text = "ბალანსი";
+            label12.AutoSize = true;
+            label12.Location = new Point(485, 320);
+            label12.Margin = new Padding(4, 0, 4, 0);
+            label12.Name = "label12";
+            label12.Size = new Size(60, 15);
+            label12.TabIndex = 3;
+            label12.Text = "ბალანსი";
             // 
             // lblStudentCode
             // 
-            this.lblStudentCode.AutoSize = true;
-            this.lblStudentCode.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblStudentCode.Location = new System.Drawing.Point(156, 446);
-            this.lblStudentCode.Name = "lblStudentCode";
-            this.lblStudentCode.Size = new System.Drawing.Size(107, 13);
-            this.lblStudentCode.TabIndex = 2;
-            this.lblStudentCode.Text = "მოსწვლის კოდი";
+            lblStudentCode.AutoSize = true;
+            lblStudentCode.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            lblStudentCode.Location = new Point(182, 515);
+            lblStudentCode.Margin = new Padding(4, 0, 4, 0);
+            lblStudentCode.Name = "lblStudentCode";
+            lblStudentCode.Size = new Size(107, 13);
+            lblStudentCode.TabIndex = 2;
+            lblStudentCode.Text = "მოსწვლის კოდი";
             // 
             // label10
             // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(56, 446);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(94, 13);
-            this.label10.TabIndex = 2;
-            this.label10.Text = "მოსწვლის კოდი";
+            label10.AutoSize = true;
+            label10.Location = new Point(65, 515);
+            label10.Margin = new Padding(4, 0, 4, 0);
+            label10.Name = "label10";
+            label10.Size = new Size(107, 15);
+            label10.TabIndex = 2;
+            label10.Text = "მოსწვლის კოდი";
             // 
             // label8
             // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(362, 83);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(109, 13);
-            this.label8.TabIndex = 1;
-            this.label8.Text = "გადაღდისთარიღი";
+            label8.AutoSize = true;
+            label8.Location = new Point(422, 96);
+            label8.Margin = new Padding(4, 0, 4, 0);
+            label8.Name = "label8";
+            label8.Size = new Size(120, 15);
+            label8.TabIndex = 1;
+            label8.Text = "გადაღდისთარიღი";
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(32, 198);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(118, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "ტელეფონის ნომერი";
+            label4.AutoSize = true;
+            label4.Location = new Point(37, 228);
+            label4.Margin = new Padding(4, 0, 4, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(130, 15);
+            label4.TabIndex = 1;
+            label4.Text = "ტელეფონის ნომერი";
             // 
             // label7
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(339, 46);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(132, 13);
-            this.label7.TabIndex = 1;
-            this.label7.Text = "რეგისტრაციის თარიღი";
+            label7.AutoSize = true;
+            label7.Location = new Point(396, 53);
+            label7.Margin = new Padding(4, 0, 4, 0);
+            label7.Name = "label7";
+            label7.Size = new Size(147, 15);
+            label7.TabIndex = 1;
+            label7.Text = "რეგისტრაციის თარიღი";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(115, 161);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(35, 13);
-            this.label3.TabIndex = 1;
-            this.label3.Text = "ასაკი";
+            label3.AutoSize = true;
+            label3.Location = new Point(134, 186);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(39, 15);
+            label3.TabIndex = 1;
+            label3.Text = "ასაკი";
             // 
             // label6
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(83, 272);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(67, 13);
-            this.label6.TabIndex = 1;
-            this.label6.Text = "მისამართი";
+            label6.AutoSize = true;
+            label6.Location = new Point(97, 314);
+            label6.Margin = new Padding(4, 0, 4, 0);
+            label6.Name = "label6";
+            label6.Size = new Size(74, 15);
+            label6.TabIndex = 1;
+            label6.Text = "მისამართი";
             // 
             // label17
             // 
-            this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(36, 511);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(114, 13);
-            this.label17.TabIndex = 1;
-            this.label17.Text = "გადახდის სტატუსი";
+            label17.AutoSize = true;
+            label17.Location = new Point(42, 590);
+            label17.Margin = new Padding(4, 0, 4, 0);
+            label17.Name = "label17";
+            label17.Size = new Size(127, 15);
+            label17.TabIndex = 1;
+            label17.Text = "გადახდის სტატუსი";
             // 
             // label11
             // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(357, 157);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(114, 13);
-            this.label11.TabIndex = 1;
-            this.label11.Text = "გადახდის სტატუსი";
+            label11.AutoSize = true;
+            label11.Location = new Point(416, 181);
+            label11.Margin = new Padding(4, 0, 4, 0);
+            label11.Name = "label11";
+            label11.Size = new Size(127, 15);
+            label11.TabIndex = 1;
+            label11.Text = "გადახდის სტატუსი";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(93, 124);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(57, 13);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "მშობელი";
+            label2.AutoSize = true;
+            label2.Location = new Point(108, 143);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(64, 15);
+            label2.TabIndex = 1;
+            label2.Text = "მშობელი";
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(59, 235);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(91, 13);
-            this.label5.TabIndex = 1;
-            this.label5.Text = "პირადი ნომერი";
+            label5.AutoSize = true;
+            label5.Location = new Point(69, 271);
+            label5.Margin = new Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new Size(101, 15);
+            label5.TabIndex = 1;
+            label5.Text = "პირადი ნომერი";
             // 
             // label9
             // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(416, 120);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(55, 13);
-            this.label9.TabIndex = 1;
-            this.label9.Text = "სტატუსი";
+            label9.AutoSize = true;
+            label9.Location = new Point(485, 138);
+            label9.Margin = new Padding(4, 0, 4, 0);
+            label9.Name = "label9";
+            label9.Size = new Size(62, 15);
+            label9.TabIndex = 1;
+            label9.Text = "სტატუსი";
             // 
             // label13
             // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(46, 80);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(104, 13);
-            this.label13.TabIndex = 1;
-            this.label13.Text = "მოსწავლის გვარი";
+            label13.AutoSize = true;
+            label13.Location = new Point(54, 92);
+            label13.Margin = new Padding(4, 0, 4, 0);
+            label13.Name = "label13";
+            label13.Size = new Size(115, 15);
+            label13.TabIndex = 1;
+            label13.Text = "მოსწავლის გვარი";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(36, 46);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(114, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "მოსწავლის სახელი";
+            label1.AutoSize = true;
+            label1.Location = new Point(42, 53);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(126, 15);
+            label1.TabIndex = 1;
+            label1.Text = "მოსწავლის სახელი";
             // 
             // txtPaymentDate
             // 
-            this.txtPaymentDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPaymentDate.Location = new System.Drawing.Point(477, 76);
-            this.txtPaymentDate.Multiline = true;
-            this.txtPaymentDate.Name = "txtPaymentDate";
-            this.txtPaymentDate.Size = new System.Drawing.Size(172, 31);
-            this.txtPaymentDate.TabIndex = 8;
+            txtPaymentDate.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPaymentDate.Location = new Point(556, 88);
+            txtPaymentDate.Margin = new Padding(4, 3, 4, 3);
+            txtPaymentDate.Multiline = true;
+            txtPaymentDate.Name = "txtPaymentDate";
+            txtPaymentDate.Size = new Size(200, 35);
+            txtPaymentDate.TabIndex = 8;
             // 
             // txtPhone
             // 
-            this.txtPhone.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPhone.Location = new System.Drawing.Point(156, 191);
-            this.txtPhone.Multiline = true;
-            this.txtPhone.Name = "txtPhone";
-            this.txtPhone.Size = new System.Drawing.Size(172, 31);
-            this.txtPhone.TabIndex = 4;
+            txtPhone.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPhone.Location = new Point(182, 220);
+            txtPhone.Margin = new Padding(4, 3, 4, 3);
+            txtPhone.Multiline = true;
+            txtPhone.Name = "txtPhone";
+            txtPhone.Size = new Size(200, 35);
+            txtPhone.TabIndex = 4;
             // 
             // txtAddress
             // 
-            this.txtAddress.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAddress.Location = new System.Drawing.Point(156, 265);
-            this.txtAddress.Multiline = true;
-            this.txtAddress.Name = "txtAddress";
-            this.txtAddress.Size = new System.Drawing.Size(172, 31);
-            this.txtAddress.TabIndex = 6;
+            txtAddress.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtAddress.Location = new Point(182, 306);
+            txtAddress.Margin = new Padding(4, 3, 4, 3);
+            txtAddress.Multiline = true;
+            txtAddress.Name = "txtAddress";
+            txtAddress.Size = new Size(200, 35);
+            txtAddress.TabIndex = 6;
             // 
             // txtPaymentStatus
             // 
-            this.txtPaymentStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPaymentStatus.Location = new System.Drawing.Point(477, 150);
-            this.txtPaymentStatus.Multiline = true;
-            this.txtPaymentStatus.Name = "txtPaymentStatus";
-            this.txtPaymentStatus.Size = new System.Drawing.Size(172, 31);
-            this.txtPaymentStatus.TabIndex = 10;
+            txtPaymentStatus.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPaymentStatus.Location = new Point(556, 173);
+            txtPaymentStatus.Margin = new Padding(4, 3, 4, 3);
+            txtPaymentStatus.Multiline = true;
+            txtPaymentStatus.Name = "txtPaymentStatus";
+            txtPaymentStatus.Size = new Size(200, 35);
+            txtPaymentStatus.TabIndex = 10;
             // 
             // txtParent
             // 
-            this.txtParent.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtParent.Location = new System.Drawing.Point(156, 117);
-            this.txtParent.Multiline = true;
-            this.txtParent.Name = "txtParent";
-            this.txtParent.Size = new System.Drawing.Size(172, 31);
-            this.txtParent.TabIndex = 2;
+            txtParent.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtParent.Location = new Point(182, 135);
+            txtParent.Margin = new Padding(4, 3, 4, 3);
+            txtParent.Multiline = true;
+            txtParent.Name = "txtParent";
+            txtParent.Size = new Size(200, 35);
+            txtParent.TabIndex = 2;
             // 
             // txtRegistrationDate
             // 
-            this.txtRegistrationDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtRegistrationDate.Location = new System.Drawing.Point(477, 39);
-            this.txtRegistrationDate.Multiline = true;
-            this.txtRegistrationDate.Name = "txtRegistrationDate";
-            this.txtRegistrationDate.Size = new System.Drawing.Size(172, 31);
-            this.txtRegistrationDate.TabIndex = 7;
+            txtRegistrationDate.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtRegistrationDate.Location = new Point(556, 45);
+            txtRegistrationDate.Margin = new Padding(4, 3, 4, 3);
+            txtRegistrationDate.Multiline = true;
+            txtRegistrationDate.Name = "txtRegistrationDate";
+            txtRegistrationDate.Size = new Size(200, 35);
+            txtRegistrationDate.TabIndex = 7;
             // 
             // txtAge
             // 
-            this.txtAge.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAge.Location = new System.Drawing.Point(156, 154);
-            this.txtAge.Multiline = true;
-            this.txtAge.Name = "txtAge";
-            this.txtAge.Size = new System.Drawing.Size(172, 31);
-            this.txtAge.TabIndex = 3;
+            txtAge.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtAge.Location = new Point(182, 178);
+            txtAge.Margin = new Padding(4, 3, 4, 3);
+            txtAge.Multiline = true;
+            txtAge.Name = "txtAge";
+            txtAge.Size = new Size(200, 35);
+            txtAge.TabIndex = 3;
             // 
             // txtPersonalId
             // 
-            this.txtPersonalId.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPersonalId.Location = new System.Drawing.Point(156, 228);
-            this.txtPersonalId.Multiline = true;
-            this.txtPersonalId.Name = "txtPersonalId";
-            this.txtPersonalId.Size = new System.Drawing.Size(172, 31);
-            this.txtPersonalId.TabIndex = 5;
+            txtPersonalId.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtPersonalId.Location = new Point(182, 263);
+            txtPersonalId.Margin = new Padding(4, 3, 4, 3);
+            txtPersonalId.Multiline = true;
+            txtPersonalId.Name = "txtPersonalId";
+            txtPersonalId.Size = new Size(200, 35);
+            txtPersonalId.TabIndex = 5;
             // 
             // txtStatus
             // 
-            this.txtStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtStatus.Location = new System.Drawing.Point(477, 113);
-            this.txtStatus.Multiline = true;
-            this.txtStatus.Name = "txtStatus";
-            this.txtStatus.Size = new System.Drawing.Size(172, 31);
-            this.txtStatus.TabIndex = 9;
+            txtStatus.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtStatus.Location = new Point(556, 130);
+            txtStatus.Margin = new Padding(4, 3, 4, 3);
+            txtStatus.Multiline = true;
+            txtStatus.Name = "txtStatus";
+            txtStatus.Size = new Size(200, 35);
+            txtStatus.TabIndex = 9;
             // 
             // txtLastName
             // 
-            this.txtLastName.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtLastName.Location = new System.Drawing.Point(156, 80);
-            this.txtLastName.Multiline = true;
-            this.txtLastName.Name = "txtLastName";
-            this.txtLastName.Size = new System.Drawing.Size(172, 31);
-            this.txtLastName.TabIndex = 1;
+            txtLastName.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtLastName.Location = new Point(182, 92);
+            txtLastName.Margin = new Padding(4, 3, 4, 3);
+            txtLastName.Multiline = true;
+            txtLastName.Name = "txtLastName";
+            txtLastName.Size = new Size(200, 35);
+            txtLastName.TabIndex = 1;
             // 
             // txtFirstName
             // 
-            this.txtFirstName.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtFirstName.Location = new System.Drawing.Point(156, 43);
-            this.txtFirstName.Multiline = true;
-            this.txtFirstName.Name = "txtFirstName";
-            this.txtFirstName.Size = new System.Drawing.Size(172, 31);
-            this.txtFirstName.TabIndex = 0;
+            txtFirstName.Font = new Font("Microsoft Sans Serif", 11.5F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            txtFirstName.Location = new Point(182, 50);
+            txtFirstName.Margin = new Padding(4, 3, 4, 3);
+            txtFirstName.Multiline = true;
+            txtFirstName.Name = "txtFirstName";
+            txtFirstName.Size = new Size(200, 35);
+            txtFirstName.TabIndex = 0;
             // 
             // btndel
             // 
-            this.btndel.Location = new System.Drawing.Point(1105, 22);
-            this.btndel.Name = "btndel";
-            this.btndel.Size = new System.Drawing.Size(75, 23);
-            this.btndel.TabIndex = 14;
-            this.btndel.Text = "წაშლა";
-            this.btndel.UseVisualStyleBackColor = true;
-            this.btndel.Click += new System.EventHandler(this.btnDel_Click);
+            btndel.Location = new Point(912, 870);
+            btndel.Margin = new Padding(4, 3, 4, 3);
+            btndel.Name = "btndel";
+            btndel.Size = new Size(88, 27);
+            btndel.TabIndex = 14;
+            btndel.Text = "წაშლა";
+            btndel.UseVisualStyleBackColor = true;
+            btndel.Click += btnDel_Click;
             // 
             // cbGroups
             // 
-            this.cbGroups.FormattingEnabled = true;
-            this.cbGroups.Location = new System.Drawing.Point(759, 24);
-            this.cbGroups.Name = "cbGroups";
-            this.cbGroups.Size = new System.Drawing.Size(121, 21);
-            this.cbGroups.TabIndex = 16;
-            this.cbGroups.SelectedValueChanged += new System.EventHandler(this.cbGroups_SelectedValueChanged);
+            cbGroups.FormattingEnabled = true;
+            cbGroups.Location = new Point(97, 46);
+            cbGroups.Margin = new Padding(4, 3, 4, 3);
+            cbGroups.Name = "cbGroups";
+            cbGroups.Size = new Size(140, 23);
+            cbGroups.TabIndex = 16;
+            cbGroups.SelectedValueChanged += cbGroups_SelectedValueChanged;
             // 
             // btnClear
             // 
-            this.btnClear.Location = new System.Drawing.Point(1186, 22);
-            this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(92, 23);
-            this.btnClear.TabIndex = 15;
-            this.btnClear.Text = "გასუფთავება";
-            this.btnClear.UseVisualStyleBackColor = true;
-            this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+            btnClear.Location = new Point(806, 869);
+            btnClear.Margin = new Padding(4, 3, 4, 3);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(107, 27);
+            btnClear.TabIndex = 15;
+            btnClear.Text = "გასუფთავება";
+            btnClear.UseVisualStyleBackColor = true;
+            btnClear.Click += btnClear_Click;
             // 
             // label15
             // 
-            this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(696, 27);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(57, 13);
-            this.label15.TabIndex = 18;
-            this.label15.Text = "ჯგუფები";
-            // 
-            // label16
-            // 
-            this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(886, 27);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(84, 13);
-            this.label16.TabIndex = 18;
-            this.label16.Text = "ძიება ჯგუფში";
+            label15.AutoSize = true;
+            label15.Location = new Point(23, 49);
+            label15.Margin = new Padding(4, 0, 4, 0);
+            label15.Name = "label15";
+            label15.Size = new Size(64, 15);
+            label15.TabIndex = 18;
+            label15.Text = "ჯგუფები";
             // 
             // groupBox2
             // 
-            this.groupBox2.Controls.Add(this.txtSearch);
-            this.groupBox2.Controls.Add(this.rbByStCode);
-            this.groupBox2.Controls.Add(this.rbByAge);
-            this.groupBox2.Controls.Add(this.rbByIdNumber);
-            this.groupBox2.Controls.Add(this.rbByLastName);
-            this.groupBox2.Controls.Add(this.rbByAddress);
-            this.groupBox2.Controls.Add(this.rbByParent);
-            this.groupBox2.Controls.Add(this.rbByPhone);
-            this.groupBox2.Controls.Add(this.rbByName);
-            this.groupBox2.Location = new System.Drawing.Point(1265, 67);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(267, 655);
-            this.groupBox2.TabIndex = 19;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "დეტალური ძიება";
+            groupBox2.Controls.Add(chkstudentsToGroups);
+            groupBox2.Controls.Add(txtSearch);
+            groupBox2.Controls.Add(cbGroups);
+            groupBox2.Controls.Add(label15);
+            groupBox2.Controls.Add(rbByStCode);
+            groupBox2.Controls.Add(rbByAge);
+            groupBox2.Controls.Add(rbByIdNumber);
+            groupBox2.Controls.Add(rbByLastName);
+            groupBox2.Controls.Add(rbByAddress);
+            groupBox2.Controls.Add(rbByParent);
+            groupBox2.Controls.Add(rbByPhone);
+            groupBox2.Controls.Add(rbByName);
+            groupBox2.Location = new Point(1475, 149);
+            groupBox2.Margin = new Padding(4, 3, 4, 3);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Padding = new Padding(4, 3, 4, 3);
+            groupBox2.Size = new Size(312, 525);
+            groupBox2.TabIndex = 19;
+            groupBox2.TabStop = false;
+            groupBox2.Text = "დეტალური ძიება";
             // 
             // txtSearch
             // 
-            this.txtSearch.Location = new System.Drawing.Point(25, 221);
-            this.txtSearch.Multiline = true;
-            this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(223, 29);
-            this.txtSearch.TabIndex = 1;
-            this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
+            txtSearch.Location = new Point(33, 383);
+            txtSearch.Margin = new Padding(4, 3, 4, 3);
+            txtSearch.Multiline = true;
+            txtSearch.Name = "txtSearch";
+            txtSearch.Size = new Size(259, 33);
+            txtSearch.TabIndex = 1;
+            txtSearch.TextChanged += txtSearch_TextChanged;
             // 
             // rbByStCode
             // 
-            this.rbByStCode.AutoSize = true;
-            this.rbByStCode.Location = new System.Drawing.Point(16, 198);
-            this.rbByStCode.Name = "rbByStCode";
-            this.rbByStCode.Size = new System.Drawing.Size(53, 17);
-            this.rbByStCode.TabIndex = 0;
-            this.rbByStCode.TabStop = true;
-            this.rbByStCode.Text = "კოდი";
-            this.rbByStCode.UseVisualStyleBackColor = true;
+            rbByStCode.AutoSize = true;
+            rbByStCode.Location = new Point(23, 356);
+            rbByStCode.Margin = new Padding(4, 3, 4, 3);
+            rbByStCode.Name = "rbByStCode";
+            rbByStCode.Size = new Size(58, 19);
+            rbByStCode.TabIndex = 0;
+            rbByStCode.TabStop = true;
+            rbByStCode.Text = "კოდი";
+            rbByStCode.UseVisualStyleBackColor = true;
             // 
             // rbByAge
             // 
-            this.rbByAge.AutoSize = true;
-            this.rbByAge.Location = new System.Drawing.Point(16, 106);
-            this.rbByAge.Name = "rbByAge";
-            this.rbByAge.Size = new System.Drawing.Size(53, 17);
-            this.rbByAge.TabIndex = 0;
-            this.rbByAge.TabStop = true;
-            this.rbByAge.Text = "ასაკი";
-            this.rbByAge.UseVisualStyleBackColor = true;
+            rbByAge.AutoSize = true;
+            rbByAge.Location = new Point(23, 250);
+            rbByAge.Margin = new Padding(4, 3, 4, 3);
+            rbByAge.Name = "rbByAge";
+            rbByAge.Size = new Size(57, 19);
+            rbByAge.TabIndex = 0;
+            rbByAge.TabStop = true;
+            rbByAge.Text = "ასაკი";
+            rbByAge.UseVisualStyleBackColor = true;
             // 
             // rbByIdNumber
             // 
-            this.rbByIdNumber.AutoSize = true;
-            this.rbByIdNumber.Location = new System.Drawing.Point(16, 152);
-            this.rbByIdNumber.Name = "rbByIdNumber";
-            this.rbByIdNumber.Size = new System.Drawing.Size(109, 17);
-            this.rbByIdNumber.TabIndex = 0;
-            this.rbByIdNumber.TabStop = true;
-            this.rbByIdNumber.Text = "პირადი ნომერი";
-            this.rbByIdNumber.UseVisualStyleBackColor = true;
+            rbByIdNumber.AutoSize = true;
+            rbByIdNumber.Location = new Point(23, 303);
+            rbByIdNumber.Margin = new Padding(4, 3, 4, 3);
+            rbByIdNumber.Name = "rbByIdNumber";
+            rbByIdNumber.Size = new Size(119, 19);
+            rbByIdNumber.TabIndex = 0;
+            rbByIdNumber.TabStop = true;
+            rbByIdNumber.Text = "პირადი ნომერი";
+            rbByIdNumber.UseVisualStyleBackColor = true;
             // 
             // rbByLastName
             // 
-            this.rbByLastName.AutoSize = true;
-            this.rbByLastName.Location = new System.Drawing.Point(16, 60);
-            this.rbByLastName.Name = "rbByLastName";
-            this.rbByLastName.Size = new System.Drawing.Size(57, 17);
-            this.rbByLastName.TabIndex = 0;
-            this.rbByLastName.TabStop = true;
-            this.rbByLastName.Text = "გვარი";
-            this.rbByLastName.UseVisualStyleBackColor = true;
+            rbByLastName.AutoSize = true;
+            rbByLastName.Location = new Point(23, 197);
+            rbByLastName.Margin = new Padding(4, 3, 4, 3);
+            rbByLastName.Name = "rbByLastName";
+            rbByLastName.Size = new Size(60, 19);
+            rbByLastName.TabIndex = 0;
+            rbByLastName.TabStop = true;
+            rbByLastName.Text = "გვარი";
+            rbByLastName.UseVisualStyleBackColor = true;
             // 
             // rbByAddress
             // 
-            this.rbByAddress.AutoSize = true;
-            this.rbByAddress.Location = new System.Drawing.Point(16, 175);
-            this.rbByAddress.Name = "rbByAddress";
-            this.rbByAddress.Size = new System.Drawing.Size(85, 17);
-            this.rbByAddress.TabIndex = 0;
-            this.rbByAddress.TabStop = true;
-            this.rbByAddress.Text = "მისამართი";
-            this.rbByAddress.UseVisualStyleBackColor = true;
+            rbByAddress.AutoSize = true;
+            rbByAddress.Location = new Point(23, 330);
+            rbByAddress.Margin = new Padding(4, 3, 4, 3);
+            rbByAddress.Name = "rbByAddress";
+            rbByAddress.Size = new Size(92, 19);
+            rbByAddress.TabIndex = 0;
+            rbByAddress.TabStop = true;
+            rbByAddress.Text = "მისამართი";
+            rbByAddress.UseVisualStyleBackColor = true;
             // 
             // rbByParent
             // 
-            this.rbByParent.AutoSize = true;
-            this.rbByParent.Location = new System.Drawing.Point(16, 83);
-            this.rbByParent.Name = "rbByParent";
-            this.rbByParent.Size = new System.Drawing.Size(75, 17);
-            this.rbByParent.TabIndex = 0;
-            this.rbByParent.TabStop = true;
-            this.rbByParent.Text = "მშობელი";
-            this.rbByParent.UseVisualStyleBackColor = true;
+            rbByParent.AutoSize = true;
+            rbByParent.Location = new Point(23, 224);
+            rbByParent.Margin = new Padding(4, 3, 4, 3);
+            rbByParent.Name = "rbByParent";
+            rbByParent.Size = new Size(82, 19);
+            rbByParent.TabIndex = 0;
+            rbByParent.TabStop = true;
+            rbByParent.Text = "მშობელი";
+            rbByParent.UseVisualStyleBackColor = true;
             // 
             // rbByPhone
             // 
-            this.rbByPhone.AutoSize = true;
-            this.rbByPhone.Location = new System.Drawing.Point(16, 129);
-            this.rbByPhone.Name = "rbByPhone";
-            this.rbByPhone.Size = new System.Drawing.Size(87, 17);
-            this.rbByPhone.TabIndex = 0;
-            this.rbByPhone.TabStop = true;
-            this.rbByPhone.Text = "ტელეფონი";
-            this.rbByPhone.UseVisualStyleBackColor = true;
+            rbByPhone.AutoSize = true;
+            rbByPhone.Location = new Point(23, 277);
+            rbByPhone.Margin = new Padding(4, 3, 4, 3);
+            rbByPhone.Name = "rbByPhone";
+            rbByPhone.Size = new Size(93, 19);
+            rbByPhone.TabIndex = 0;
+            rbByPhone.TabStop = true;
+            rbByPhone.Text = "ტელეფონი";
+            rbByPhone.UseVisualStyleBackColor = true;
             // 
             // rbByName
             // 
-            this.rbByName.AutoSize = true;
-            this.rbByName.Location = new System.Drawing.Point(16, 37);
-            this.rbByName.Name = "rbByName";
-            this.rbByName.Size = new System.Drawing.Size(67, 17);
-            this.rbByName.TabIndex = 0;
-            this.rbByName.TabStop = true;
-            this.rbByName.Text = "სახელი";
-            this.rbByName.UseVisualStyleBackColor = true;
+            rbByName.AutoSize = true;
+            rbByName.Location = new Point(23, 171);
+            rbByName.Margin = new Padding(4, 3, 4, 3);
+            rbByName.Name = "rbByName";
+            rbByName.Size = new Size(71, 19);
+            rbByName.TabIndex = 0;
+            rbByName.TabStop = true;
+            rbByName.Text = "სახელი";
+            rbByName.UseVisualStyleBackColor = true;
+            // 
+            // groupBox3
+            // 
+            groupBox3.Location = new Point(1475, 14);
+            groupBox3.Name = "groupBox3";
+            groupBox3.Size = new Size(313, 127);
+            groupBox3.TabIndex = 20;
+            groupBox3.TabStop = false;
+            groupBox3.Text = "groupBox3";
+            // 
+            // chkstudentsToGroups
+            // 
+            chkstudentsToGroups.AutoSize = true;
+            chkstudentsToGroups.Location = new Point(23, 128);
+            chkstudentsToGroups.Name = "chkstudentsToGroups";
+            chkstudentsToGroups.Size = new Size(232, 19);
+            chkstudentsToGroups.TabIndex = 19;
+            chkstudentsToGroups.Text = "მოსწავლეები რამდენიმე ჯგუფში";
+            chkstudentsToGroups.UseVisualStyleBackColor = true;
             // 
             // StudentsEditForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(1544, 808);
-            this.Controls.Add(this.groupBox2);
-            this.Controls.Add(this.label16);
-            this.Controls.Add(this.label15);
-            this.Controls.Add(this.btnClear);
-            this.Controls.Add(this.cbGroups);
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.btndel);
-            this.Controls.Add(this.txtStudentSearch);
-            this.Controls.Add(this.dgvStudents);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "StudentsEditForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "StudentsEditForm";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.StudentsEditForm_FormClosing);
-            this.Load += new System.EventHandler(this.StudentsEditForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvStudents)).EndInit();
-            this.contextMenuStrip1.ResumeLayout(false);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvGroupSubGroups)).EndInit();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            AutoScroll = true;
+            ClientSize = new Size(1801, 932);
+            Controls.Add(btndel);
+            Controls.Add(groupBox3);
+            Controls.Add(btnClear);
+            Controls.Add(groupBox2);
+            Controls.Add(groupBox1);
+            Controls.Add(dgvStudents);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 3, 4, 3);
+            Name = "StudentsEditForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "StudentsEditForm";
+            FormClosing += StudentsEditForm_FormClosing;
+            Load += StudentsEditForm_Load;
+            ((System.ComponentModel.ISupportInitialize)dgvStudents).EndInit();
+            contextMenuStrip1.ResumeLayout(false);
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvGroupSubGroups).EndInit();
+            groupBox2.ResumeLayout(false);
+            groupBox2.PerformLayout();
+            ResumeLayout(false);
 
         }
 
         #endregion
         private System.Windows.Forms.DataGridView dgvStudents;
-        private System.Windows.Forms.TextBox txtStudentSearch;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem წაშლაToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem სვეტებისმართვაToolStripMenuItem;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label4;
@@ -755,7 +831,6 @@
         private System.Windows.Forms.CheckedListBox chlGroups;
         private System.Windows.Forms.Button btnStudentActivation;
         private System.Windows.Forms.Label label15;
-        private System.Windows.Forms.Label label16;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.RadioButton rbByStCode;
         private System.Windows.Forms.RadioButton rbByAge;
@@ -772,5 +847,7 @@
         private System.Windows.Forms.TextBox txtBalance;
         private System.Windows.Forms.Label lblGroup;
         private System.Windows.Forms.Label label18;
+        private GroupBox groupBox3;
+        private CheckBox chkstudentsToGroups;
     }
 }

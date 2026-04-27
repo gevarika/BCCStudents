@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace BCCStudents.Domain.Entities
+﻿namespace BCCStudents.Domain.Entities
 {
     public class SyncResult
     {

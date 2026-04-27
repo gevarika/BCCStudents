@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
-using BCCStudents.Application.Interfaces;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
+using System.Text;
 
 namespace BCCStudents.Application.Services.Sync.UpStream
 {
     /// <summary>
-    /// áƒ¡áƒ”áƒ áƒ•áƒ”áƒ áƒ˜áƒ¡ áƒ‘áƒáƒ–áƒáƒ¨áƒ˜ áƒ£áƒ¨áƒ£áƒáƒšáƒ áƒ©áƒáƒ¬áƒ”áƒ áƒ (INSERT/UPDATE/DELETE) â€“ Students/Groups/SubGroups áƒ“áƒ áƒ¡áƒ®áƒ•áƒ áƒªáƒ®áƒ áƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡.
+    /// სერვერზე პოსტების შეცვლა (INSERT/UPDATE/DELETE) – Students/Groups/SubGroups და სხვა ცხრილები.
     /// </summary>
     public class UpStreamSyncService : IUpStreamSyncService
     {
@@ -45,12 +40,12 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                         throw new NotSupportedException($"Unsupported sync operation: {payload.Operation}");
                 }
 
-                _logger.Info($"UpStream (Immediate) áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ“áƒ: {payload.TableName}/{payload.Operation}/{payload.RecordKey}");
+                _logger.Info($"UpStream (Immediate) წარმატებით ატვირთული: {payload.TableName}/{payload.Operation}/{payload.RecordKey}");
                 return Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                _logger.Error($"UpStream (Immediate) áƒ•áƒ”áƒ  áƒ¨áƒ”áƒ¡áƒ áƒ£áƒšáƒ“áƒ: {payload.TableName}/{payload.Operation}/{payload.RecordKey}", ex);
+                _logger.Error($"UpStream (Immediate) შეცდომა ატვირთვის: {payload.TableName}/{payload.Operation}/{payload.RecordKey}", ex);
                 return Task.FromResult(false);
             }
         }
@@ -60,7 +55,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             var columns = payload.Data.Keys.ToList();
             if (!columns.Any())
             {
-                throw new InvalidOperationException("Upsert áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ›áƒ˜áƒœáƒ˜áƒ›áƒ£áƒ› áƒ”áƒ áƒ—áƒ˜ áƒ•áƒ”áƒšáƒ˜.");
+                throw new InvalidOperationException("Upsert ოპერაციისთვის არ აქვს სვეტები.");
             }
 
             var columnList = string.Join(", ", columns.Select(EscapeColumn));
@@ -105,7 +100,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
                 if (payload.KeyColumns.Count == 0)
                 {
-                    throw new InvalidOperationException("Delete áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ RecordId áƒáƒœ KeyColumns.");
+                    throw new InvalidOperationException("Delete ოპერაციისთვის არ აქვს RecordId ან KeyColumns.");
                 }
 
                 var conditions = new List<string>();
@@ -138,6 +133,3 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         }
     }
 }
-
-
-

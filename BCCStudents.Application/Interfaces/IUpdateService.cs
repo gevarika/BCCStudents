@@ -1,7 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using BCCStudents.Application.Services.Update;
 
 namespace BCCStudents.Application.Interfaces

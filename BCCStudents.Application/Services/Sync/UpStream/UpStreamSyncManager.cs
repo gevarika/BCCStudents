@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.UpStream
 {
     /// <summary>
-    /// áƒ¤áƒáƒœáƒ˜-áƒ›áƒáƒœáƒ”áƒŸáƒ”áƒ áƒ˜, áƒ áƒáƒ›áƒ”áƒšáƒ˜áƒª áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒšáƒáƒ“ áƒáƒ›áƒ£áƒ¨áƒáƒ•áƒ”áƒ‘áƒ¡ SyncOutbox-áƒ¨áƒ˜ áƒ“áƒáƒ’áƒ áƒáƒ•áƒ˜áƒš áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ”áƒ‘áƒ¡.
+    /// ფონი-მენეჯერი, რომელიც პერიოდულად ამუშავებს SyncOutbox-ში დაგროვილ ჩანაწერებს.
     /// </summary>
     public sealed class UpStreamSyncManager : IDisposable, IUpStreamSyncManager
     {
@@ -25,7 +20,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         private bool _disposed;
 
         /// <summary>
-        /// Event áƒ áƒáƒ›áƒ”áƒšáƒ˜áƒª áƒ˜áƒ«áƒáƒ®áƒ”áƒ‘áƒ áƒ¡áƒ˜áƒœáƒ¥áƒ áƒáƒœáƒ˜áƒ–áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ“áƒáƒ¡áƒ áƒ£áƒšáƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡
+        /// Event რომელიც იძახება სინქრონიზაციის დასრულებისას
         /// </summary>
         public event EventHandler<SyncStatusEventArgs> SyncCompleted;
 
@@ -39,12 +34,12 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _interval = interval ?? TimeSpan.FromSeconds(30); // áƒ“áƒ”áƒ¤áƒáƒšáƒ¢áƒáƒ“ 30 áƒ¬áƒ›.
+            _interval = interval ?? TimeSpan.FromSeconds(30); // დეფოლტად 30 წმ.
             _maxAttempts = Math.Max(1, maxAttempts);
         }
 
         /// <summary>
-        /// áƒ˜áƒ¬áƒ§áƒ”áƒ‘áƒ¡ áƒžáƒ”áƒ áƒ˜áƒáƒ“áƒ£áƒš áƒ“áƒáƒ›áƒ£áƒ¨áƒáƒ•áƒ”áƒ‘áƒáƒ¡.
+        /// იწყებს პერიოდულ დამუშავებას.
         /// </summary>
         public void Start()
         {
@@ -60,7 +55,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         }
 
         /// <summary>
-        /// áƒáƒ©áƒ”áƒ áƒ”áƒ‘áƒ¡ áƒ¢áƒáƒ˜áƒ›áƒ”áƒ áƒ¡ (áƒ›áƒáƒ’. áƒáƒžáƒ˜áƒ¡ áƒ“áƒáƒ®áƒ£áƒ áƒ•áƒ˜áƒ¡áƒáƒ¡).
+        /// აჩერებს ტაიმერს (მაგ. აპის დახურვისას).
         /// </summary>
         public void Stop()
         {
@@ -76,13 +71,13 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             if (_disposed) return;
             if (Interlocked.Exchange(ref _isProcessing, 1) == 1)
             {
-                return; // áƒ£áƒ™áƒ•áƒ” áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡
+                return; // უკვე მუშაობს
             }
 
             int successCount = 0;
             int failedCount = 0;
             List<string> errors = new List<string>();
-            
+
             try
             {
                 var items = await _repository.GetPendingItemsAsync(50).ConfigureAwait(false);
@@ -113,8 +108,8 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             finally
             {
                 Interlocked.Exchange(ref _isProcessing, 0);
-                
-                // Event-áƒ˜áƒ¡ áƒ’áƒáƒ›áƒáƒ«áƒáƒ®áƒ”áƒ‘áƒ
+
+                // Event-ის გამოძახება
                 if (SyncCompleted != null)
                 {
                     var args = new SyncStatusEventArgs

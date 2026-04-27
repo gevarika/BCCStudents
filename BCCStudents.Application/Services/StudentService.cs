@@ -1,53 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using BCCStudents.Domain.Interfaces;
-using System.IO;
-using System.Windows.Forms;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using BCCStudents.Application.Services.Sync.UpStream;
-using BCCStudents.Application.Services.Sync;
-
-using BCCStudents.Application.Interfaces;
+using System.Data;
 
 namespace BCCStudents.Application.Services
 {
     public partial class StudentService : IStudentService
     {
         private readonly IStudentRepository _studentRepository;
-        private readonly IGroupRepository _groupRepository;
+        //private readonly IGroupRepository _groupRepository;
+        private readonly ISubGroupService _subGroupService;
         private readonly ILoggerRepository _loggerRepository;
         private readonly ISubGroupRepository _subGroupRepository;
-        private readonly IStudentGroupRepository _studentGroupRepository;
+        private readonly IStudentGroupsService _studentGroupsService;
         private readonly IStudentSubGroupRepository _studentSubGroupRepository;
         private readonly DocumentService _documentService;
         private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         private readonly IStudentJsonService _studentJsonService;
         private readonly IStudentCodeGenerator _studentCodeGenerator;
-        
-        public StudentService(IStudentRepository studentRepository, 
-            IGroupRepository groupRepository, 
-            ILoggerRepository loggerRepository, 
+        private readonly IGroupRepository _groupRepository;
+        private readonly IApplicationStatus _appStatus;
+
+        public StudentService(IStudentRepository studentRepository,
+            IGroupRepository groupRepository,
+            ILoggerRepository loggerRepository,
+            ISubGroupService subGroupService,
             ISubGroupRepository subGroupRepository,
-            IStudentGroupRepository studentGroupRepository,
+            IStudentGroupsService studentGroupsService,
             IStudentSubGroupRepository studentSubGroupRepository,
-            IStudentCodeGenerator studentCodeGenerator, 
+            IStudentCodeGenerator studentCodeGenerator,
             IDatabaseConnectionProvider connectionProvider,
             DocumentService documentService,
             IServiceProvider serviceProvider,
             IUpStreamChangeTracker upStreamChangeTracker,
-            IStudentJsonService studentJsonService
+            IStudentJsonService studentJsonService,
+            IApplicationStatus appStatus
             )
         {
             _studentRepository = studentRepository;
-            _groupRepository = groupRepository;
+            _groupRepository = groupRepository ?? throw new ArgumentNullException(nameof(groupRepository));
             _subGroupRepository = subGroupRepository;
-            _studentGroupRepository = studentGroupRepository;
+            _studentGroupsService = studentGroupsService;
             _studentSubGroupRepository = studentSubGroupRepository;
             _loggerRepository = loggerRepository;
             //_studentCodeGenerator = studentCodeGenerator ?? throw new ArgumentNullException(nameof(studentCodeGenerator));
@@ -56,35 +51,65 @@ namespace BCCStudents.Application.Services
             _studentCodeGenerator = studentCodeGenerator;
             _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             _studentJsonService = studentJsonService ?? throw new ArgumentNullException(nameof(studentJsonService));
+            _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
         }
-        
-        public void MigrateStudentGroups()
+
+        /// <summary>
+        /// მოსწავლის სხვა ჯგუფში გადატანა
+        /// </summary>
+        public void MigrateStudentToGroup(int studentId, int oldGroupId, int newGroupId)
         {
-            _studentRepository.MigrateStudentGroups();
+            // ძველი ჯგუფიდან დეაქტივაცია
+            _studentGroupsService.UpdateStudentStatus(studentId, oldGroupId, false);
+            _groupRepository.DecrementStudentCount(oldGroupId);
+
+            // ახალ ჯგუფში დამატება
+            AddStudentToGroup(studentId, newGroupId, true);
+            _groupRepository.IncrementStudentCount(newGroupId);
+
+            // ახალ ჯგუფის პირველ ქვეჯგუფში დამატება
+            try
+            {
+                var subGroup = _subGroupService.GetFirstSubGroupByGroupId(newGroupId);
+                if (subGroup != null)
+                {
+                    AddStudentToSubGroup(studentId, newGroupId, subGroup.Id, "Pending", null, 0, 0, true);
+                }
+            }
+            catch { }
+
+            // ძველი ჯგუფის ქვეჯგუფებიდან წაშლა
+            _subGroupService.RemoveStudentFromAllSubGroups(studentId, oldGroupId);
         }
         public DataTable GetUnassignedStudents()
-        { return _studentRepository.GetUnassignedStudents();}
+        { return _studentRepository.GetUnassignedStudents(); }
         public DataTable GetAllStudentsFor()
-        { return _studentRepository.GetAllStudentsFor();}
+        { return _studentRepository.GetAllStudentsFor(); }
         public List<StudentViewDto> GetAllStudentsSomeInfo()
         { return _studentRepository.GetAllStudentsSomeInfo(); }
         public List<Student> GetAllStudents()
         { return _studentRepository.GetAllStudents(); }
         public DataTable FilterStudents(string name, int? groupId, int? subGroupId, DateTime? startDate, DateTime? endDate)
-        { return _studentRepository.FilterStudents(name, groupId, subGroupId, startDate, endDate);}
+        { return _studentRepository.FilterStudents(name, groupId, subGroupId, startDate, endDate); }
         public List<(int Id, string FullName)> GetStudentNames()
-        { return _studentRepository.GetStudentNames();}
+        { return _studentRepository.GetStudentNames(); }
         public string GetStudentName(int studentId)
         { return _studentRepository.GetStudentName(studentId); }
         public List<Student> GetStudentsByGroupId(int groupId)
-        { return _studentRepository.GetStudentsByGroupId(groupId); }
-        public List<Student> SearchStudentsByNameAndGroup(string text,int groupId)
+        {
+            return _studentRepository.GetStudentsByGroupId(groupId);
+        }
+        public List<Student> SearchStudentsByNameAndGroup(string text, int groupId)
         { return _studentRepository.SearchStudentsByNameAndGroup(text, groupId); }
         public List<Student> GetAllStudentsWithGroups()
         {
             return _studentRepository.GetAllStudentsWithGroups();
         }
 
+        public List<Student> GetStudentsInMultipleGroups()
+        {
+            return _studentRepository.GetStudentsInMultipleGroups();
+        }
         public List<Student> SearchStudentsByNameAcrossAllGroups(string name)
         {
             return _studentRepository.SearchStudentsByNameAcrossAllGroups(name);
@@ -105,6 +130,9 @@ namespace BCCStudents.Application.Services
 
         public bool AddStudent(Student student, List<int> groupIds, int userId, bool printContract, OperationResultContext result, out int studentId)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. Student add operation is blocked.");
+
             studentId = 0;
             var postCommitSyncActions = new List<Action>();
             var studentSyncScheduled = false;
@@ -133,12 +161,12 @@ namespace BCCStudents.Application.Services
                                     transaction.Rollback();
                                     return false;
                                 }
-                                var groupPrice = _groupRepository.GetGroupPriceById(group.Id);
+                                var groupPrice = _groupRepository.GetGroupPrice(group.Id);
                                 var discountedPrice = new DiscountCalculator(tuitionFee: groupPrice, discountAmount: Convert.ToDecimal(student.Discount));
                                 decimal finalPrice = discountedPrice.GetFinalAmount();
                                 var replacementData = new Dictionary<string, string>
                                 {
-                                    {   "{FirstName}", student.FirstName },
+                                    { "{FirstName}", student.FirstName },
                                     { "{LastName}", student.LastName },
                                     { "{PhoneNumber}", student.PhoneNumber },
                                     { "{IdNumber}", student.Id_Numb.ToString() },
@@ -179,13 +207,13 @@ namespace BCCStudents.Application.Services
                         }
                         foreach (var groupId in groupIds)
                         {
-                            var groupPrice = _groupRepository.GetGroupPriceById(groupId);
-                            
+                            var groupPrice = _groupRepository.GetGroupPrice(groupId);
+
                             // ფასდაკლების გამოთვლა DiscountCalculator კლასით
                             var discount = student.Discount; // პროცენტი (მაგ: 10, 20, 50)
                             var discountCalculator = new DiscountCalculator(groupPrice, (decimal)discount);
                             var discountedPrice = discountCalculator.GetFinalAmount();
-                            
+
                             var studentGroup = new StudentGroups
                             {
                                 StudentId = studentId,
@@ -196,7 +224,7 @@ namespace BCCStudents.Application.Services
                                 DateOfPayment = student.DateOfPayment ?? DateTime.Today.AddMonths(1),
                                 Status = true
                             };
-                            int sgId = _studentGroupRepository.InsertStudentGroup(studentGroup, connection, transaction);
+                            int sgId = _studentGroupsService.AddStudentGroup(studentGroup, connection, transaction);
                             if (sgId == 0) { allSuccess = false; break; }
                             _groupRepository.RecalculateStudentCount(groupId, connection, transaction);
                             var groupIdCopy = groupId;
@@ -248,7 +276,7 @@ namespace BCCStudents.Application.Services
                     {
                         transaction.Rollback();
                         MessageBox.Show("Transaction rolled back: " + ex.Message);
-                        _loggerRepository.WriteLog("Student Add", "Failure", ex.ToString(),userId.ToString());
+                        _loggerRepository.WriteLog("Student Add", "Failure", ex.ToString(), userId.ToString());
                         return false;
                     }
                 }
@@ -256,6 +284,8 @@ namespace BCCStudents.Application.Services
         }
         public void DeleteStudent(int studentId, int userId)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. Student delete operation is blocked.");
             var snapshot = _studentRepository.GetStudentById(studentId);
             // 1. წავშალოთ ჯგუფებთან კავშირი
             _studentRepository.RemoveStudentFromGroups(studentId);
@@ -271,7 +301,7 @@ namespace BCCStudents.Application.Services
                 _upStreamChangeTracker.TrackStudentChange(studentId, SyncOperationType.Delete, snapshot);
             }
         }
-        
+
         public decimal CalculateFinalFee(decimal baseFee, decimal discountPercentage)
         {
             decimal discountAmount = baseFee * (discountPercentage / 100);
@@ -279,19 +309,15 @@ namespace BCCStudents.Application.Services
 
             return finalFee < 0 ? 0 : finalFee;
         }
-        /*public void UpdateStudentStatus(List<(int studentId, int groupId)> students)
-        {
-            foreach (var (studentId, groupId) in students)
-            {
-                _studentRepository.UpdateStudentStatus(studentId, groupId, "Inactive");
-            }
-        }*/
+
         public Student GetStudentDetailsById(int studentId, int groupId)
         {
             return _studentRepository.GetStudentDetailsById(studentId, groupId);
         }
         public void UpdateStudent(Student student)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. Student update operation is blocked.");
             student.UpdatedAt = DateTime.Now;
             _studentRepository.UpdateStudent(student);
             SyncStudentSnapshot(student.Id, SyncOperationType.Update);
@@ -303,74 +329,37 @@ namespace BCCStudents.Application.Services
         public void UpdateStudentFields(int studentId, Dictionary<string, object> changedFields)
         {
             if (changedFields == null || changedFields.Count == 0) return;
-            
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. Student field update operation is blocked.");
+
             _studentRepository.UpdateStudentFields(studentId, changedFields);
             SyncStudentSnapshot(studentId, SyncOperationType.Update);
         }
 
-        /// <summary>
-        /// Updates the status of a student-group link (e.g., to 'გადატანილი').
-        /// </summary>
-        public bool UpdateStudentStatus(int studentId, int groupId, bool status)
-        {
-            var ok = _studentRepository.UpdateStudentStatus(studentId, groupId, status);
-            if (ok)
-            {
-                StudentGroups snapshot = null;
-                try
-                {
-                    using (var conn = _connectionProvider.GetLocalConnection())
-                    {
-                        conn.Open();
-                        const string q = "SELECT Id, StudentId, GroupId, PaymentStatus, DateOfPayment, Price, Discount, Status, UpdatedAt FROM StudentGroups WHERE StudentId=@sid AND GroupId=@gid";
-                        using (var cmd = new MySqlCommand(q, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@sid", studentId);
-                            cmd.Parameters.AddWithValue("@gid", groupId);
-                            using (var r = cmd.ExecuteReader())
-                            {
-                                if (r.Read())
-                                {
-                                    snapshot = new StudentGroups
-                                    {
-                                        Id = Convert.ToInt32(r["Id"]),
-                                        StudentId = Convert.ToInt32(r["StudentId"]),
-                                        GroupId = Convert.ToInt32(r["GroupId"]),
-                                        PaymentStatus = r["PaymentStatus"] == DBNull.Value ? null : r["PaymentStatus"].ToString(),
-                                        DateOfPayment = r["DateOfPayment"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["DateOfPayment"]),
-                                        Price = r["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(r["Price"]),
-                                        Discount = r["Discount"] == DBNull.Value ? 0 : Convert.ToDouble(r["Discount"]),
-                                        Status = r["Status"] != DBNull.Value && Convert.ToBoolean(r["Status"])
-                                    };
-                                }
-                            }
-                        }
-                    }
-                }
-                catch { }
 
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, SyncOperationType.Update, snapshot);
-                }
-            }
-            return ok;
-        }
-        
+
         public void UpdateStudentGroupFields(StudentGroups original, StudentGroups updated)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. Student group update operation is blocked.");
             _studentRepository.UpdateStudentGroupFields(original, updated);
         }
-        
+
+        public bool UpdateStudentStatus(int studentId, int groupId, bool status)
+        {
+            return _studentRepository.UpdateStudentStatus(studentId, groupId, status);
+        }
 
         /// <summary>
         /// Adds a student to a group with the specified status (default: 'Active').
         /// </summary>
         public void AddStudentToGroup(int studentId, int groupId, bool status = true, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. AddStudentToGroup operation is blocked.");
             // ჯგუფის ფასის მიღება
-            var groupPrice = _groupRepository.GetGroupPriceById(groupId);
-            
+            var groupPrice = _groupRepository.GetGroupPrice(groupId);
+
             var studentGroup = new StudentGroups
             {
                 StudentId = studentId,
@@ -381,8 +370,8 @@ namespace BCCStudents.Application.Services
                 Discount = 0, // default ფასდაკლება = 0
                 Status = status
             };
-            _studentGroupRepository.InsertStudentGroup(studentGroup, externalConnection, externalTransaction);
-            _groupRepository.RecalculateStudentCount(groupId, externalConnection, externalTransaction);  
+            _studentGroupsService.AddStudentGroup(studentGroup, externalConnection, externalTransaction);
+            _groupRepository.RecalculateStudentCount(groupId, externalConnection, externalTransaction);
             SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
             SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
@@ -390,6 +379,8 @@ namespace BCCStudents.Application.Services
         // Overload used by UI when აქვს სრულ ველებს
         public void AddStudentToGroup(int studentId, int groupId, bool status, DateTime? dateOfPayment, string paymentStatus, decimal price, double discount)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. AddStudentToGroup operation is blocked.");
             var studentGroup = new StudentGroups
             {
                 StudentId = studentId,
@@ -400,7 +391,7 @@ namespace BCCStudents.Application.Services
                 Discount = discount,
                 Status = status
             };
-            _studentGroupRepository.InsertStudentGroup(studentGroup);
+            _studentGroupsService.AddStudentGroup(studentGroup);
             _groupRepository.RecalculateStudentCount(groupId, null, null);
             SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
             SyncGroupSnapshot(groupId, SyncOperationType.Update);
@@ -408,6 +399,8 @@ namespace BCCStudents.Application.Services
 
         public void AddStudentToSubGroup(int studentId, int groupId, int subGroupId, string paymentStatus, DateTime? dateOfPayment, decimal price, double discount, bool status)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. AddStudentToSubGroup operation is blocked.");
             var studentSubGroup = new StudentSubGroups
             {
                 StudentId = studentId,
@@ -447,6 +440,8 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public int? UpdateStudentGroupId(int studentId, int newGroupId)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. UpdateStudentGroupId operation is blocked.");
             var oldGroupId = GetCurrentGroupId(studentId);
             if (!oldGroupId.HasValue)
             {
@@ -459,13 +454,13 @@ namespace BCCStudents.Application.Services
                 // განვაახლოთ StudentCount ორივე ჯგუფისთვის
                 _groupRepository.RecalculateStudentCount(oldGroupId.Value, null, null);
                 _groupRepository.RecalculateStudentCount(newGroupId, null, null);
-                
+
                 // სინქრონიზაცია
                 SyncStudentGroupSnapshot(studentId, newGroupId, SyncOperationType.Update);
                 SyncGroupSnapshot(oldGroupId.Value, SyncOperationType.Update);
                 SyncGroupSnapshot(newGroupId, SyncOperationType.Update);
             }
-            
+
             return success ? oldGroupId : null;
         }
 
@@ -474,6 +469,8 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public void UpdateStudentSubGroupId(int studentId, int newGroupId, int newSubGroupId)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. UpdateStudentSubGroupId operation is blocked.");
             // ვიღებთ ძველ GroupId-ს StudentSubGroups-დან, რადგან StudentSubGroups-ში ჩანაწერი კვლავ ძველ GroupId-თან არის დაკავშირებული
             // (UpdateStudentGroupId განაახლებს მხოლოდ StudentGroups-ში GroupId-ს, არა StudentSubGroups-ში)
             var oldGroupId = GetCurrentGroupIdFromStudentSubGroups(studentId);
@@ -482,11 +479,11 @@ namespace BCCStudents.Application.Services
                 // თუ ვერ მოიძებნა, სცადე ახალი GroupId-თვის (შეიძლება უკვე განახლებული იყოს)
                 oldGroupId = newGroupId;
             }
-            
+
             // გამოვიყენოთ SubGroupRepository-ის მეთოდი, რომელიც შეინარჩუნებს სხვა ველებს
             // მნიშვნელოვანია: გამოვიყენოთ ძველი GroupId ჩანაწერის მოსაძებნად
             var oldSubGroupId = _subGroupRepository.GetCurrentStudentSubGroupId(studentId, oldGroupId.Value, default);
-            
+
             // თუ ძველი GroupId-თვის ვერ მოიძებნა, სცადე ახალი GroupId-თვის
             if (oldSubGroupId <= 0 && oldGroupId.Value != newGroupId)
             {
@@ -496,25 +493,25 @@ namespace BCCStudents.Application.Services
                     oldGroupId = newGroupId;
                 }
             }
-            
+
             if (oldSubGroupId > 0)
             {
                 // განვაახლოთ SubGroupId ძველი GroupId-თვის
                 _subGroupRepository.UpdateStudentSubGroup(studentId, oldGroupId.Value, newSubGroupId, oldSubGroupId);
-                
+
                 // თუ GroupId შეიცვალა, განვაახლოთ GroupId-ც StudentSubGroups-ში
                 if (oldGroupId.Value != newGroupId)
                 {
                     UpdateStudentSubGroupGroupId(studentId, oldGroupId.Value, newGroupId);
                 }
-                
+
                 // განვაახლოთ StudentCount ორივე ქვეჯგუფისთვის
                 if (oldSubGroupId != newSubGroupId)
                 {
                     _subGroupRepository.DecreaseStudentCount(oldSubGroupId);
                     SyncSubGroupSnapshot(oldSubGroupId, SyncOperationType.Update);
                 }
-                
+
                 _subGroupRepository.IncrementSubGroupCount(newSubGroupId, null, null);
                 SyncStudentSubGroupSnapshot(studentId, newGroupId, newSubGroupId, SyncOperationType.Update);
                 SyncSubGroupSnapshot(newSubGroupId, SyncOperationType.Update);
@@ -561,7 +558,7 @@ namespace BCCStudents.Application.Services
                         UPDATE StudentSubGroups
                         SET GroupId = @newGroupId, UpdatedAt = @UpdatedAt
                         WHERE StudentId = @studentId AND GroupId = @oldGroupId AND Status = 1 AND (IsDeleted = 0 OR IsDeleted IS NULL)";
-                    
+
                     using (var cmd = new MySqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@newGroupId", newGroupId);
@@ -606,10 +603,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public void RemoveStudentFromGroup(int studentId, int groupId)
         {
+            if (!_appStatus.IsDatabaseOnline)
+                throw new InvalidOperationException("Database is offline. RemoveStudentFromGroup operation is blocked.");
             // 1. ვიღებთ snapshots-ს სინქრონიზაციისთვის (soft delete-ის წინ)
             var studentGroupSnapshot = GetStudentGroupSnapshot(studentId, groupId);
             var studentSubGroupSnapshots = GetStudentSubGroupSnapshots(studentId, groupId);
-            
+
             // 2. ვიღებთ SubGroupIds-ს StudentCount-ის განახლებისთვის
             var subGroupIds = new List<int>();
             try
@@ -636,7 +635,7 @@ namespace BCCStudents.Application.Services
 
             // 3. Soft delete: StudentGroups და StudentSubGroups (ლოკალურ ბაზაში Status=0, IsDeleted=1)
             _studentRepository.RemoveStudentFromGroup(studentId, groupId);
-            
+
             // 4. UpStream სინქრონიზაცია: StudentGroups
             // მნიშვნელოვანია: ვიყენებთ Update ოპერაციას Status=false-ით, რადგან სერვერზეც უნდა გავაკეთოთ soft delete
             if (studentGroupSnapshot != null)
@@ -656,7 +655,7 @@ namespace BCCStudents.Application.Services
                 };
                 _upStreamChangeTracker.TrackStudentGroupChange(updatedSnapshot.Id, SyncOperationType.Update, updatedSnapshot);
             }
-            
+
             // 5. UpStream სინქრონიზაცია: StudentSubGroups
             // მნიშვნელოვანია: ვიყენებთ Update ოპერაციას Status=false-ით
             foreach (var subGroupSnapshot in studentSubGroupSnapshots)
@@ -688,7 +687,7 @@ namespace BCCStudents.Application.Services
                 SyncGroupSnapshot(groupId, SyncOperationType.Update);
             }
             catch { }
-            
+
             // 7. Local recounts after soft-delete: SubGroups
             foreach (var subGroupId in subGroupIds)
             {

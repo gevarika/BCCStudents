@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using System.Data;
 using System.Globalization;
 
-using BCCStudents.Application.Interfaces;
-
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class StatisticsService : IStatisticsService
     {
         private readonly IStudentRepository _studentRepository;
@@ -87,7 +82,7 @@ namespace BCCStudents.Application.Services {
                 foreach (var sg in studentGroups)
                 {
                     var payments = _paymentRepository.GetStudentPayments(sg.StudentId);
-                    var groupPayments = payments.Where(p => 
+                    var groupPayments = payments.Where(p =>
                         (!startDate.HasValue || p.PaymentDate >= startDate.Value) &&
                         (!endDate.HasValue || p.PaymentDate <= endDate.Value)).ToList();
 
@@ -121,7 +116,7 @@ namespace BCCStudents.Application.Services {
                 foreach (var sg in studentGroups)
                 {
                     var payments = _paymentRepository.GetStudentPayments(sg.StudentId);
-                    var groupPayments = payments.Where(p => 
+                    var groupPayments = payments.Where(p =>
                         (!startDate.HasValue || p.PaymentDate >= startDate.Value) &&
                         (!endDate.HasValue || p.PaymentDate <= endDate.Value)).ToList();
 
@@ -176,7 +171,7 @@ namespace BCCStudents.Application.Services {
             dt.Columns.Add("გადახდილი", typeof(decimal));
             dt.Columns.Add("გადასახდელი", typeof(decimal));
 
-            var groups = groupId.HasValue 
+            var groups = groupId.HasValue
                 ? new List<Group> { _groupRepository.GetGroupById(groupId.Value) }
                 : _groupRepository.GetAllGroups();
 
@@ -209,7 +204,7 @@ namespace BCCStudents.Application.Services {
 
         public (int PaidCount, int PendingCount) GetStudentsPaymentStatusCount(int? groupId = null)
         {
-            var groups = groupId.HasValue 
+            var groups = groupId.HasValue
                 ? new List<Group> { _groupRepository.GetGroupById(groupId.Value) }
                 : _groupRepository.GetAllGroups();
 
@@ -470,7 +465,7 @@ namespace BCCStudents.Application.Services {
             dt.Columns.Add("საშუალო გადახდილი", typeof(decimal));
             dt.Columns.Add("საშუალო გადასახდელი", typeof(decimal));
 
-            var groups = groupId.HasValue 
+            var groups = groupId.HasValue
                 ? new List<Group> { _groupRepository.GetGroupById(groupId.Value) }
                 : _groupRepository.GetAllGroups();
 
@@ -508,7 +503,7 @@ namespace BCCStudents.Application.Services {
             dt.Columns.Add("საერთო ფასდაკლება", typeof(decimal));
             dt.Columns.Add("საშუალო ფასდაკლება %", typeof(double));
 
-            var groups = groupId.HasValue 
+            var groups = groupId.HasValue
                 ? new List<Group> { _groupRepository.GetGroupById(groupId.Value) }
                 : _groupRepository.GetAllGroups();
 

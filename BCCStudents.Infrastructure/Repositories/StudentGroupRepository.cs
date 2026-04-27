@@ -1,48 +1,46 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using BCCStudents.Domain.Interfaces;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
+using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     /// <summary>
-    /// StudentGroups áƒªáƒ®áƒ áƒ˜áƒšáƒ—áƒáƒœ áƒ¡áƒáƒ›áƒ£áƒ¨áƒáƒ áƒ™áƒšáƒáƒ¡áƒ˜
-    /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”-áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜áƒ¡ áƒ›áƒáƒ áƒ—áƒ•áƒ
+    /// StudentGroups ცხრილთან სამუშაო კლასი
+    /// მოსწავლის-ჯგუფის კავშირის მართვა
     /// </summary>
     public class StudentGroupRepository : IStudentGroupRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public StudentGroupRepository(DatabaseHelper dbHelper)
+        public StudentGroupRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
-        #region ==================== INSERT - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ ====================
+        #region ==================== INSERT - ჩანაწერის დამატება ====================
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ¡áƒ áƒ£áƒšáƒ˜ áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (სრული ობიექტით)
         /// </summary>
-        /// <param name="studentGroup">StudentGroups áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜</param>
-        /// <param name="connection">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜ - áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡)</param>
-        /// <param name="transaction">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜)</param>
-        /// <returns>áƒáƒ®áƒáƒšáƒ˜ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ ID</returns>
+        /// <param name="studentGroup">StudentGroups ობიექტი</param>
+        /// <param name="connection">არსებული კავშირი (ოფციონალური - ტრანზაქციისთვის)</param>
+        /// <param name="transaction">არსებული ტრანზაქცია (ოფციონალური)</param>
+        /// <returns>ახალი ჩანაწერის ID</returns>
         public int InsertStudentGroup(StudentGroups studentGroup, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             bool useExternalConnection = connection != null;
-            var conn = connection ?? _dbHelper.GetLocalConnection();
+            var conn = connection ?? _connectionProvider.GetLocalConnection();
 
             try
             {
                 if (!useExternalConnection)
                     conn.Open();
 
-                // áƒ—áƒ£ DateOfPayment áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ—áƒ˜áƒ—áƒ”áƒ‘áƒ£áƒšáƒ˜, default = áƒ“áƒ¦áƒ”áƒ¡ + 1 áƒ—áƒ•áƒ”
+                // თუ DateOfPayment არ არის მითითებული, default = დღეს + 1 თვე
                 var dateOfPayment = studentGroup.DateOfPayment ?? DateTime.Today.AddMonths(1);
-                
-                // Debug áƒšáƒáƒ’áƒ˜
+
+                // Debug ლოგი
                 System.Diagnostics.Debug.WriteLine($"[InsertStudentGroup] StudentId={studentGroup.StudentId}, GroupId={studentGroup.GroupId}, DateOfPayment={dateOfPayment:yyyy-MM-dd}");
 
                 var query = @"INSERT INTO StudentGroups 
@@ -73,24 +71,24 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ›áƒ˜áƒœáƒ˜áƒ›áƒáƒšáƒ£áƒ áƒ˜ áƒžáƒáƒ áƒáƒ›áƒ”áƒ¢áƒ áƒ”áƒ‘áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (მინიმალური პარამეტრებით)
         /// </summary>
-        /// <param name="studentId">áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ ID</param>
-        /// <param name="groupId">áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID</param>
-        /// <param name="connection">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜ - áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡)</param>
-        /// <param name="transaction">áƒáƒ áƒ¡áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¢áƒ áƒáƒœáƒ–áƒáƒ¥áƒªáƒ˜áƒ (áƒáƒ¤áƒªáƒ˜áƒáƒœáƒáƒšáƒ£áƒ áƒ˜)</param>
-        /// <returns>áƒáƒ®áƒáƒšáƒ˜ áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ ID</returns>
+        /// <param name="studentId">მოსწავლის ID</param>
+        /// <param name="groupId">ჯგუფის ID</param>
+        /// <param name="connection">არსებული კავშირი (ოფციონალური - ტრანზაქციისთვის)</param>
+        /// <param name="transaction">არსებული ტრანზაქცია (ოფციონალური)</param>
+        /// <returns>ახალი ჩანაწერის ID</returns>
         public int InsertStudentGroup(int studentId, int groupId, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             bool useExternalConnection = connection != null;
-            var conn = connection ?? _dbHelper.GetLocalConnection();
+            var conn = connection ?? _connectionProvider.GetLocalConnection();
 
             try
             {
                 if (!useExternalConnection)
                     conn.Open();
 
-                // áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ = áƒ“áƒ¦áƒ”áƒ¡ + 1 áƒ—áƒ•áƒ” (áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ áƒ›áƒáƒ›áƒ“áƒ”áƒ•áƒœáƒ áƒ—áƒ•áƒ”áƒ¨áƒ˜)
+                // გადახდის თარიღი = დღეს + 1 თვე (პირველი გადახდა მომდევნო თვეში)
                 var dateOfPayment = DateTime.Today.AddMonths(1);
 
                 var query = @"INSERT INTO StudentGroups 
@@ -116,15 +114,15 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ¨áƒ˜ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ (áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ—)
+        /// მოსწავლის ჯგუფში დამატება (ფასდაკლებით)
         /// </summary>
         public int InsertStudentGroupWithDiscount(int studentId, int groupId, double discount)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
 
-                // áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ = áƒ“áƒ¦áƒ”áƒ¡ + 1 áƒ—áƒ•áƒ”
+                // გადახდის თარიღი = დღეს + 1 თვე
                 var dateOfPayment = DateTime.Today.AddMonths(1);
 
                 var query = @"INSERT INTO StudentGroups 
@@ -147,14 +145,14 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== SELECT - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¬áƒáƒ™áƒ˜áƒ—áƒ®áƒ•áƒ ====================
+        #region ==================== SELECT - ჩანაწერის წაკითხვა ====================
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ ID-áƒ˜áƒ—
+        /// ჩანაწერის მიღება ID-ით
         /// </summary>
         public StudentGroups GetById(int id)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -176,14 +174,14 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ StudentId áƒ“áƒ GroupId-áƒ˜áƒ—
+        /// ჩანაწერის მიღება StudentId და GroupId-ით
         /// </summary>
         public StudentGroups GetByStudentAndGroup(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
+                var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, DateOfPayment, UpdatedAt 
                               FROM StudentGroups WHERE StudentId = @StudentId AND GroupId = @GroupId";
 
                 using (var cmd = new MySqlCommand(query, connection))
@@ -203,12 +201,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის ყველა ჯგუფის მიღება
         /// </summary>
         public List<StudentGroups> GetByStudentId(int studentId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -230,12 +228,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის აქტიური ჯგუფების მიღება
         /// </summary>
         public List<StudentGroups> GetActiveByStudentId(int studentId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT sg.Id, sg.StudentId, sg.GroupId, sg.PaymentStatus, sg.Price, sg.Discount, sg.Status, sg.IsDeleted, sg.DateOfPayment, sg.UpdatedAt,
@@ -260,12 +258,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// ჯგუფის ყველა მოსწავლის მიღება
         /// </summary>
         public List<StudentGroups> GetByGroupId(int groupId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -287,12 +285,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// ჯგუფის აქტიური მოსწავლეების მიღება
         /// </summary>
         public List<StudentGroups> GetActiveByGroupId(int groupId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -315,24 +313,24 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ (Groups áƒªáƒ®áƒ áƒ˜áƒšáƒ—áƒáƒœ JOIN)
+        /// მოსწავლის ჯგუფების მიღება გადასახდისთვის (Groups ცხრილთან JOIN)
         /// </summary>
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+        /// მოსწავლის აქტიური ჯგუფების მიღება გადასახდისთვის
         /// </summary>
-        /// <param name="studentId">áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ ID</param>
-        /// <returns>áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡</returns>
+        /// <param name="studentId">მოსწავლის ID</param>
+        /// <returns>აქტიური ჯგუფების სია გადასახდისთვის</returns>
         /// <remarks>
-        /// âš ï¸ áƒ›áƒœáƒ˜áƒ¨áƒ•áƒœáƒ”áƒšáƒáƒ•áƒáƒœáƒ˜: 
-        /// - StudentGroups.Price áƒ’áƒáƒ“áƒáƒ˜áƒ¬áƒ”áƒ áƒ”áƒ‘áƒ Groups.Price-áƒ˜áƒ— (áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ¤áƒáƒ¡áƒ˜)
-        /// - áƒ”áƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ áƒáƒ“áƒ’áƒáƒœ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡ áƒ£áƒœáƒ“áƒ áƒ’áƒáƒ›áƒáƒ•áƒ—áƒ•áƒáƒšáƒáƒ—:
+        /// Note:
+        /// - StudentGroups.Price გადაიწერება Groups.Price-ით (სრული ფასი)
+        /// - ეს აუცილებელია რადგან გადახდის დროს უნდა გამოვთვალოთ:
         ///   finalFee = Groups.Price - (Groups.Price * StudentGroups.Discount / 100)
-        /// - StudentGroups.Price áƒ¨áƒ”áƒ˜áƒ«áƒšáƒ”áƒ‘áƒ áƒ˜áƒ§áƒáƒ¡ áƒ£áƒ™áƒ•áƒ” áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜, áƒáƒ›áƒ˜áƒ¢áƒáƒ› áƒ•áƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ— Groups.Price-áƒ¡
+        /// - StudentGroups.Price შეიძლება იყოს უკვე ფასდაკლებული, ამიტომ ვიყენებთ Groups.Price-ს
         /// </remarks>
         public List<StudentGroups> GetForPayment(int studentId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"
@@ -356,12 +354,12 @@ namespace BCCStudents.Infrastructure.Repositories
                     {
                         while (reader.Read())
                         {
-                            // áƒ¡áƒžáƒ”áƒªáƒ˜áƒáƒšáƒ£áƒ áƒ˜ mapper GetForPayment-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ (SQL-áƒ¨áƒ˜ áƒáƒ áƒ˜áƒ¡ SgPrice áƒ“áƒ GroupPrice, áƒáƒ áƒ Price)
+                            // სპეციალური mapper GetForPayment-ისთვის (SQL-ში არის SgPrice და GroupPrice, არა Price)
                             var sg = MapFromReaderForPayment(reader);
-                            
-                            // âš ï¸ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ Groups áƒªáƒ®áƒ áƒ˜áƒšáƒ˜áƒ¡ áƒ¤áƒáƒ¡áƒ˜ áƒ’áƒáƒ›áƒáƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ (áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ¤áƒáƒ¡áƒ˜)
-                            // StudentGroups.Price áƒ’áƒáƒ“áƒáƒ˜áƒ¬áƒ”áƒ áƒ”áƒ‘áƒ Groups.Price-áƒ˜áƒ—
-                            // áƒ”áƒ¡ áƒáƒ£áƒªáƒ˜áƒšáƒ”áƒ‘áƒ”áƒšáƒ˜áƒ áƒ áƒáƒ“áƒ’áƒáƒœ áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ áƒ’áƒáƒ›áƒáƒ˜áƒ—áƒ•áƒšáƒ”áƒ‘áƒ PaymentService-áƒ¨áƒ˜:
+
+                            // გადახდისთვის Groups ცხრილის ფასი გამოიყენება (სრული ფასი)
+                            // StudentGroups.Price გადაიწერება Groups.Price-ით
+                            // ეს აუცილებელია რადგან ფასდაკლება ითვლება PaymentService-ში:
                             // finalFee = Groups.Price - (Groups.Price * StudentGroups.Discount / 100)
                             sg.Price = reader.IsDBNull(reader.GetOrdinal("GroupPrice")) ? 0 : reader.GetDecimal("GroupPrice");
                             sg.Name = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString("GroupName");
@@ -375,12 +373,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID-áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის ჯგუფის ID-ების მიღება
         /// </summary>
         public List<int> GetGroupIdsByStudentId(int studentId)
         {
             var result = new List<int>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT GroupId FROM StudentGroups WHERE StudentId = @StudentId";
@@ -401,12 +399,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ ID-áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// მოსწავლის აქტიური ჯგუფის ID-ების მიღება
         /// </summary>
         public List<int> GetActiveGroupIdsByStudentId(int studentId)
         {
             var result = new List<int>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT GroupId FROM StudentGroups 
@@ -428,12 +426,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ£áƒ®áƒ“áƒ”áƒšáƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ
+        /// გადაუხდელი ჯგუფების მიღება
         /// </summary>
         public List<StudentGroups> GetUnpaidByStudentId(int studentId)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -459,12 +457,12 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ•áƒáƒ“áƒáƒ’áƒáƒ“áƒáƒªáƒ˜áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ”áƒ‘áƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ (áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜ áƒ’áƒáƒ•áƒ˜áƒ“áƒ)
+        /// ვადაგადაცილებული გადახდების მიღება (გადახდის თარიღი გავიდა)
         /// </summary>
         public List<StudentGroups> GetOverduePayments(DateTime asOfDate)
         {
             var result = new List<StudentGroups>();
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT Id, StudentId, GroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt 
@@ -491,11 +489,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜
+        /// არსებობს თუ არა აქტიური კავშირი
         /// </summary>
         public bool ExistsActive(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"SELECT COUNT(1) FROM StudentGroups 
@@ -512,11 +510,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ˜ (áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒáƒœ áƒáƒ áƒáƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜)
+        /// არსებობს თუ არა კავშირი (აქტიური ან არააქტიური)
         /// </summary>
         public bool ExistsAny(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT COUNT(1) FROM StudentGroups WHERE StudentId = @StudentId AND GroupId = @GroupId";
@@ -532,14 +530,14 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== UPDATE - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒ¡áƒ áƒ£áƒšáƒ˜) ====================
+        #region ==================== UPDATE - ჩანაწერის განახლება (სრული) ====================
 
         /// <summary>
-        /// áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ჩანაწერის სრული განახლება
         /// </summary>
         public bool Update(StudentGroups studentGroup)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -565,14 +563,14 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== UPDATE - áƒªáƒáƒšáƒ™áƒ”áƒ£áƒšáƒ˜ áƒ•áƒ”áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ ====================
+        #region ==================== UPDATE - ცალკეული ველების განახლება ====================
 
         /// <summary>
-        /// áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒáƒ¥áƒ¢áƒ˜áƒ•áƒáƒªáƒ˜áƒ/áƒ“áƒ”áƒáƒ¥áƒ¢áƒ˜áƒ•áƒáƒªáƒ˜áƒ)
+        /// სტატუსის განახლება (აქტივაცია/დეაქტივაცია)
         /// </summary>
         public bool UpdateStatus(int studentId, int groupId, bool status)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -593,11 +591,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის სტატუსის განახლება
         /// </summary>
         public bool UpdatePaymentStatus(int studentId, int groupId, string paymentStatus)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -617,11 +615,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის თარიღის განახლება
         /// </summary>
         public bool UpdateDateOfPayment(int studentId, int groupId, DateTime? dateOfPayment)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -641,7 +639,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (alias áƒ›áƒ”áƒ—áƒáƒ“áƒ˜ PaymentDateService-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡)
+        /// გადახდის თარიღის განახლება (alias მეთოდი PaymentDateService-ისთვის)
         /// </summary>
         public bool UpdatePaymentDate(int studentId, int groupId, DateTime newDate)
         {
@@ -649,11 +647,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ’áƒáƒ“áƒáƒ®áƒ“áƒ˜áƒ¡ áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ“áƒ áƒ—áƒáƒ áƒ˜áƒ¦áƒ˜áƒ¡ áƒ”áƒ áƒ—áƒáƒ“ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// გადახდის სტატუსის და თარიღის ერთდროული განახლება
         /// </summary>
         public bool UpdatePaymentStatusAndDate(int studentId, int groupId, string paymentStatus, DateTime? dateOfPayment)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -674,11 +672,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ფასდაკლების განახლება
         /// </summary>
         public bool UpdateDiscount(int studentId, int groupId, double discount)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -698,11 +696,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ¤áƒáƒ¡áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+        /// ფასის განახლება
         /// </summary>
         public bool UpdatePrice(int studentId, int groupId, decimal price)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -722,11 +720,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// GroupId-áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ (áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ)
+        /// GroupId-ის განახლება (ჯგუფის შეცვლა)
         /// </summary>
         public bool UpdateGroupId(int studentId, int oldGroupId, int newGroupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -747,10 +745,10 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== DELETE - áƒ©áƒáƒœáƒáƒ¬áƒ”áƒ áƒ˜áƒ¡ áƒ¬áƒáƒ¨áƒšáƒ ====================
+        #region ==================== DELETE - ჩანაწერის წაშლა ====================
 
         /// <summary>
-        /// Soft Delete - áƒ¡áƒ¢áƒáƒ¢áƒ£áƒ¡áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ•áƒšáƒ
+        /// Soft Delete - სტატუსის შეცვლა
         /// </summary>
         public bool SoftDelete(int studentId, int groupId)
         {
@@ -758,11 +756,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// Hard Delete - áƒ¡áƒ áƒ£áƒšáƒ˜ áƒ¬áƒáƒ¨áƒšáƒ
+        /// Hard Delete - სრული წაშლა
         /// </summary>
         public bool HardDelete(int studentId, int groupId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "DELETE FROM StudentGroups WHERE StudentId = @StudentId AND GroupId = @GroupId";
@@ -778,11 +776,11 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ“áƒáƒœ Soft Delete
+        /// მოსწავლის ყველა ჯგუფიდან Soft Delete
         /// </summary>
         public bool SoftDeleteAllByStudentId(int studentId)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = @"UPDATE StudentGroups 
@@ -801,16 +799,16 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== IMPORT - áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ áƒ¡áƒáƒ­áƒ˜áƒ áƒ áƒ›áƒ”áƒ—áƒáƒ“áƒ”áƒ‘áƒ˜ ====================
+        #region ==================== IMPORT - იმპორტისთვის საჭირო მეთოდები ====================
 
         /// <summary>
-        /// áƒ§áƒ•áƒ”áƒšáƒ áƒáƒ¥áƒ¢áƒ˜áƒ£áƒ áƒ˜ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”-áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ¬áƒ§áƒ•áƒ˜áƒšáƒ˜áƒ¡ áƒ›áƒ˜áƒ¦áƒ”áƒ‘áƒ (áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡ áƒ“áƒ£áƒ‘áƒšáƒ˜áƒ™áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒšáƒáƒ“)
+        /// ყველა აქტიური მოსწავლე-ჯგუფის წყვილის მიღება (იმპორტის დროს დუბლიკატების შესამოწმებლად)
         /// </summary>
         public List<(int StudentId, int GroupId)> GetAllActiveStudentGroupPairs()
         {
             var pairs = new List<(int StudentId, int GroupId)>();
 
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
                 var query = "SELECT StudentId, GroupId FROM StudentGroups WHERE Status = 1 AND (IsDeleted = 0 OR IsDeleted IS NULL)";
@@ -829,10 +827,10 @@ namespace BCCStudents.Infrastructure.Repositories
 
         #endregion
 
-        #region ==================== HELPER - áƒ“áƒáƒ›áƒ®áƒ›áƒáƒ áƒ” áƒ›áƒ”áƒ—áƒáƒ“áƒ”áƒ‘áƒ˜ ====================
+        #region ==================== HELPER - დამხმარე მეთოდები ====================
 
         /// <summary>
-        /// StudentGroups áƒáƒ‘áƒ˜áƒ”áƒ¥áƒ¢áƒ˜áƒ¡ áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ DataReader-áƒ“áƒáƒœ
+        /// StudentGroups ობიექტის შექმნა DataReader-დან
         /// </summary>
         private StudentGroups MapFromReader(MySqlDataReader reader)
         {
@@ -852,7 +850,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// StudentGroups-áƒ˜áƒ¡ mapper SubGroupId-áƒ˜áƒ— (StudentSubGroups JOIN-áƒ˜áƒ—)
+        /// StudentGroups-ის mapper SubGroupId-ით (StudentSubGroups JOIN-ით)
         /// </summary>
         private StudentGroups MapFromReaderWithSubGroup(MySqlDataReader reader)
         {
@@ -873,7 +871,7 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// StudentGroups-áƒ˜áƒ¡ mapper GetForPayment-áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ (SQL-áƒ¨áƒ˜ áƒáƒ áƒ˜áƒ¡ SgPrice áƒ“áƒ GroupPrice, áƒáƒ áƒ Price)
+        /// StudentGroups-ის mapper GetForPayment-ისთვის (SQL-ში არის SgPrice და GroupPrice, არა Price)
         /// </summary>
         private StudentGroups MapFromReaderForPayment(MySqlDataReader reader)
         {
@@ -883,7 +881,7 @@ namespace BCCStudents.Infrastructure.Repositories
                 StudentId = reader.GetInt32("StudentId"),
                 GroupId = reader.GetInt32("GroupId"),
                 PaymentStatus = reader.IsDBNull(reader.GetOrdinal("PaymentStatus")) ? null : reader.GetString("PaymentStatus"),
-                Price = reader.IsDBNull(reader.GetOrdinal("SgPrice")) ? 0 : reader.GetDecimal("SgPrice"), // SgPrice-áƒ¡ áƒ•áƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ—, áƒ¨áƒ”áƒ›áƒ“áƒ”áƒ’ GroupPrice-áƒ˜áƒ— áƒ’áƒáƒ“áƒáƒ˜áƒ¬áƒ”áƒ áƒ”áƒ‘áƒ
+                Price = reader.IsDBNull(reader.GetOrdinal("SgPrice")) ? 0 : reader.GetDecimal("SgPrice"), // SgPrice-ს ვიყენებთ, შემდეგ GroupPrice-ით გადაიწერება
                 Discount = reader.IsDBNull(reader.GetOrdinal("Discount")) ? 0 : reader.GetDouble("Discount"),
                 Status = !reader.IsDBNull(reader.GetOrdinal("Status")) && reader.GetBoolean("Status"),
                 IsDeleted = !reader.IsDBNull(reader.GetOrdinal("IsDeleted")) && reader.GetBoolean("IsDeleted"),

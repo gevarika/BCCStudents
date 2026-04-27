@@ -25,7 +25,7 @@ namespace BCCStudents.Presentation
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(420, 140);
             this.Name = "UpdateProgressForm";
-            this.Text = "áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ";
+            this.Text = "განახლება";
             this.ResumeLayout(false);
         }
     }

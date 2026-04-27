@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using BCCStudents.Application.Services;
 using BCCStudents.Domain.Entities;
-using Core.Models;
 
 namespace BCCStudents.Application.Interfaces
 {
@@ -32,6 +28,7 @@ namespace BCCStudents.Application.Interfaces
         /// აბრუნებს გადახდების შეჯამებას
         /// </summary>
         List<PaymentSummary> GetPaymentSummaries();
+        List<PaymentSummary> GetPendingPayments();
     }
 }
 

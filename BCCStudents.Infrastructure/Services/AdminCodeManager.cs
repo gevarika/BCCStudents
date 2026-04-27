@@ -1,5 +1,4 @@
-﻿using System;
-using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Infrastructure.Services
 {
@@ -18,9 +17,9 @@ namespace BCCStudents.Infrastructure.Services
         /// <summary>
         /// Admin code რომელიც Properties.Settings-იდან update-დება და ინახება
         /// </summary>
-        public string AdminCode 
+        public string AdminCode
         {
-            get 
+            get
             {
                 var code = _config.AdminCode;
                 return string.IsNullOrWhiteSpace(code) ? "admin123" : code;

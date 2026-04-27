@@ -1,27 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Domain.Interfaces
 {
     public interface IPaymentRepository
     {
-        bool InsertPayment(Payment payment);
+        int InsertPayment(Payment payment);
         void AddPayment(int studentId, decimal amount);
         Task<bool> AddPayments(IEnumerable<Payment> payments);
-        
+
         bool IsGroupPaidForPeriod(int studentId, int groupId, DateTime paymentDate);
         List<PaymentSummary> GetPendingPayments();
+        List<PaymentSummary> GetPaymentSummaries();
         List<PaymentSummary> GetSuccessfulPayments();
         List<int> FindStudentsByDescription(string description);
         Task<List<Payment>> GetCurrentMonthPayments(int studentId);
         List<Payment> GetStudentPayments(int studentId);
         bool PaymentExists(DateTime paymentDate, decimal amount, long? personalId, string description);
-        List<PaymentSummary> GetPaymentSummaries();
+
         IEnumerable<SuccessfulPayment> GetImportHistory();
         // ვერ წარმატებული გადახდების მართვა
         int SaveFailedPayment(FailedPayment payment);

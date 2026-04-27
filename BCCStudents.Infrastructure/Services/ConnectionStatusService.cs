@@ -1,18 +1,16 @@
-﻿using BCCStudents.Application.Interfaces;
-using BCCStudents.Infrastructure.Data;
-using System;
+using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Infrastructure.Services
 {
     /// <summary>
     /// კავშირის სტატუსის სერვისი - იმპლემენტირებს IConnectionStatusService ინტერფეისს.
-    /// იყენებს DatabaseHelper-ს კავშირის შესამოწმებლად Clean Architecture-ის დაცვით.
+    /// იყენებს IDatabaseConnectionChecker-ს კავშირის შესამოწმებლად Clean Architecture-ის დაცვით.
     /// </summary>
     public class ConnectionStatusService : IConnectionStatusService
     {
-        private readonly DatabaseHelper _databaseHelper;
+        private readonly IDatabaseConnectionChecker _connectionChecker;
         private bool _isConnected;
-        
+
         /// <summary>
         /// კავშირის მიმდინარე სტატუსი.
         /// private set - მხოლოდ ამ კლასმა შეძლოს მისი განახლება.
@@ -37,20 +35,20 @@ namespace BCCStudents.Infrastructure.Services
         public event EventHandler ConnectionStatusChanged;
 
         /// <summary>
-        /// კონსტრუქტორი - იღებს DatabaseHelper-ს Dependency Injection-ით.
+        /// კონსტრუქტორი - იღებს IDatabaseConnectionChecker-ს Dependency Injection-ით.
         /// ახორციელებს საწყის კავშირის შემოწმებას.
         /// </summary>
-        /// <param name="databaseHelper">DatabaseHelper ინსტანსი კავშირის შესამოწმებლად</param>
-        public ConnectionStatusService(DatabaseHelper databaseHelper)
+        /// <param name="connectionChecker">IDatabaseConnectionChecker ინსტანსი კავშირის შესამოწმებლად</param>
+        public ConnectionStatusService(IDatabaseConnectionChecker connectionChecker)
         {
-            _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
+            _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             // კავშირის სტატუსის საწყისი შემოწმება
             CheckConnection();
         }
 
         /// <summary>
         /// ამოწმებს კავშირს მონაცემთა ბაზასთან.
-        /// იყენებს DatabaseHelper.CanConnectToMySQL() მეთოდს.
+        /// იყენებს IDatabaseConnectionChecker.CanConnectToMySQL() მეთოდს.
         /// ანახლებს IsConnected თვისებას და იძახებს ConnectionStatusChanged ივენთს მნიშვნელობის ცვლილებისას.
         /// </summary>
         /// <returns>true თუ კავშირი დამყარებულია, false თუ არა</returns>
@@ -58,9 +56,9 @@ namespace BCCStudents.Infrastructure.Services
         {
             try
             {
-                // იყენებს DatabaseHelper-ს კავშირის შესამოწმებლად
+                // იყენებს IDatabaseConnectionChecker-ს კავშირის შესამოწმებლად
                 // IsConnected-ის setter ავტომატურად იძახებს ConnectionStatusChanged ივენთს ცვლილებისას
-                IsConnected = _databaseHelper.CanConnectToMySQL();
+                IsConnected = _connectionChecker.CanConnectToMySQL();
             }
             catch
             {
@@ -70,3 +68,4 @@ namespace BCCStudents.Infrastructure.Services
         }
     }
 }
+

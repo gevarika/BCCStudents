@@ -1,9 +1,8 @@
-﻿using System;
+﻿using BCCStudents.Domain.Interfaces;
+using BCCStudents.Presentation.Properties;
 using System.Configuration;
 using System.Security.Cryptography;
 using System.Text;
-using BCCStudents.Domain.Interfaces;
-using BCCStudents.Presentation.Properties;
 
 namespace BCCStudents.Presentation.Services
 {
@@ -12,6 +11,7 @@ namespace BCCStudents.Presentation.Services
     /// </summary>
     public class ConfigurationService : IConfigurationService
     {
+        // Database selection & connections
         public bool IsTestDb
         {
             get => Settings.Default.IsTestDb;
@@ -48,7 +48,7 @@ namespace BCCStudents.Presentation.Services
             set { Settings.Default.ServerMySqlConnectionString_Test = value; }
         }
 
-        public string ServerHost
+        /*public string ServerHost
         {
             get => Settings.Default.ServerHost;
             set { Settings.Default.ServerHost = value; }
@@ -70,8 +70,45 @@ namespace BCCStudents.Presentation.Services
         {
             get => Settings.Default.Password;
             set { Settings.Default.Password = value; }
+        }*/
+
+        public async Task SaveConnectionSettingsAsync(string settingName, string server, string port, string database, string username, string password)
+        {
+            string protectedPassword = Protect(password);
+            string connStr = $"Server={server};Port={port};Database={database};User={username};Password={protectedPassword};SslMode=Preferred;";
+
+            await Task.Run(() =>
+            {
+                var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var section = config.ConnectionStrings;
+
+                // გამოიყენეთ გადაცემული სახელი (მაგ: "LocalMySqlConnectionString")
+                if (section.ConnectionStrings[settingName] != null)
+                {
+                    section.ConnectionStrings[settingName].ConnectionString = connStr;
+                }
+                else
+                {
+                    // თუ ასეთი სახელით ვერ იპოვა, ამატებს ახალს
+                    section.ConnectionStrings.Add(new ConnectionStringSettings(settingName, connStr, "MySql.Data.MySqlClient"));
+                }
+
+                config.Save(ConfigurationSaveMode.Modified);
+                ConfigurationManager.RefreshSection("connectionStrings");
+            });
         }
 
+        // DPAPI დამხმარე მეთოდი
+        private string Protect(string plainText)
+        {
+            if (string.IsNullOrEmpty(plainText)) return null;
+            byte[] data = Encoding.UTF8.GetBytes(plainText);
+            // შიფრავს მონაცემებს მიმდინარე მომხმარებლის დონეზე
+            byte[] protectedData = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(protectedData);
+        }
+
+        // SMS configuration
         public bool SmsEnabled
         {
             get => Settings.Default.SmsEnabled;
@@ -84,24 +121,31 @@ namespace BCCStudents.Presentation.Services
             set { Settings.Default.SmsApiKey = value; }
         }
 
-        public string AdminCode
+        public string SmsText_Registration
         {
-            get => Settings.Default.AdminCode;
-            set { Settings.Default.AdminCode = value; }
+            get => Settings.Default.SmsText_Registration;
+            set { Settings.Default.SmsText_Registration = value; }
         }
 
-        public bool DbChangedSinceLastBackup
+        public string SmsText_Payment
         {
-            get => Settings.Default.DbChangedSinceLastBackup;
-            set { Settings.Default.DbChangedSinceLastBackup = value; }
+            get => Settings.Default.SmsText_Payment;
+            set { Settings.Default.SmsText_Payment = value; }
         }
 
-        public DateTime LastBackupTime
+        public string SmsText_UpcomingReminder
         {
-            get => Settings.Default.LastBackupTime;
-            set { Settings.Default.LastBackupTime = value; }
+            get => Settings.Default.SmsText_UpcomingReminder;
+            set { Settings.Default.SmsText_UpcomingReminder = value; }
         }
 
+        public string SmsText_OverdueReminder
+        {
+            get => Settings.Default.SmsText_OverdueReminder;
+            set { Settings.Default.SmsText_OverdueReminder = value; }
+        }
+
+        // Backup configuration
         public string BackupDirectory
         {
             get => Settings.Default.BackupDirectory;
@@ -126,6 +170,18 @@ namespace BCCStudents.Presentation.Services
             set { Settings.Default.MaxBackupFiles = value; }
         }
 
+        public bool AutoBackupEnabled
+        {
+            get => Settings.Default.AutoBackupEnabled;
+            set { Settings.Default.AutoBackupEnabled = value; }
+        }
+
+        public string MySqlDumpPath
+        {
+            get => Settings.Default.MySqlDumpPath;
+            set { Settings.Default.MySqlDumpPath = value; }
+        }
+
         public string BackupUsername
         {
             get => Settings.Default.BackupUsername;
@@ -138,9 +194,108 @@ namespace BCCStudents.Presentation.Services
             set { Settings.Default.BackupPassword = value; }
         }
 
+        public DateTime LastBackupTime
+        {
+            get => Settings.Default.LastBackupTime;
+            set { Settings.Default.LastBackupTime = value; }
+        }
+
+        public bool DbChangedSinceLastBackup
+        {
+            get => Settings.Default.DbChangedSinceLastBackup;
+            set { Settings.Default.DbChangedSinceLastBackup = value; }
+        }
+
+        // Sync / update flags
+        public bool AutoDownstreamSyncEnabled
+        {
+            get => Settings.Default.AutoDownstreamSyncEnabled;
+            set { Settings.Default.AutoDownstreamSyncEnabled = value; }
+        }
+
+        public bool AutoUpstreamSyncEnabled
+        {
+            get => Settings.Default.AutoUpstreamSyncEnabled;
+            set { Settings.Default.AutoUpstreamSyncEnabled = value; }
+        }
+
+        public bool AutoUpdateEnabled
+        {
+            get => Settings.Default.AutoUpdateEnabled;
+            set { Settings.Default.AutoUpdateEnabled = value; }
+        }
+
+        public bool UpgradeRequired
+        {
+            get => Settings.Default.UpgradeRequired;
+            set { Settings.Default.UpgradeRequired = value; }
+        }
+
+        // Admin
+        public string AdminCode
+        {
+            get => Settings.Default.AdminCode;
+            set { Settings.Default.AdminCode = value; }
+        }
+
+        public string UsedUsernames
+        {
+            get => Settings.Default.UsedUsernames;
+            set { Settings.Default.UsedUsernames = value; }
+        }
         public void Save()
         {
             Settings.Default.Save();
+        }
+        //Payments
+        public bool UseFullBalanceForAutoPayment
+        {
+            get => Settings.Default.UseFullBalanceForAutoPayment;
+            set { Settings.Default.UseFullBalanceForAutoPayment = value; }
+        }
+
+        public bool AllowPartialPayments
+        {
+            get => Settings.Default.AllowPartialPayments;
+            set { Settings.Default.AllowPartialPayments = value; }
+        }
+
+        //Files and directories
+        public void SaveAutoDetectionSettings(bool enabled, string watchPath, string pattern)
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+            UpdateSetting(config, "AutoFileDetection.Enabled", enabled.ToString());
+            UpdateSetting(config, "AutoFileDetection.WatchFolderPath", watchPath);
+            UpdateSetting(config, "AutoFileDetection.FileNamePattern", pattern);
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+        }
+
+        // დამხმარე მეთოდი კოდის შესამცირებლად
+        private void UpdateSetting(Configuration config, string key, string value)
+        {
+            if (config.AppSettings.Settings[key] == null)
+                config.AppSettings.Settings.Add(key, value);
+            else
+                config.AppSettings.Settings[key].Value = value;
+        }
+
+        public bool IsAutoDetectionEnabled()
+        {
+            var value = ConfigurationManager.AppSettings["AutoFileDetection.Enabled"];
+            return bool.TryParse(value, out bool result) ? result : true; // Default არის true
+        }
+
+        public string GetWatchFolderPath()
+        {
+            return ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"] ?? string.Empty;
+        }
+
+        public string GetFileNamePattern()
+        {
+            return ConfigurationManager.AppSettings["AutoFileDetection.FileNamePattern"] ?? "*.xlsx";
         }
 
         /// <summary>
@@ -161,7 +316,7 @@ namespace BCCStudents.Presentation.Services
                     var connectionString = ConfigurationManager.ConnectionStrings[appConfigKey];
                     if (connectionString == null)
                         return null;
-                    
+
                     encryptedBase64 = connectionString.ConnectionString;
                 }
                 else
@@ -236,7 +391,7 @@ namespace BCCStudents.Presentation.Services
                 // მივიღოთ config ფაილის path ConfigurationManager-ის მეშვეობით
                 var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
                 string configPath = config.FilePath;
-                
+
                 System.Xml.XmlDocument xmlDoc = new System.Xml.XmlDocument();
                 xmlDoc.Load(configPath);
 

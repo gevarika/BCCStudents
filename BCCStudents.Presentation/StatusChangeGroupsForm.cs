@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {
     public partial class StatusChangeGroupsForm : Form
     {
-        public int? SelectedGroupId { get; private set; } // null áƒœáƒ˜áƒ¨áƒœáƒáƒ•áƒ¡ áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜
+        public int? SelectedGroupId { get; private set; } // null ნიშნავს ყველა ჯგუფს
 
         public StatusChangeGroupsForm(List<Group> groups)
         {
@@ -23,7 +20,7 @@ namespace BCCStudents.Presentation
             if (cmbGroups.SelectedIndex >= 0)
                 SelectedGroupId = ((Group)cmbGroups.SelectedItem).Id;
             else
-                SelectedGroupId = null; // áƒ§áƒ•áƒ”áƒšáƒ áƒ¯áƒ’áƒ£áƒ¤áƒ˜
+                SelectedGroupId = null; // ყველა ჯგუფი
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -41,4 +38,4 @@ namespace BCCStudents.Presentation
             Close();
         }
     }
-} 
+}

@@ -1,10 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BCCStudents.Application.Services
 {
@@ -24,7 +18,7 @@ namespace BCCStudents.Application.Services
             var directory = Path.GetDirectoryName(ConfigFilePath);
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
-                
+
             string json = JsonConvert.SerializeObject(this, Formatting.Indented);
             File.WriteAllText(ConfigFilePath, json);
         }

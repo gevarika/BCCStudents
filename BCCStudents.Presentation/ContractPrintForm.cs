@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+﻿using BCCStudents.Application.Services;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Printing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Word = Microsoft.Office.Interop.Word;
-using BCCStudents.Application.Services;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Presentation
 {

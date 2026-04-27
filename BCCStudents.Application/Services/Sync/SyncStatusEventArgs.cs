@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using BCCStudents.Domain.Entities;
-
-namespace BCCStudents.Application.Services.Sync
+﻿namespace BCCStudents.Application.Services.Sync
 {
     /// <summary>
     /// Event arguments for sync status updates

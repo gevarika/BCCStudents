@@ -1,36 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
 using BCCStudents.Domain.Interfaces;
 //using BCCStudents.Infrastructure.DataBase;
-using BCCStudents.Application.Services;
 using BCCStudents.Infrastructure.Services;
+using System.Data;
+using System.Text;
 
 namespace BCCStudents.Presentation
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public partial class StudentsEditForm : Form
     {
-        private readonly IStudentRepository _studentService;
-        private readonly StudentService _studentSvc;
-        private readonly GroupService _groupService;
-        private readonly SubGroupService _subGroupService;
-        private readonly BackupManager _backupManager;
-        public StudentsEditForm(IStudentRepository studentService, GroupService groupService, SubGroupService subGroupService, StudentService studentSvc, BackupManager backupManager)
+        private readonly IStudentService _studentService;
+        private readonly IGroupService _groupService;
+        private readonly ISubGroupService _subGroupService;
+        private readonly IStudentGroupsService _studentGroupsService;
+        private readonly BackupService _backupManager;
+        private readonly IUserContext _userContext;
+        public StudentsEditForm(IStudentService studentService, IGroupService groupService, ISubGroupService subGroupService, IStudentGroupsService studentGroupsService, BackupService backupManager, IUserContext userContext)
         {
             InitializeComponent();
             _studentService = studentService;
-            _studentSvc = studentSvc;
             _groupService = groupService;
             _subGroupService = subGroupService;
+            _studentGroupsService = studentGroupsService;
             _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "მოსწავლის ინფორმაციის რედაქტირება");
             else FormTitleHelper.SetTitle(this, "მოსწავლის ინფორმაციის რედაქტირება - სატესტო რეჟიმი");
@@ -46,6 +41,18 @@ namespace BCCStudents.Presentation
             txtPaymentDate.TextChanged += TextBox_TextChanged;
             txtStatus.TextChanged += TextBox_TextChanged;
             txtPaymentStatus.TextChanged += TextBox_TextChanged;
+
+            // CheckBox event handler for filtering students in multiple groups
+            chkstudentsToGroups.CheckedChanged += ChkstudentsToGroups_CheckedChanged;
+
+            // Context Menu event handlers
+            სვეტებისმართვაToolStripMenuItem.Click += ManageColumns_Click;
+
+            // სვეტების კონფიგურაციის ჩატვირთვა SettingsHelper-იდან
+            LoadColumnSettings();
+
+            // DataGridView სვეტების ზომის ცვლილების ივენთი - შენახვისთვის
+            dgvStudents.ColumnWidthChanged += DgvStudents_ColumnWidthChanged;
 
             // ... ჯგუფების ჩატვირთვა
             chlGroups.DisplayMember = "Name";
@@ -73,7 +80,7 @@ namespace BCCStudents.Presentation
             };
             dgvGroupSubGroups.Columns.Add(subGroupColumn);
 
-            
+
 
         }
 
@@ -88,51 +95,59 @@ namespace BCCStudents.Presentation
         private bool isProgrammaticSubGroupCheck = false;
         private HashSet<int> originalCheckedGroupIds = new HashSet<int>();
         bool statusChanged = false;
-        private void txtStudentsSearch_TextChanged(object sender, EventArgs e)
-        {
-            /*string searchText = txtStudentSearch.Text.Trim();
-            int selectedGroupId = cbGroups.SelectedValue != null ? Convert.ToInt32(cbGroups.SelectedValue) : -1;
 
-            List<Student> students;
-            if (!string.IsNullOrWhiteSpace(searchText))
+        // სვეტების ხილულობის კონფიგურაცია (სვეტის სახელი -> Visible)
+        // ვტვირთავთ შენახულ კონფიგურაციას SettingsHelper-დან, ან ვიყენებთ ნაგულისხმევ მნიშვნელობებს
+        private Dictionary<string, bool> columnVisibility;
+
+        // სვეტების ზომების კონფიგურაცია (სვეტის სახელი -> Width)
+        private Dictionary<string, int> columnWidths;
+
+        /// <summary>
+        /// ვიყენებთ Control.Tag პატერნით Security Checks-ისთვის
+        /// Tag = "Permission_CanDelete" ან "Permission_CanManageStudents" ა.შ.
+        /// </summary>
+        private void ApplySecurityChecks()
+        {
+            // btnDel - CanDelete permission
+            if (btndel != null)
             {
-                students = _studentService.SearchStudentsByNameAndGroup(searchText, selectedGroupId);
-            }
-            else
-            {
-                students = _studentService.GetStudentsByGroupId(selectedGroupId);
+                btndel.Tag = $"Permission_{Permission.CanDelete}";
+                btndel.Enabled = _userContext.HasPermission(Permission.CanDelete);
             }
 
-            RefreshDataGridView(students);*/
-        }
-        private void deleteSingleToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (dgvStudents.SelectedRows.Count == 1)
+            // წაშლაToolStripMenuItem - CanDelete permission
+            if (წაშლაToolStripMenuItem != null)
             {
-                var row = dgvStudents.SelectedRows[0];
-                row.DefaultCellStyle.BackColor = Color.Red;
-                row.DefaultCellStyle.ForeColor = Color.White;
-                row.Tag = "ToDelete"; // ნიშნული, რომ ეს ჩანაწერი წასაშლელია
+                წაშლაToolStripMenuItem.Tag = $"Permission_{Permission.CanDelete}";
+                წაშლაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanDelete);
             }
-            else
+
+            // btnSaveChanges - CanManageStudents permission
+            if (btnSaveChanges != null)
             {
-                MessageBox.Show("Please select a single record to delete.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                btnSaveChanges.Tag = $"Permission_{Permission.CanManageStudents}";
+                btnSaveChanges.Enabled = _userContext.HasPermission(Permission.CanManageStudents);
+            }
+
+            // btnStudentActivation - CanManageStudents permission
+            if (btnStudentActivation != null)
+            {
+                btnStudentActivation.Tag = $"Permission_{Permission.CanManageStudents}";
+                btnStudentActivation.Enabled = _userContext.HasPermission(Permission.CanManageStudents);
             }
         }
 
         private void btnDel_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanDelete))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             var studentsToDelete = selectedStudents.Where(s => s.Value).Select(s => s.Key).ToList();
-            /*foreach (var kvp in selectedStudents)
-            {
-                var studentId = kvp.Key.StudentId;
-                var groupId = kvp.Key.GroupId;
-                var isSelected = kvp.Value;
-
-                Console.WriteLine($"[CHECK] StudentId={studentId}, GroupId={groupId}, Selected={isSelected}");
-
-            }*/
 
             if (studentsToDelete.Count == 0)
             {
@@ -140,12 +155,6 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-
-            // ჯგუფების მიხედვით დალაგებული სტუდენტების სიის შექმნა
-            /*var groupedStudents = studentsToDelete
-                .GroupBy(s => s.GroupId)
-                .OrderBy(g => g.Key)
-                .ToDictionary(g => g.Key, g => g.Select(s => s.StudentId).ToList());*/
             var groupedStudents = studentsToDelete.GroupBy(s => s.GroupId).OrderBy(g => g.Key).ToDictionary(g => g.Key, g => g.Select(x => x.StudentId).ToList());
             StringBuilder message = new StringBuilder();
             foreach (var group in groupedStudents)
@@ -171,7 +180,7 @@ namespace BCCStudents.Presentation
             {
                 foreach (var (studentId, groupId) in studentsToDelete)
                 {
-                    _studentSvc.UpdateStudentStatus(studentId, groupId, false);
+                    _studentGroupsService.UpdateStudentStatus(studentId, groupId, false);
                 }
 
                 MessageBox.Show("Selected students have been marked as 'Inactive'.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -182,11 +191,11 @@ namespace BCCStudents.Presentation
                 int selectedGroupId = cbGroups.SelectedValue != null ? Convert.ToInt32(cbGroups.SelectedValue) : -1;
                 var students = _studentService.GetStudentsByGroupId(selectedGroupId);
                 RefreshDataGridView(students);
-                
+
                 // განვახლოთ originalStudentData თუ არჩეული მოსწავლე იყო წაშლილებში
                 if (originalStudentData != null && studentsToDelete.Any(s => s.StudentId == originalStudentData.Id))
                 {
-                    originalStudentData.StudentGroupsList = _groupService.GetStudentGroupsByStudentId(originalStudentData.Id);
+                    originalStudentData.StudentGroupsList = _studentGroupsService.GetActiveByStudentId(originalStudentData.Id);
                     originalStudentData.StudentSubGroupsList = _subGroupService.GetAllSubGroups();
                     LoadStudentSubGroupsToGrid(originalStudentData);
                 }
@@ -234,6 +243,9 @@ namespace BCCStudents.Presentation
 
         private void StudentsEditForm_Load(object sender, EventArgs e)
         {
+            // Security Checks - Control.Tag პატერნით
+            ApplySecurityChecks();
+
             dgvGroupSubGroups.CellValueChanged += dgvGroupSubGroups_CellValueChanged;
 
             var groups = _groupService.GetAllGroups().OrderBy(g => g.Id).ToList(); // ID-ის მიხედვით ზრდადობით დალაგება
@@ -247,7 +259,7 @@ namespace BCCStudents.Presentation
         private void dgvGroupSubGroups_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             if (isProgrammaticSubGroupCheck) return;
-            
+
             // ვამოწმებთ რომ ნამდვილად ქვეჯგუფის ComboBox იცვლება
             if (dgvGroupSubGroups.Columns[e.ColumnIndex].Name == "SubGroup")
             {
@@ -258,36 +270,99 @@ namespace BCCStudents.Presentation
 
         private void cbGroups_SelectedValueChanged(object sender, EventArgs e)
         {
-            string searchText = txtStudentSearch.Text.Trim();
-            int selectedGroupId = cbGroups.SelectedValue != null ? Convert.ToInt32(cbGroups.SelectedValue) : -1;
+            // გამოიძახე ApplyFiltersAsync რომელიც გაითვალისწინებს ყველა ფილტრს
+            _ = ApplyFiltersAsync();
+        }
 
-            List<Student> students;
-            // ყოველთვის გამოიყენე groupId-ზე დამოკიდებული მეთოდები
-            if (selectedGroupId == 0)
+        /// <summary>
+        /// ფილტრების გამოყენება და სტუდენტების ჩატვირთვა (Async)
+        /// გაითვალისწინებს: txtSearch, chkstudentsToGroups, cbGroups, radio buttons
+        /// </summary>
+        private async Task ApplyFiltersAsync()
+        {
+            try
             {
-                students = string.IsNullOrWhiteSpace(searchText)
-                    ? _studentService.GetAllStudentsWithGroups() // 🟢 შეიცავს JOIN და GroupId
-                    : _studentService.SearchStudentsByNameAcrossAllGroups(searchText); // 🟢 იგივე
+                // 1. Search text-ის მიღება
+                string searchText = txtSearch.Text.Trim();
+
+                // 2. cbGroups-ის selected value (ფილტრაციისთვის გამოიყენება მხოლოდ cbGroups, chlGroups გამოიყენება მოსწავლის რედაქტირებისთვის)
+                int selectedGroupId = cbGroups.SelectedValue != null ? Convert.ToInt32(cbGroups.SelectedValue) : -1;
+
+                // 3. chkstudentsToGroups checkbox-ის მდგომარეობა
+                bool filterMultipleGroups = chkstudentsToGroups.Checked;
+
+                List<Student> students;
+
+                // 4. ჯგუფის მიხედვით სტუდენტების მიღება
+                if (filterMultipleGroups)
+                {
+                    // თუ chkstudentsToGroups მონიშნულია, ვიღებთ რამდენიმე ჯგუფში არსებულ სტუდენტებს
+                    students = _studentService.GetStudentsInMultipleGroups();
+                }
+                else if (selectedGroupId > 0)
+                {
+                    // თუ cbGroups-ში არჩეულია კონკრეტული ჯგუფი
+                    students = _studentService.GetStudentsByGroupId(selectedGroupId);
+                }
+                else
+                {
+                    // თუ არცერთი ჯგუფი არაა არჩეული (selectedGroupId == 0 ან -1), ვიღებთ ყველა სტუდენტს
+                    students = _studentService.GetAllStudentsWithGroups();
+                }
+
+                // 5. Search text-ის ფილტრაცია (თუ search text არის)
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    List<Student> searchResults = new List<Student>();
+                    string searchField = null;
+
+                    if (rbByName.Checked)
+                        searchField = "FirstName";
+                    else if (rbByLastName.Checked)
+                        searchField = "LastName";
+                    else if (rbByParent.Checked)
+                        searchField = "ParentName";
+                    else if (rbByAge.Checked)
+                        searchField = "Age";
+                    else if (rbByIdNumber.Checked)
+                        searchField = "Id_Numb";
+                    else if (rbByAddress.Checked)
+                        searchField = "Address";
+                    else if (rbByStCode.Checked)
+                        searchField = "StudentCode";
+
+                    if (!string.IsNullOrEmpty(searchField))
+                    {
+                        // Search-ის გაკეთება: თუ ჯგუფი არჩეულია, search-ს ვაკეთებთ ამ ჯგუფში, წინააღმდეგ შემთხვევაში ყველა ჯგუფში
+                        if (selectedGroupId > 0 && !filterMultipleGroups)
+                        {
+                            searchResults = _studentService.SearchStudents(searchField, searchText, selectedGroupId);
+                        }
+                        else
+                        {
+                            searchResults = _studentService.SearchStudents(searchField, searchText);
+                        }
+
+                        // AND ლოგიკა: ვიღებთ მხოლოდ იმ სტუდენტებს, რომლებიც არის როგორც students-ში, ისე searchResults-ში
+                        var studentIdsInResults = searchResults.Select(s => s.Id).ToHashSet();
+                        students = students.Where(s => studentIdsInResults.Contains(s.Id)).ToList();
+                    }
+                }
+
+                // 7. UI-ზე განახლება (UI thread-ზე)
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => RefreshDataGridView(students)));
+                }
+                else
+                {
+                    RefreshDataGridView(students);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                students = string.IsNullOrWhiteSpace(searchText)
-                    ? _studentService.GetStudentsByGroupId(selectedGroupId)
-                    : _studentService.SearchStudentsByNameAndGroup(searchText, selectedGroupId);
+                MessageBox.Show($"შეცდომა ფილტრაციისას: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            /*if (selectedGroupId == 0)
-            {
-                students = string.IsNullOrWhiteSpace(searchText)
-            ? _studentService.GetAllStudents()
-            : _studentService.SearchStudentsByName(searchText);
-            }
-            else
-            {
-                students = string.IsNullOrWhiteSpace(searchText)
-                    ? _studentService.GetStudentsByGroupId(selectedGroupId)
-                    : _studentService.SearchStudentsByNameAndGroup(searchText, selectedGroupId);
-            }*/
-            RefreshDataGridView(students);
         }
         private void btnClear_Click(object sender, EventArgs e)
         {
@@ -313,18 +388,131 @@ namespace BCCStudents.Presentation
             dgvStudents.Columns.Clear();
             dgvStudents.AutoGenerateColumns = false;
 
-            dgvStudents.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Select", HeaderText = "Select", Width = 50 });
-            dgvStudents.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", DataPropertyName = "Id", Visible = false });
-            dgvStudents.Columns.Add(new DataGridViewTextBoxColumn { Name = "GroupId", DataPropertyName = "GroupId", Visible = false });
-            dgvStudents.Columns.Add(new DataGridViewTextBoxColumn { Name = "FirstName", DataPropertyName = "FirstName", HeaderText = "First Name" });
-            dgvStudents.Columns.Add(new DataGridViewTextBoxColumn { Name = "LastName", DataPropertyName = "LastName", HeaderText = "Last Name" });
-            dgvStudents.Columns.Add(new DataGridViewTextBoxColumn { Name = "GroupName", DataPropertyName = "GroupName", HeaderText = "Group" });
+            // Select checkbox column
+            var selectCol = new DataGridViewCheckBoxColumn { Name = "Select", HeaderText = "Select", Width = 50 };
+            selectCol.Visible = columnVisibility.GetValueOrDefault("Select", true);
+            dgvStudents.Columns.Add(selectCol);
+
+            // Id column (ყოველთვის ფარული, მაგრამ Dictionary-ში შეიძლება იყოს)
+            var idCol = new DataGridViewTextBoxColumn { Name = "Id", DataPropertyName = "Id" };
+            idCol.Visible = columnVisibility.GetValueOrDefault("Id", false);
+            dgvStudents.Columns.Add(idCol);
+
+            // GroupId column (ყოველთვის ფარული, მაგრამ Dictionary-ში შეიძლება იყოს)
+            var groupIdCol = new DataGridViewTextBoxColumn { Name = "GroupId", DataPropertyName = "GroupId" };
+            groupIdCol.Visible = columnVisibility.GetValueOrDefault("GroupId", false);
+            dgvStudents.Columns.Add(groupIdCol);
+
+            // FirstName
+            var firstNameCol = new DataGridViewTextBoxColumn { Name = "FirstName", DataPropertyName = "FirstName", HeaderText = "First Name", Width = 120 };
+            firstNameCol.Visible = columnVisibility.GetValueOrDefault("FirstName", true);
+            dgvStudents.Columns.Add(firstNameCol);
+
+            // LastName
+            var lastNameCol = new DataGridViewTextBoxColumn { Name = "LastName", DataPropertyName = "LastName", HeaderText = "Last Name", Width = 120 };
+            lastNameCol.Visible = columnVisibility.GetValueOrDefault("LastName", true);
+            dgvStudents.Columns.Add(lastNameCol);
+
+            // GroupName
+            var groupNameCol = new DataGridViewTextBoxColumn { Name = "GroupName", DataPropertyName = "GroupName", HeaderText = "Group", Width = 150 };
+            groupNameCol.Visible = columnVisibility.GetValueOrDefault("GroupName", true);
+            dgvStudents.Columns.Add(groupNameCol);
+
+            // Age
+            var ageCol = new DataGridViewTextBoxColumn { Name = "Age", DataPropertyName = "Age", HeaderText = "Age", Width = 60 };
+            ageCol.Visible = columnVisibility.GetValueOrDefault("Age", false);
+            dgvStudents.Columns.Add(ageCol);
+
+            // ParentName
+            var parentNameCol = new DataGridViewTextBoxColumn { Name = "ParentName", DataPropertyName = "ParentName", HeaderText = "Parent Name", Width = 150 };
+            parentNameCol.Visible = columnVisibility.GetValueOrDefault("ParentName", false);
+            dgvStudents.Columns.Add(parentNameCol);
+
+            // PhoneNumber
+            var phoneCol = new DataGridViewTextBoxColumn { Name = "PhoneNumber", DataPropertyName = "PhoneNumber", HeaderText = "Phone", Width = 120 };
+            phoneCol.Visible = columnVisibility.GetValueOrDefault("PhoneNumber", false);
+            dgvStudents.Columns.Add(phoneCol);
+
+            // Id_Numb (Personal ID)
+            var idNumbCol = new DataGridViewTextBoxColumn { Name = "Id_Numb", DataPropertyName = "Id_Numb", HeaderText = "Personal ID", Width = 120 };
+            idNumbCol.Visible = columnVisibility.GetValueOrDefault("Id_Numb", false);
+            dgvStudents.Columns.Add(idNumbCol);
+
+            // Address
+            var addressCol = new DataGridViewTextBoxColumn { Name = "Address", DataPropertyName = "Address", HeaderText = "Address", Width = 200 };
+            addressCol.Visible = columnVisibility.GetValueOrDefault("Address", false);
+            dgvStudents.Columns.Add(addressCol);
+
+            // StudentCode
+            var studentCodeCol = new DataGridViewTextBoxColumn { Name = "StudentCode", DataPropertyName = "StudentCode", HeaderText = "Student Code", Width = 120 };
+            studentCodeCol.Visible = columnVisibility.GetValueOrDefault("StudentCode", false);
+            dgvStudents.Columns.Add(studentCodeCol);
+
+            // RegistrationDate
+            var regDateCol = new DataGridViewTextBoxColumn { Name = "RegistrationDate", DataPropertyName = "RegistrationDate", HeaderText = "Registration Date", Width = 130 };
+            regDateCol.Visible = columnVisibility.GetValueOrDefault("RegistrationDate", false);
+            dgvStudents.Columns.Add(regDateCol);
+
+            // DateOfPayment
+            var paymentDateCol = new DataGridViewTextBoxColumn { Name = "DateOfPayment", DataPropertyName = "DateOfPayment", HeaderText = "Payment Date", Width = 130 };
+            paymentDateCol.Visible = columnVisibility.GetValueOrDefault("DateOfPayment", false);
+            dgvStudents.Columns.Add(paymentDateCol);
+
+            // TuitionFee
+            var tuitionFeeCol = new DataGridViewTextBoxColumn { Name = "TuitionFee", DataPropertyName = "TuitionFee", HeaderText = "Tuition Fee", Width = 100 };
+            tuitionFeeCol.Visible = columnVisibility.GetValueOrDefault("TuitionFee", false);
+            dgvStudents.Columns.Add(tuitionFeeCol);
+
+            // Discount
+            var discountCol = new DataGridViewTextBoxColumn { Name = "Discount", DataPropertyName = "Discount", HeaderText = "Discount", Width = 80 };
+            discountCol.Visible = columnVisibility.GetValueOrDefault("Discount", false);
+            dgvStudents.Columns.Add(discountCol);
+
+            // PaymentStatus
+            var paymentStatusCol = new DataGridViewTextBoxColumn { Name = "PaymentStatus", DataPropertyName = "PaymentStatus", HeaderText = "Payment Status", Width = 120 };
+            paymentStatusCol.Visible = columnVisibility.GetValueOrDefault("PaymentStatus", false);
+            dgvStudents.Columns.Add(paymentStatusCol);
+
+            // Status
+            var statusCol = new DataGridViewTextBoxColumn { Name = "Status", DataPropertyName = "Status", HeaderText = "Status", Width = 80 };
+            statusCol.Visible = columnVisibility.GetValueOrDefault("Status", false);
+            dgvStudents.Columns.Add(statusCol);
+
+            // Balance
+            var balanceCol = new DataGridViewTextBoxColumn { Name = "Balance", DataPropertyName = "Balance", HeaderText = "Balance", Width = 100 };
+            balanceCol.Visible = columnVisibility.GetValueOrDefault("Balance", false);
+            dgvStudents.Columns.Add(balanceCol);
+
+            // UpdatedAt
+            var updatedAtCol = new DataGridViewTextBoxColumn { Name = "UpdatedAt", DataPropertyName = "UpdatedAt", HeaderText = "Updated At", Width = 130 };
+            updatedAtCol.Visible = columnVisibility.GetValueOrDefault("UpdatedAt", false);
+            dgvStudents.Columns.Add(updatedAtCol);
+
+            // სვეტების ზომების განახლება, თუ შენახულია
+            if (columnWidths != null && columnWidths.Count > 0)
+            {
+                foreach (DataGridViewColumn col in dgvStudents.Columns)
+                {
+                    if (columnWidths.ContainsKey(col.Name))
+                    {
+                        col.Width = columnWidths[col.Name];
+                    }
+                }
+            }
 
             // გავწმინდოთ წაშლისთვის მონიშნული მოსწავლეები რეფრეშისას
             // (გარდა იმ შემთხვევისა, როცა მომხმარებელმა უკვე მონიშნა)
             // selectedStudents.Clear(); // ეს გააკეთებს btnDel ან btnClear
-            
+
             dgvStudents.Rows.Clear();
+
+            // ვამოწმებთ, რომ Select სვეტი დამატებულია
+            if (!dgvStudents.Columns.Contains("Select"))
+            {
+                MessageBox.Show("შეცდომა: Select სვეტი არ არის DataGridView-ში", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             foreach (var student in students)
             {
                 int resolvedGroupId = student.GroupId;
@@ -337,14 +525,65 @@ namespace BCCStudents.Presentation
                     }
                 }
                 catch { }
-                dgvStudents.Rows.Add(
-                    false,  // Checkbox default unchecked
-                    student.Id,
-                    resolvedGroupId,
-                    student.FirstName,
-                    student.LastName,
-                    student.GroupName
-                );
+
+                // ყველა სვეტის მონაცემების დამატება - სვეტები უკვე დამატებულია, ახლა ვქმნით რიგს
+                // CreateCells ქმნის უჯრებს (cells) DataGridView-ის ყველა სვეტისთვის
+                // ეს მეთოდი ქმნის უჯრებს სვეტების ტიპის მიხედვით (CheckBoxColumn -> CheckBoxCell, TextBoxColumn -> TextBoxCell)
+                var row = new DataGridViewRow();
+
+                try
+                {
+                    row.CreateCells(dgvStudents);
+
+                    // შევამოწმოთ, რომ CreateCells-მა შექმნა ყველა უჯრა
+                    if (row.Cells.Count != dgvStudents.Columns.Count)
+                    {
+                        throw new InvalidOperationException($"CreateCells შექმნა {row.Cells.Count} უჯრა, მაგრამ საჭიროა {dgvStudents.Columns.Count} სვეტი");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // თუ CreateCells არ მუშაობს, ხელით ვქმნით უჯრებს
+                    //row = new DataGridViewRow();
+                    foreach (DataGridViewColumn col in dgvStudents.Columns)
+                    {
+                        DataGridViewCell cell;
+                        if (col is DataGridViewCheckBoxColumn)
+                        {
+                            cell = new DataGridViewCheckBoxCell();
+                        }
+                        else
+                        {
+                            cell = new DataGridViewTextBoxCell();
+                        }
+                        row.Cells.Add(cell);
+                    }
+                }
+                int rowIndex = dgvStudents.Rows.Add(); // ჯერ ვამატებთ ცარიელ რიგს
+                row = dgvStudents.Rows[rowIndex];   // ვიღებთ უკვე დამატებულ რიგს
+
+                row.Cells["Select"].Value = false;
+                row.Cells["Id"].Value = student.Id;
+                row.Cells["GroupId"].Value = resolvedGroupId;
+                row.Cells["FirstName"].Value = student.FirstName ?? "";
+                row.Cells["LastName"].Value = student.LastName ?? "";
+                row.Cells["GroupName"].Value = student.GroupName ?? "";
+                row.Cells["Age"].Value = student.Age;
+                row.Cells["ParentName"].Value = student.ParentName ?? "";
+                row.Cells["PhoneNumber"].Value = student.PhoneNumber ?? "";
+                row.Cells["Id_Numb"].Value = student.Id_Numb;
+                row.Cells["Address"].Value = student.Address ?? "";
+                row.Cells["StudentCode"].Value = student.StudentCode ?? "";
+                row.Cells["RegistrationDate"].Value = student.RegistrationDate != default(DateTime) ? student.RegistrationDate.ToString("yyyy-MM-dd") : "";
+                row.Cells["DateOfPayment"].Value = student.DateOfPayment.HasValue ? student.DateOfPayment.Value.ToString("yyyy-MM-dd") : "";
+                row.Cells["TuitionFee"].Value = student.TuitionFee;
+                row.Cells["Discount"].Value = student.Discount;
+                row.Cells["PaymentStatus"].Value = student.PaymentStatus ?? "";
+                row.Cells["Status"].Value = student.Status ? "Active" : "Inactive";
+                row.Cells["Balance"].Value = student.Balance;
+                row.Cells["UpdatedAt"].Value = student.UpdatedAt != default(DateTime) ? student.UpdatedAt.ToString("yyyy-MM-dd HH:mm") : "";
+
+                // რიგი უკვე დამატებულია dgvStudents.Rows.Add()-ით ხაზ 524-ზე, ამიტომ აღარ გვჭირდება მისი დამატება
             }
 
             // აღვადგენთ მონიშნული სტუდენტების სტატუსს
@@ -362,7 +601,7 @@ namespace BCCStudents.Presentation
 
             dgvStudents.Refresh();
         }
-        
+
         private void FieldStatusAsStudent(bool status)
         {
             if (status)
@@ -412,7 +651,7 @@ namespace BCCStudents.Presentation
         private void LoadStudentSubGroupsToGrid(Student student)
         {
             isProgrammaticSubGroupCheck = true; // პროგრამული ცვლილების ფლაგი
-            
+
             var studentGroups = student.StudentGroupsList?.OrderBy(sg => sg.GroupId).ToList(); // ID-ის მიხედვით ზრდადობით დალაგება
             var allSubGroups = _subGroupService.GetAllSubGroups();
 
@@ -444,7 +683,7 @@ namespace BCCStudents.Presentation
                     subGroupCell.Value = selectedSubGroupId;
                 }
             }
-            
+
             isProgrammaticSubGroupCheck = false; // ფლაგის განულება
         }
 
@@ -455,12 +694,12 @@ namespace BCCStudents.Presentation
         private int studentId = 0;  // არჩეული მოსწავლის ID
         private int groupId = 0;    // არჩეული მოსწავლის ჯგუფის ID
         private bool isLoadingData = false; // პროგრამული მონაცემების ჩატვირთვის ფლაგი
-        
+
         private void TextBox_TextChanged(object sender, EventArgs e)
         {
             // პროგრამული ჩატვირთვისას არ ჩაითვალოს ცვლილებად
             if (isLoadingData) return;
-            
+
             if (!hasChanges) hasChanges = true;
             ((TextBox)sender).BackColor = Color.LightYellow; // ვიზუალურად ცვლილების ჩვენება
         }
@@ -472,6 +711,13 @@ namespace BCCStudents.Presentation
         /// <param name="e"></param>
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanManageStudents))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             // 1. ვალიდაცია - არის თუ არა არჩეული მოსწავლე
             if (originalStudentData == null || studentId <= 0)
             {
@@ -581,7 +827,7 @@ namespace BCCStudents.Presentation
             // თუ არის შეცვლილი ველები - განახლება
             if (changedFields.Count > 0)
             {
-                _studentSvc.UpdateStudentFields(studentId, changedFields);
+                _studentService.UpdateStudentFields(studentId, changedFields);
             }
         }
 
@@ -603,7 +849,7 @@ namespace BCCStudents.Presentation
 
             // ახალი ჯგუფები (დაემატა)
             var addedGroupIds = currentCheckedGroupIds.Except(originalCheckedGroupIds).ToList();
-            
+
             // წაშლილი ჯგუფები (ამოიღეს)
             var removedGroupIds = originalCheckedGroupIds.Except(currentCheckedGroupIds).ToList();
 
@@ -630,14 +876,14 @@ namespace BCCStudents.Presentation
             if (group == null) return;
 
             // StudentGroups-ში დამატება
-            _studentSvc.AddStudentToGroup(studId, grpId, true, null, "Pending", group.Price, 0);
+            _studentService.AddStudentToGroup(studId, grpId, true, null, "Pending", group.Price, 0);
 
             // პირველი ქვეჯგუფის მიღება და StudentSubGroups-ში დამატება
             var subGroups = _subGroupService.GetSubGroupsByGroupId(grpId);
             if (subGroups != null && subGroups.Any())
             {
                 var firstSubGroup = subGroups.First();
-                _studentSvc.AddStudentToSubGroup(studId, grpId, firstSubGroup.Id, "Pending", null, firstSubGroup.TuitionFee, 0, true);
+                _studentService.AddStudentToSubGroup(studId, grpId, firstSubGroup.Id, "Pending", null, firstSubGroup.TuitionFee, 0, true);
             }
 
             // Groups.StudentCount გაზრდა (AddStudentToGroup მეთოდში უკვე ხდება)
@@ -653,7 +899,7 @@ namespace BCCStudents.Presentation
             // - StudentSubGroups.Status = 0
             // - Groups.StudentCount--
             // - SubGroups.StudentCount--
-            _studentSvc.RemoveStudentFromGroup(studId, grpId);
+            _studentService.RemoveStudentFromGroup(studId, grpId);
         }
 
         /// <summary>
@@ -689,7 +935,7 @@ namespace BCCStudents.Presentation
                     var subGroup = _subGroupService.GetSubGroupById(newSubGroupId);
                     if (subGroup != null)
                     {
-                        _studentSvc.AddStudentToSubGroup(studentId, rowGroupId, newSubGroupId, "Pending", null, subGroup.TuitionFee, 0, true);
+                        _studentService.AddStudentToSubGroup(studentId, rowGroupId, newSubGroupId, "Pending", null, subGroup.TuitionFee, 0, true);
                     }
                 }
             }
@@ -712,11 +958,11 @@ namespace BCCStudents.Presentation
         private void SaveStatusChange()
         {
             bool newStatus = chkBoxStatus.Checked;
-            
+
             // მხოლოდ მიმდინარე ჯგუფის სტატუსის შეცვლა
             if (groupId > 0)
             {
-                _studentSvc.UpdateStudentStatus(studentId, groupId, newStatus);
+                _studentGroupsService.UpdateStudentStatus(studentId, groupId, newStatus);
             }
         }
 
@@ -726,7 +972,7 @@ namespace BCCStudents.Presentation
         private void RefreshAfterSave()
         {
             isLoadingData = true; // პროგრამული ჩატვირთვის დაწყება
-            
+
             try
             {
                 // 1. DataGridView-ის განახლება
@@ -734,12 +980,12 @@ namespace BCCStudents.Presentation
                 RefreshDataGridView(updatedStudents);
 
                 // 2. მოსწავლის მონაცემების ხელახლა ჩატვირთვა
-                var refreshedStudent = _studentSvc.GetStudentDetailsById(studentId, groupId);
+                var refreshedStudent = _studentService.GetStudentDetailsById(studentId, groupId);
                 if (refreshedStudent != null)
                 {
-                    refreshedStudent.StudentGroupsList = _groupService.GetStudentGroupsByStudentId(studentId);
+                    refreshedStudent.StudentGroupsList = _studentGroupsService.GetActiveByStudentId(studentId);
                     refreshedStudent.StudentSubGroupsList = _subGroupService.GetAllSubGroups();
-                    
+
                     // 3. originalStudentData-ს განახლება
                     originalStudentData = refreshedStudent;
 
@@ -802,10 +1048,10 @@ namespace BCCStudents.Presentation
             DialogResult result = MessageBox.Show("Are you sure you want to discard changes?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result == DialogResult.Yes)
             {
-                if (dgvStudents.CurrentCell != null)
+                /*if (dgvStudents.CurrentCell != null)
                 {
                     dgvStudents_CellDoubleClick(null, new DataGridViewCellEventArgs(dgvStudents.CurrentCell.ColumnIndex, dgvStudents.CurrentCell.RowIndex));
-                }
+                }*/
                 hasChanges = false;
                 statusChanged = false;
                 subGroupsChanged = false;
@@ -852,15 +1098,6 @@ namespace BCCStudents.Presentation
         }
 
         /// <summary>
-        /// DataGridView-ზე ორმაგი დაკლიკება - მოსწავლის არჩევა
-        /// </summary>
-        private void dgvStudents_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0) return;
-            LoadSelectedStudentData(e.RowIndex);
-        }
-
-        /// <summary>
         /// Select checkbox-ზე დაკლიკების დამუშავება
         /// </summary>
         private void HandleSelectCheckboxClick(int rowIndex)
@@ -868,7 +1105,7 @@ namespace BCCStudents.Presentation
             var row = dgvStudents.Rows[rowIndex];
             int studId = Convert.ToInt32(row.Cells["Id"].Value);
             int grpId = Convert.ToInt32(row.Cells["GroupId"].Value);
-            
+
             // მიმდინარე მნიშვნელობის ინვერსია
             bool currentValue = row.Cells["Select"].Value != null && (bool)row.Cells["Select"].Value;
             bool newValue = !currentValue;
@@ -917,13 +1154,13 @@ namespace BCCStudents.Presentation
             // 3. არჩეული მოსწავლის ID-ების მიღება
             var row = dgvStudents.Rows[rowIndex];
             studentId = Convert.ToInt32(row.Cells["Id"].Value);
-            
+
             // GroupId შეიძლება იყოს NULL თუ მოსწავლე რამდენიმე ჯგუფშია (GROUP_CONCAT გამოყენებისას)
             var groupIdValue = row.Cells["GroupId"].Value;
             groupId = (groupIdValue == null || groupIdValue == DBNull.Value) ? 0 : Convert.ToInt32(groupIdValue);
 
             // 4. მოსწავლის სრული მონაცემების ჩატვირთვა
-            var student = _studentSvc.GetStudentDetailsById(studentId, groupId);
+            var student = _studentService.GetStudentDetailsById(studentId, groupId);
             if (student == null)
             {
                 MessageBox.Show("მოსწავლის მონაცემები ვერ მოიძებნა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -932,7 +1169,7 @@ namespace BCCStudents.Presentation
             }
 
             // 5. StudentGroups და SubGroups ჩატვირთვა
-            student.StudentGroupsList = _groupService.GetStudentGroupsByStudentId(studentId);
+            student.StudentGroupsList = _studentGroupsService.GetActiveByStudentId(studentId);
             student.StudentSubGroupsList = _subGroupService.GetAllSubGroups();
 
             // 6. originalStudentData-ს შენახვა (ცვლილებების შესადარებლად)
@@ -982,7 +1219,7 @@ namespace BCCStudents.Presentation
         private void ClearStudentForm()
         {
             isLoadingData = true; // პროგრამული ცვლილებების ფლაგი
-            
+
             try
             {
                 studentId = 0;
@@ -1030,7 +1267,7 @@ namespace BCCStudents.Presentation
         private void PopulateStudentFields(Student student)
         {
             isLoadingData = true; // პროგრამული ჩატვირთვის დაწყება
-            
+
             try
             {
                 txtFirstName.Text = student.FirstName ?? string.Empty;
@@ -1103,60 +1340,73 @@ namespace BCCStudents.Presentation
 
             isProgrammaticCheck = false;
         }
-        
+
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            SearchStudents();
+            // გამოიძახე ApplyFiltersAsync რომელიც გაითვალისწინებს ყველა ფილტრს
+            _ = ApplyFiltersAsync();
         }
-        private void SearchStudents()
+
+        /// <summary>
+        /// CheckBox-ის event handler - განაახლებს სტუდენტების სიას
+        /// </summary>
+        private void ChkstudentsToGroups_CheckedChanged(object sender, EventArgs e)
         {
-            string searchText = txtSearch.Text.Trim();
-            List<Student> results = new List<Student>();
-            int selectedGroupId = cbGroups.SelectedValue != null ? Convert.ToInt32(cbGroups.SelectedValue) : -1;
-            if (string.IsNullOrWhiteSpace(searchText))
+            // გამოიძახე ApplyFiltersAsync რომელიც გაითვალისწინებს ყველა ფილტრს
+            _ = ApplyFiltersAsync();
+        }
+
+        /// <summary>
+        /// ფილტრაცია: დაბრუნება მხოლოდ ის სტუდენტების, რომლებიც 1-ზე მეტ ჯგუფში არიან
+        /// </summary>
+        private List<Student> FilterStudentsInMultipleGroups(List<Student> students)
+        {
+            if (students == null || !students.Any())
+                return new List<Student>();
+
+            var filteredStudents = new List<Student>();
+            var checkedStudentIds = new HashSet<int>();
+
+            foreach (var student in students)
             {
-                dgvStudents.DataSource = null;
-                return;
+                // თუ უკვე შევამოწმეთ ეს სტუდენტი, გამოვტოვოთ (დუბლიკატების თავიდან ასაცილებლად)
+                if (checkedStudentIds.Contains(student.Id))
+                    continue;
+
+                // მივიღოთ სტუდენტის ჯგუფების სია
+                var studentGroups = _studentGroupsService.GetActiveByStudentId(student.Id);
+
+                // თუ სტუდენტი 1-ზე მეტ ჯგუფშია, დავამატოთ შედეგებში
+                if (studentGroups != null && studentGroups.Count > 1)
+                {
+                    checkedStudentIds.Add(student.Id);
+
+                    // დავამატოთ სტუდენტი ყველა ჯგუფისთვის (თითოეული ჯგუფისთვის ცალ-ცალკე row)
+                    foreach (var sg in studentGroups)
+                    {
+                        var studentCopy = new Student
+                        {
+                            Id = student.Id,
+                            FirstName = student.FirstName,
+                            LastName = student.LastName,
+                            Age = student.Age,
+                            ParentName = student.ParentName,
+                            PhoneNumber = student.PhoneNumber,
+                            Id_Numb = student.Id_Numb,
+                            Address = student.Address,
+                            RegistrationDate = student.RegistrationDate,
+                            StudentCode = student.StudentCode,
+                            GroupId = sg.GroupId,
+                            GroupName = _groupService.GetGroupName(sg.GroupId),
+                            Status = student.Status,
+                            Balance = student.Balance
+                        };
+                        filteredStudents.Add(studentCopy);
+                    }
+                }
             }
 
-            if (rbByName.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("FirstName", searchText) : _studentService.SearchStudents("FirstName", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-            else if (rbByLastName.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("LastName", searchText) : _studentService.SearchStudents("LastName", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-                //results = _studentService.SearchByLastName(searchText);
-            }
-            else if (rbByParent.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("ParentName", searchText) : _studentService.SearchStudents("ParentName", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-            else if (rbByAge.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("Age", searchText) : _studentService.SearchStudents("Age", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-            else if (rbByIdNumber.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("Id_Numb", searchText) : _studentService.SearchStudents("Id_Numb", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-            else if (rbByAddress.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("Address", searchText) : _studentService.SearchStudents("Address", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-            else if (rbByStCode.Checked)
-            {
-                results = selectedGroupId == 0 ? _studentService.SearchStudents("StudentCode", searchText) : _studentService.SearchStudents("StudentCode", searchText, selectedGroupId);
-                RefreshDataGridView(results);
-            }
-
-            RefreshDataGridView(results);
+            return filteredStudents;
         }
 
         private void chlGroups_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -1175,9 +1425,12 @@ namespace BCCStudents.Presentation
             {
                 newCheckedIds.Remove(group.Id);
             }
-            
+
             groupsChanged = !newCheckedIds.SetEquals(originalCheckedGroupIds);
             chlGroups.BackColor = groupsChanged ? Color.LightYellow : SystemColors.Window;
+
+            // chlGroups გამოიყენება მხოლოდ მოსწავლის რედაქტირებისთვის, არა ფილტრაციისთვის
+            // ამიტომ აქ არ ვიძახებთ ApplyFiltersAsync-ს
         }
 
         private void chkBoxStatus_CheckedChanged(object sender, EventArgs e)
@@ -1188,21 +1441,163 @@ namespace BCCStudents.Presentation
 
         private void btnStudentActivation_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanManageStudents))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (_studentService.UpdateStudentStatus(studentId, groupId, true))
             {
-                txtFirstName.Enabled = true;
-                txtLastName.Enabled = true;
-                txtParent.Enabled = true;
-                txtAge.Enabled = true;
-                txtPhone.Enabled = true;
-                txtPersonalId.Enabled = true;
-                txtAddress.Enabled = true;
-                txtRegistrationDate.Enabled = true;
-                txtPaymentDate.Enabled = true;
-                txtStatus.Enabled = true;
-                txtPaymentStatus.Enabled = true;
+                SetFieldsReadOnly(false);
                 _backupManager.DbChangedSinceLastBackup = true;
+            }
+        }
 
+        /// <summary>
+        /// ველების read-only მდგომარეობის დაყენება
+        /// </summary>
+        private void SetFieldsReadOnly(bool readOnly)
+        {
+            txtFirstName.Enabled = !readOnly;
+            txtLastName.Enabled = !readOnly;
+            txtParent.Enabled = !readOnly;
+            txtAge.Enabled = !readOnly;
+            txtPhone.Enabled = !readOnly;
+            txtPersonalId.Enabled = !readOnly;
+            txtAddress.Enabled = !readOnly;
+            txtRegistrationDate.Enabled = !readOnly;
+            txtPaymentDate.Enabled = !readOnly;
+            txtStatus.Enabled = !readOnly;
+            txtPaymentStatus.Enabled = !readOnly;
+        }
+
+        private void dgvStudents_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Header-ზე დაკლიკება - იგნორირება
+            if (e.RowIndex < 0) return;
+
+            // 1. Select სვეტზე დაკლიკება (Checkbox)
+            // აქ ჯობია ისევ CellContentClick-ის მსგავსი ლოგიკა, ან პირდაპირ შემოწმება
+            if (e.ColumnIndex == dgvStudents.Columns["Select"]?.Index)
+            {
+                //HandleSelectCheckboxClick(e.RowIndex);
+                // მნიშვნელოვანია: Checkbox-ის შემთხვევაში ხშირად გვჭირდება 
+                // EndEdit(), რომ ცვლილება მომენტალურად აისახოს
+                dgvStudents.EndEdit();
+                return;
+            }
+
+            // 2. ნებისმიერ სხვა უჯრაზე დაკლიკება - მოსწავლის არჩევა
+            LoadSelectedStudentData(e.RowIndex);
+        }
+
+        /// <summary>
+        /// სვეტების კონფიგურაციის ჩატვირთვა SettingsHelper-იდან
+        /// </summary>
+        private void LoadColumnSettings()
+        {
+            string formName = this.Name;
+            string dgvName = "dgvStudents"; // DataGridView-ის სახელი
+
+            // სვეტების ხილულობის ჩატვირთვა
+            columnVisibility = SettingsHelper.LoadColumnVisibility(
+                formName,
+                dgvName,
+                GetDefaultColumnVisibility()
+            );
+
+            // სვეტების ზომების ჩატვირთვა
+            columnWidths = SettingsHelper.LoadColumnWidths(
+                formName,
+                dgvName,
+                new Dictionary<string, int>()
+            );
+        }
+
+        /// <summary>
+        /// ნაგულისხმევი სვეტების ხილულობის კონფიგურაცია
+        /// </summary>
+        private Dictionary<string, bool> GetDefaultColumnVisibility()
+        {
+            return new Dictionary<string, bool>
+            {
+                { "Select", true },        // Checkbox - ყოველთვის ჩანს
+                { "Id", false },           // ID - ყოველთვის ფარული (არ ჩანს)
+                { "GroupId", false },      // GroupId - ყოველთვის ფარული (არ ჩანს)
+                { "FirstName", true },     // First Name - ნაგულისხმევად ჩანს
+                { "LastName", true },      // Last Name - ნაგულისხმევად ჩანს
+                { "GroupName", true },     // Group - ნაგულისხმევად ჩანს
+                { "Age", false },          // ასაკი
+                { "ParentName", false },   // მშობლის სახელი
+                { "PhoneNumber", false },  // ტელეფონი
+                { "Id_Numb", false },      // პირადი ნომერი
+                { "Address", false },      // მისამართი
+                { "StudentCode", false },  // სტუდენტის კოდი
+                { "RegistrationDate", false }, // რეგისტრაციის თარიღი
+                { "DateOfPayment", false },    // გადახდის თარიღი
+                { "TuitionFee", false },       // გადასახადი
+                { "Discount", false },         // ფასდაკლება
+                { "PaymentStatus", false },    // გადახდის სტატუსი
+                { "Status", false },           // სტატუსი
+                { "Balance", false },          // ბალანსი
+                { "UpdatedAt", false }         // განახლების თარიღი
+            };
+        }
+
+        /// <summary>
+        /// სვეტების კონფიგურაციის შენახვა SettingsHelper-ში
+        /// </summary>
+        private void SaveColumnSettings()
+        {
+            string formName = this.Name;
+            string dgvName = "dgvStudents"; // DataGridView-ის სახელი
+
+            // სვეტების ხილულობის შენახვა
+            SettingsHelper.SaveColumnVisibility(formName, dgvName, columnVisibility);
+
+            // სვეტების ზომების შენახვა
+            if (columnWidths != null && columnWidths.Count > 0)
+            {
+                SettingsHelper.SaveColumnWidths(formName, dgvName, columnWidths);
+            }
+        }
+
+        /// <summary>
+        /// DataGridView სვეტების ზომის ცვლილების დამუშავება
+        /// </summary>
+        private void DgvStudents_ColumnWidthChanged(object sender, DataGridViewColumnEventArgs e)
+        {
+            if (columnWidths == null)
+            {
+                columnWidths = new Dictionary<string, int>();
+            }
+
+            columnWidths[e.Column.Name] = e.Column.Width;
+
+            // შენახვა (debounce - შეიძლება დავამატოთ Timer თუ ხშირად იცვლება)
+            SaveColumnSettings();
+        }
+
+        /// <summary>
+        /// სვეტების მართვის დიალოგის გახსნა
+        /// </summary>
+        private void ManageColumns_Click(object sender, EventArgs e)
+        {
+            using (var dialog = new ColumnManagementDialog(columnVisibility))
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK && dialog.ResultColumnVisibility != null)
+                {
+                    // columnVisibility-ის განახლება
+                    columnVisibility = dialog.ResultColumnVisibility;
+
+                    // კონფიგურაციის შენახვა
+                    SaveColumnSettings();
+
+                    // DataGridView-ის განახლება - ApplyFiltersAsync-ის გამოძახებით, რათა შენარჩუნდეს მიმდინარე ფილტრები
+                    _ = ApplyFiltersAsync();
+                }
             }
         }
     }

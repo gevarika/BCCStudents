@@ -1,14 +1,9 @@
-﻿using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using BCCStudents.Domain.Interfaces;
 
-using BCCStudents.Application.Interfaces;
-
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class CleanupService : ICleanupService
     {
         private readonly ICleanupRepository _cleanupRepository;

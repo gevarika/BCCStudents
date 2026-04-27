@@ -1,36 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
-using BCCStudents.Infrastructure.Data;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     /// <summary>
-    /// áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¢áƒ áƒ”áƒ™áƒ˜áƒœáƒ’áƒ˜áƒ¡ áƒ áƒ”áƒžáƒáƒ–áƒ˜áƒ¢áƒáƒ áƒ˜áƒ˜áƒ¡ áƒ˜áƒ›áƒžáƒšáƒ”áƒ›áƒ”áƒœáƒ¢áƒáƒªáƒ˜áƒ
-    /// áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡ áƒ¡áƒ”áƒ áƒ•áƒ”áƒ áƒ˜áƒ¡ áƒ‘áƒáƒ–áƒáƒ¡áƒ—áƒáƒœ
+    /// ფაილების ტრეკინგის რეპოზიტორიის იმპლემენტაცია
+    /// მუშაობს სერვერის ბაზასთან
     /// </summary>
     public class FileTrackingRepository : IFileTrackingRepository
     {
-        private readonly DatabaseHelper _dbHelper;
+        private readonly IDatabaseConnectionProvider _connectionProvider;
 
-        public FileTrackingRepository(DatabaseHelper dbHelper)
+        public FileTrackingRepository(IDatabaseConnectionProvider connectionProvider)
         {
-            _dbHelper = dbHelper;
+            _connectionProvider = connectionProvider;
         }
 
         /// <summary>
-        /// áƒ¨áƒ”áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ¡ áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ£áƒ™áƒ•áƒ” áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ hash-áƒ˜áƒ¡ áƒ›áƒ˜áƒ®áƒ”áƒ“áƒ•áƒ˜áƒ—
+        /// შეამოწმებს არის თუ არა ფაილი უკვე იმპორტირებული hash-ის მიხედვით
         /// </summary>
         public async Task<bool> IsFileAlreadyImportedAsync(string fileHash)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync();
-                
+
                 var query = @"SELECT COUNT(*) FROM ImportedFilesLog WHERE FileHash = @fileHash";
                 using (var cmd = new MySqlCommand(query, connection))
                 {
@@ -42,18 +38,18 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒš áƒ¤áƒáƒ˜áƒšáƒ¡
+        /// ლოგირებს იმპორტირებულ ფაილს
         /// </summary>
         public async Task LogImportedFileAsync(ImportedFileInfo fileInfo)
         {
-            using (var connection = _dbHelper.GetLocalConnection())
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync();
-                
+
                 var query = @"INSERT INTO ImportedFilesLog 
                             (FilePath, FileName, FileHash, FileSize, ImportedAt, ImportedBy, ComputerName) 
                             VALUES (@filePath, @fileName, @fileHash, @fileSize, @importedAt, @importedBy, @computerName)";
-                
+
                 using (var cmd = new MySqlCommand(query, connection))
                 {
                     cmd.Parameters.AddWithValue("@filePath", fileInfo.FilePath);
@@ -63,27 +59,27 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@importedAt", fileInfo.ImportedAt);
                     cmd.Parameters.AddWithValue("@importedBy", fileInfo.ImportedBy);
                     cmd.Parameters.AddWithValue("@computerName", fileInfo.ComputerName);
-                    
+
                     await cmd.ExecuteNonQueryAsync();
                 }
             }
         }
 
         /// <summary>
-        /// áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒáƒ¡
+        /// აბრუნებს იმპორტირებული ფაილების სიას
         /// </summary>
         public async Task<List<ImportedFileInfo>> GetImportedFilesAsync()
         {
             var files = new List<ImportedFileInfo>();
-            
-            using (var connection = _dbHelper.GetLocalConnection())
+
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync();
-                
+
                 var query = @"SELECT FilePath, FileName, FileHash, FileSize, ImportedAt, ImportedBy, ComputerName 
                             FROM ImportedFilesLog 
                             ORDER BY ImportedAt DESC";
-                
+
                 using (var cmd = new MySqlCommand(query, connection))
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
@@ -102,30 +98,30 @@ namespace BCCStudents.Infrastructure.Repositories
                     }
                 }
             }
-            
+
             return files;
         }
 
         /// <summary>
-        /// áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ¡ áƒ™áƒáƒœáƒ™áƒ áƒ”áƒ¢áƒ£áƒšáƒ˜ áƒ™áƒáƒ›áƒžáƒ˜áƒ£áƒ¢áƒ”áƒ áƒ˜áƒ¡ áƒ˜áƒ›áƒžáƒáƒ áƒ¢áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ¡áƒ˜áƒáƒ¡
+        /// აბრუნებს კონკრეტული კომპიუტერის იმპორტირებული ფაილების სიას
         /// </summary>
         public async Task<List<ImportedFileInfo>> GetImportedFilesByComputerAsync(string computerName)
         {
             var files = new List<ImportedFileInfo>();
-            
-            using (var connection = _dbHelper.GetLocalConnection())
+
+            using (var connection = _connectionProvider.GetLocalConnection())
             {
                 await connection.OpenAsync();
-                
+
                 var query = @"SELECT FilePath, FileName, FileHash, FileSize, ImportedAt, ImportedBy, ComputerName 
                             FROM ImportedFilesLog 
                             WHERE ComputerName = @computerName
                             ORDER BY ImportedAt DESC";
-                
+
                 using (var cmd = new MySqlCommand(query, connection))
                 {
                     cmd.Parameters.AddWithValue("@computerName", computerName);
-                    
+
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
@@ -144,7 +140,7 @@ namespace BCCStudents.Infrastructure.Repositories
                     }
                 }
             }
-            
+
             return files;
         }
     }

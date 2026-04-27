@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Domain.Interfaces
 {

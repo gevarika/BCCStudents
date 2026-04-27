@@ -1,75 +1,70 @@
-﻿using System;
-using System.Configuration;
-using System.IO;
-using System.Windows.Forms;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Domain.Interfaces;
+﻿using System.Configuration;
 
 namespace BCCStudents.Application.Services.AutoFileDetection
 {
     /// <summary>
-    /// áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒáƒ¦áƒ›áƒáƒ©áƒ”áƒœáƒ˜áƒ¡ áƒ™áƒáƒœáƒ¤áƒ˜áƒ’áƒ£áƒ áƒáƒªáƒ˜áƒ
+    /// ავტომატური ფაილის აღმოჩენის კონფიგურაცია
     /// </summary>
     public class AutoFileDetectionConfig
     {
         /// <summary>
-        /// áƒ¡áƒáƒ¥áƒáƒ¦áƒáƒšáƒ“áƒ˜áƒ¡ áƒ’áƒ–áƒ áƒ¡áƒáƒ“áƒáƒª áƒ›áƒáƒœáƒ˜áƒ¢áƒáƒ áƒ”áƒ‘áƒ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜
+        /// საქაღალდის გზა, სადაც მონიტორება ფაილები
         /// </summary>
         public string WatchFolderPath { get; set; } = Path.Combine(System.Windows.Forms.Application.StartupPath, "Students");
 
         /// <summary>
-        /// áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¡áƒáƒ®áƒ”áƒšáƒ˜áƒ¡ áƒœáƒ˜áƒ›áƒ£áƒ¨áƒ˜ (áƒ›áƒáƒ’: *.xlsx, payments*.xls)
+        /// ფაილის სახელის ნიმუში (მაგ: *.xlsx, payments*.xls)
         /// </summary>
         public string FileNamePattern { get; set; } = "*.xlsx";
 
         /// <summary>
-        /// áƒ›áƒ®áƒáƒ áƒ“áƒáƒ­áƒ”áƒ áƒ˜áƒšáƒ˜ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒáƒ¤áƒáƒ áƒ—áƒáƒ”áƒ‘áƒ”áƒ‘áƒ˜
+        /// მხარდაჭერილი ფაილის გაფართოებები
         /// </summary>
         public string[] SupportedExtensions { get; set; } = { ".xlsx", ".xls" };
 
         /// <summary>
-        /// áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ¢áƒ”áƒ áƒ•áƒáƒšáƒ˜ áƒ¬áƒ£áƒ—áƒ”áƒ‘áƒ¨áƒ˜
+        /// შემოწმების ინტერვალი წუთებში
         /// </summary>
         public int CheckIntervalMinutes { get; set; } = 5;
 
         /// <summary>
-        /// áƒ¤áƒ£áƒœáƒ¥áƒªáƒ˜áƒ˜áƒ¡ áƒ©áƒáƒ áƒ—áƒ•áƒ/áƒ’áƒáƒ›áƒáƒ áƒ—áƒ•áƒ
+        /// ფუნქციის ჩართვა/გამორთვა
         /// </summary>
         public bool Enabled { get; set; } = true;
 
         /// <summary>
-        /// áƒáƒ•áƒ¢áƒáƒ›áƒáƒ¢áƒ£áƒ áƒ˜ áƒ¨áƒ”áƒ¢áƒ§áƒáƒ‘áƒ˜áƒœáƒ”áƒ‘áƒ”áƒ‘áƒ˜áƒ¡ áƒ©áƒáƒ áƒ—áƒ•áƒ/áƒ’áƒáƒ›áƒáƒ áƒ—áƒ•áƒ
+        /// ავტომატური შეტყობინებების ჩართვა/გამორთვა
         /// </summary>
         public bool ShowNotifications { get; set; } = true;
 
         /// <summary>
-        /// áƒ›áƒáƒ¥áƒ¡áƒ˜áƒ›áƒáƒšáƒ£áƒ áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ áƒáƒáƒ“áƒ”áƒœáƒáƒ‘áƒ áƒ”áƒ áƒ—áƒ“áƒ áƒáƒ£áƒšáƒáƒ“ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ˜áƒ¡áƒáƒ¡
+        /// მაქსიმალური ფაილების რაოდენობა ერთდროულად შემოწმებისას
         /// </summary>
         public int MaxFilesToCheck { get; set; } = 50;
 
         /// <summary>
-        /// áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ›áƒáƒ¥áƒ¡áƒ˜áƒ›áƒáƒšáƒ£áƒ áƒ˜ áƒ–áƒáƒ›áƒ MB-áƒ¨áƒ˜
+        /// ფაილის მაქსიმალური ზომა MB-ში
         /// </summary>
         public long MaxFileSizeMB { get; set; } = 100;
 
         /// <summary>
-        /// áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ›áƒáƒ¥áƒ¡áƒ˜áƒ›áƒáƒšáƒ£áƒ áƒ˜ áƒ–áƒáƒ›áƒ áƒ‘áƒáƒ˜áƒ¢áƒ”áƒ‘áƒ¨áƒ˜
+        /// ფაილის მაქსიმალური ზომა ბაიტებში
         /// </summary>
         public long MaxFileSizeBytes => MaxFileSizeMB * 1024 * 1024;
 
         /// <summary>
-        /// áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒœáƒ”
+        /// ლოგირების დონე
         /// </summary>
         public LogLevel LogLevel { get; set; } = LogLevel.Info;
 
         /// <summary>
-        /// áƒ™áƒáƒœáƒ¤áƒ˜áƒ’áƒ£áƒ áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ app.config-áƒ˜áƒ“áƒáƒœ
+        /// კონფიგურაციის ჩატვირთვა app.config-იდან
         /// </summary>
         public static AutoFileDetectionConfig LoadFromConfig()
         {
             return new AutoFileDetectionConfig
             {
-                WatchFolderPath = ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"] 
+                WatchFolderPath = ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"]
                     ?? Path.Combine(System.Windows.Forms.Application.StartupPath, "Students"),
                 FileNamePattern = ConfigurationManager.AppSettings["AutoFileDetection.FileNamePattern"] ?? "*.xlsx",
                 CheckIntervalMinutes = int.Parse(ConfigurationManager.AppSettings["AutoFileDetection.CheckIntervalMinutes"] ?? "5"),
@@ -77,18 +72,18 @@ namespace BCCStudents.Application.Services.AutoFileDetection
                 ShowNotifications = bool.Parse(ConfigurationManager.AppSettings["AutoFileDetection.ShowNotifications"] ?? "true"),
                 MaxFilesToCheck = int.Parse(ConfigurationManager.AppSettings["AutoFileDetection.MaxFilesToCheck"] ?? "50"),
                 MaxFileSizeMB = long.Parse(ConfigurationManager.AppSettings["AutoFileDetection.MaxFileSizeMB"] ?? "100"),
-                LogLevel = Enum.TryParse<LogLevel>(ConfigurationManager.AppSettings["AutoFileDetection.LogLevel"], out var level) 
+                LogLevel = Enum.TryParse<LogLevel>(ConfigurationManager.AppSettings["AutoFileDetection.LogLevel"], out var level)
                     ? level : LogLevel.Info
             };
         }
 
         /// <summary>
-        /// áƒ™áƒáƒœáƒ¤áƒ˜áƒ’áƒ£áƒ áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ¨áƒ”áƒœáƒáƒ®áƒ•áƒ app.config-áƒ¨áƒ˜
+        /// კონფიგურაციის შენახვა app.config-ში
         /// </summary>
         public void SaveToConfig()
         {
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            
+
             config.AppSettings.Settings["AutoFileDetection.WatchFolderPath"].Value = WatchFolderPath;
             config.AppSettings.Settings["AutoFileDetection.FileNamePattern"].Value = FileNamePattern;
             config.AppSettings.Settings["AutoFileDetection.CheckIntervalMinutes"].Value = CheckIntervalMinutes.ToString();
@@ -97,14 +92,14 @@ namespace BCCStudents.Application.Services.AutoFileDetection
             config.AppSettings.Settings["AutoFileDetection.MaxFilesToCheck"].Value = MaxFilesToCheck.ToString();
             config.AppSettings.Settings["AutoFileDetection.MaxFileSizeMB"].Value = MaxFileSizeMB.ToString();
             config.AppSettings.Settings["AutoFileDetection.LogLevel"].Value = LogLevel.ToString();
-            
+
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
         }
     }
 
     /// <summary>
-    /// áƒšáƒáƒ’áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒœáƒ”
+    /// ლოგირების დონე
     /// </summary>
     public enum LogLevel
     {

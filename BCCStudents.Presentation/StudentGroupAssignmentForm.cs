@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 
 namespace BCCStudents.Presentation
 {
@@ -22,20 +17,20 @@ namespace BCCStudents.Presentation
             InitializeComponent();
             this.student = student;
             this.availableGroups = groups;
-            
+
             InitializeForm();
         }
 
         private void InitializeForm()
         {
-            this.Text = "áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ˜áƒ¡ áƒ¯áƒ’áƒ£áƒ¤áƒ—áƒáƒœ áƒ“áƒáƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ”áƒ‘áƒ";
+            this.Text = "მოსწავლის ჯგუფთან დაკავშირება";
             this.Size = new Size(500, 400);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // áƒ›áƒ—áƒáƒ•áƒáƒ áƒ˜ áƒžáƒáƒœáƒ”áƒšáƒ˜
+            // მთავარი პანელი
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -44,27 +39,27 @@ namespace BCCStudents.Presentation
                 Padding = new Padding(10)
             };
 
-            // áƒ¡áƒáƒ—áƒáƒ£áƒ áƒ˜
+            // სათაური
             var lblTitle = new Label
             {
-                Text = $"áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ” '{student.FirstName} {student.LastName}' áƒáƒ  áƒáƒ áƒ˜áƒ¡ áƒ“áƒáƒ™áƒáƒ•áƒ¨áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒáƒ áƒªáƒ”áƒ áƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ—áƒáƒœ.",
+                Text = $"მოსწავლე '{student.FirstName} {student.LastName}' არ არის დაკავშირებული არც ერთ ჯგუფთან.",
                 Font = new Font("Sylfaen", 12, FontStyle.Bold),
                 Dock = DockStyle.Top,
                 Height = 40,
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            // áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ•áƒ˜áƒ¡ áƒšáƒ”áƒ˜áƒ‘áƒšáƒ˜
+            // ჯგუფის არჩევის ლეიბლი
             var lblGroupSelection = new Label
             {
-                Text = "áƒáƒ˜áƒ áƒ©áƒ˜áƒ”áƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ˜ áƒ áƒáƒ›áƒ”áƒšáƒ¨áƒ˜áƒª áƒ“áƒáƒ”áƒ›áƒáƒ¢áƒ”áƒ‘áƒ áƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”:",
+                Text = "აირჩიეთ ჯგუფი, რომელშიც დაემატება მოსწავლე:",
                 Font = new Font("Sylfaen", 10, FontStyle.Bold),
                 Dock = DockStyle.Top,
                 Height = 25,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            // áƒ¯áƒ’áƒ£áƒ¤áƒ”áƒ‘áƒ˜áƒ¡ ComboBox
+            // ჯგუფების ComboBox
             var cbGroups = new ComboBox
             {
                 Dock = DockStyle.Top,
@@ -77,17 +72,17 @@ namespace BCCStudents.Presentation
             cbGroups.DisplayMember = "Name";
             cbGroups.ValueMember = "Id";
 
-            // áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒšáƒ”áƒ˜áƒ‘áƒšáƒ˜
+            // ფასდაკლების ლეიბლი
             var lblDiscount = new Label
             {
-                Text = "áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ (%):",
+                Text = "ფასდაკლება (%):",
                 Font = new Font("Sylfaen", 10),
                 Dock = DockStyle.Top,
                 Height = 25,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
-            // áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ NumericUpDown
+            // ფასდაკლების NumericUpDown
             var numDiscount = new NumericUpDown
             {
                 Minimum = 0,
@@ -100,7 +95,7 @@ namespace BCCStudents.Presentation
                 Font = new Font("Sylfaen", 10)
             };
 
-            // áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ˜áƒ¡ áƒšáƒ”áƒ˜áƒ‘áƒšáƒ˜
+            // ჯგუფის ინფორმაციის ლეიბლი
             var lblGroupInfo = new Label
             {
                 Text = "",
@@ -111,7 +106,7 @@ namespace BCCStudents.Presentation
                 ForeColor = Color.Blue
             };
 
-            // áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜áƒ¡ áƒžáƒáƒœáƒ”áƒšáƒ˜
+            // ღილაკების პანელი
             var buttonPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Bottom,
@@ -121,7 +116,7 @@ namespace BCCStudents.Presentation
 
             var btnCancel = new Button
             {
-                Text = "áƒ’áƒáƒ£áƒ¥áƒ›áƒ”áƒ‘áƒ",
+                Text = "გაუქმება",
                 Width = 80,
                 Height = 30,
                 DialogResult = DialogResult.Cancel
@@ -129,7 +124,7 @@ namespace BCCStudents.Presentation
 
             var btnOK = new Button
             {
-                Text = "áƒ“áƒáƒ›áƒ¢áƒ™áƒ˜áƒªáƒ”áƒ‘áƒ",
+                Text = "დამტკიცება",
                 Width = 80,
                 Height = 30,
                 DialogResult = DialogResult.OK
@@ -138,28 +133,28 @@ namespace BCCStudents.Presentation
             buttonPanel.Controls.Add(btnCancel);
             buttonPanel.Controls.Add(btnOK);
 
-            // áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ
+            // ჯგუფის ინფორმაციის განახლება
             cbGroups.SelectedIndexChanged += (sender, e) =>
             {
                 if (cbGroups.SelectedItem is Group selectedGroup)
                 {
-                    lblGroupInfo.Text = $"áƒ¯áƒ’áƒ£áƒ¤áƒ˜: {selectedGroup.Name}\náƒ¤áƒáƒ¡áƒ˜: {selectedGroup.Price:C}\náƒ›áƒáƒ¡áƒ¬áƒáƒ•áƒšáƒ”áƒ”áƒ‘áƒ˜áƒ¡ áƒ áƒáƒáƒ“áƒ”áƒœáƒáƒ‘áƒ: {selectedGroup.StudentCount}";
+                    lblGroupInfo.Text = $"ჯგუფი: {selectedGroup.Name}\nფასი: {selectedGroup.Price:C}\nმოსწავლეების რაოდენობა: {selectedGroup.StudentCount}";
                     this.selectedGroup = selectedGroup;
                 }
             };
 
-            // áƒ¤áƒáƒ¡áƒ“áƒáƒ™áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ
+            // ფასდაკლების შეცვლა
             numDiscount.ValueChanged += (sender, e) =>
             {
                 discount = (double)numDiscount.Value;
             };
 
-            // áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ”áƒ‘áƒ˜
+            // ღილაკების ივენთები
             btnOK.Click += (sender, e) =>
             {
                 if (cbGroups.SelectedItem == null)
                 {
-                    MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ— áƒáƒ˜áƒ áƒ©áƒ˜áƒáƒ— áƒ¯áƒ’áƒ£áƒ¤áƒ˜.", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("გთხოვთ აირჩიოთ ჯგუფი.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -173,7 +168,7 @@ namespace BCCStudents.Presentation
                 this.discount = 0;
             };
 
-            // áƒ™áƒáƒœáƒ¢áƒ áƒáƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ›áƒáƒ¢áƒ”áƒ‘áƒ
+            // კონტროლების დამატება
             mainPanel.Controls.Add(lblTitle, 0, 0);
             mainPanel.Controls.Add(lblGroupSelection, 0, 1);
             mainPanel.Controls.Add(cbGroups, 0, 2);
@@ -184,11 +179,11 @@ namespace BCCStudents.Presentation
 
             this.Controls.Add(mainPanel);
 
-            // áƒ¡áƒáƒ¬áƒ§áƒ˜áƒ¡áƒ˜ áƒ¯áƒ’áƒ£áƒ¤áƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ•áƒ
+            // საწყისი ჯგუფის არჩევა
             if (availableGroups.Any() && cbGroups.Items.Count > 0)
             {
                 cbGroups.SelectedIndex = 0;
             }
         }
     }
-} 
+}

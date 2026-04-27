@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 using System.Globalization;
-using System.Linq;
-using Newtonsoft.Json;
 
 namespace BCCStudents.Domain.Entities
 {
     /// <summary>
-    /// UpStream áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ áƒžáƒ”áƒ˜áƒšáƒáƒáƒ“áƒ˜ (payload) â€“ áƒ¨áƒ”áƒ˜áƒªáƒáƒ•áƒ¡ áƒ›áƒáƒœáƒáƒªáƒ”áƒ›áƒ”áƒ‘áƒ¡, áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ˜áƒ¡ áƒ¢áƒ˜áƒžáƒ¡ áƒ“áƒ áƒ¯áƒ”áƒ˜áƒ¡áƒáƒœáƒ˜áƒ¡ áƒ¡áƒ”áƒ áƒ˜áƒáƒšáƒ˜áƒ–áƒ”áƒ‘áƒ£áƒš áƒ•áƒ”áƒ áƒ¡áƒ˜áƒáƒ¡.
+    /// UpStream ცვლილებების payload – შეიცავს მონაცემებს, ოპერაციის ტიპს და JSON-სერიალიზებულ ვერსიას.
     /// </summary>
     public class SyncChangePayload
     {
@@ -32,7 +29,7 @@ namespace BCCStudents.Domain.Entities
             KeyColumns = keyColumns != null
                 ? new Dictionary<string, object>(keyColumns, StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-            CreatedAtUtc = DateTime.UtcNow;
+            CreatedAt = DateTime.Now;
 
             _payloadJson = new Lazy<string>(() => Serialize(Data));
         }
@@ -42,10 +39,10 @@ namespace BCCStudents.Domain.Entities
         public int? RecordId { get; }
         public IReadOnlyDictionary<string, object> Data { get; }
         public IReadOnlyDictionary<string, object> KeyColumns { get; }
-        public DateTime CreatedAtUtc { get; }
+        public DateTime CreatedAt { get; }
 
         /// <summary>
-        /// áƒ£áƒœáƒ˜áƒ™áƒáƒšáƒ£áƒ áƒ˜ áƒ˜áƒ“áƒ”áƒœáƒ¢áƒ˜áƒ¤áƒ˜áƒ™áƒáƒ¢áƒáƒ áƒ˜ (Id áƒáƒœ áƒ™áƒáƒ›áƒžáƒáƒ–áƒ˜áƒ¢áƒ£áƒ áƒ˜ áƒ’áƒáƒ¡áƒáƒ¦áƒ”áƒ‘áƒ˜) â€“ áƒ’áƒáƒ›áƒáƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ áƒšáƒáƒ’áƒ”áƒ‘áƒ¨áƒ˜ áƒ“áƒ SyncOutbox-áƒ¨áƒ˜.
+        /// უნიკალური იდენტიფიკატორი (Id ან კომპოზიტური გასაღები) – გამოიყენება ლოგებში და SyncOutbox-ში.
         /// </summary>
         public string RecordKey
         {
@@ -63,13 +60,13 @@ namespace BCCStudents.Domain.Entities
                         .Select(k => $"{k.Key}:{(k.Value ?? "NULL")}"));
                 }
 
-                // áƒ£áƒ™áƒáƒœáƒáƒ¡áƒ™áƒœáƒ”áƒšáƒ˜ fallback â€“ áƒ£áƒœáƒ˜áƒ™áƒáƒšáƒ£áƒ áƒ˜ Guid
+                // უკანაასკნელი fallback – უნიკალური Guid
                 return Guid.NewGuid().ToString("N");
             }
         }
 
         /// <summary>
-        /// JSON-áƒáƒ“ áƒ¡áƒ”áƒ áƒ˜áƒáƒšáƒ˜áƒ–áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒžáƒ”áƒ˜áƒšáƒáƒáƒ“áƒ˜ (SyncOutbox-áƒ¨áƒ˜ áƒ¨áƒ”áƒ¡áƒáƒœáƒáƒ®áƒáƒ“).
+        /// JSON-ად სერიალიზებული payload (SyncOutbox-ში შესანახად).
         /// </summary>
         public string PayloadJson => _payloadJson.Value;
 

@@ -1,0 +1,238 @@
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE `failedpayments`;
+TRUNCATE TABLE `failedstudentimports`;
+TRUNCATE TABLE `importedfileslog`;
+TRUNCATE TABLE `importedpaymentslog`;
+TRUNCATE TABLE `payments`;
+TRUNCATE TABLE `pendingstudentgroups`;
+TRUNCATE TABLE `pendingstudents`;
+TRUNCATE TABLE `pendingstudentsubgroups`;
+TRUNCATE TABLE `groups`;
+TRUNCATE TABLE `subgroups`;
+TRUNCATE TABLE `students`;
+TRUNCATE TABLE `studentgroups`;
+TRUNCATE TABLE `studentsubgroups`;
+TRUNCATE TABLE `syncmetadata`;
+TRUNCATE TABLE `syncoutbox`;
+TRUNCATE TABLE `syncstate`;
+TRUNCATE TABLE `systemConfig`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE `FailedPayments`;
+TRUNCATE TABLE 	`FailedStudentImports`;
+TRUNCATE TABLE `ImportedFilesLog`;
+TRUNCATE TABLE `ImportedPaymentsLog`;
+TRUNCATE TABLE `Payments`;
+TRUNCATE TABLE `PendingStudentGroups`;
+TRUNCATE TABLE `PendingStudents`;
+TRUNCATE TABLE `PendingStudentSubGroups`;
+TRUNCATE TABLE `Groups`;
+TRUNCATE TABLE `SubGroups`;
+TRUNCATE TABLE `Students`;
+TRUNCATE TABLE `StudentGroups`;
+TRUNCATE TABLE `StudentSubGroups`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE `failedpayments` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `RowNumber` int NOT NULL,
+  `PaymentDate` datetime NOT NULL,
+  `Amount` decimal(10,2) NOT NULL,
+  `PersonalId` bigint DEFAULT NULL,
+  `Description` varchar(500) DEFAULT NULL,
+  `Reason` varchar(255) NOT NULL,
+  `CreatedAt` datetime NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `importedfileslog` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `FilePath` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ფაილის სრული გზა',
+  `FileName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ფაილის სახელი',
+  `FileHash` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ფაილის MD5 hash დუპლიკატების თავიდან აცილებისთვის',
+  `FileSize` bigint NOT NULL COMMENT 'ფაილის ზომა ბაიტებში',
+  `ImportedAt` datetime NOT NULL COMMENT 'იმპორტის თარიღი',
+  `ImportedBy` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ვინ გააკეთა იმპორტი',
+  `ComputerName` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'რომელი კომპიუტერიდან გაკეთდა იმპორტი',
+  `CreatedAt` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'ჩანაწერის შექმნის თარიღი',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `UK_FileHash` (`FileHash`),
+  KEY `IDX_ComputerName` (`ComputerName`),
+  KEY `IDX_ImportedAt` (`ImportedAt`),
+  KEY `IDX_ImportedBy` (`ImportedBy`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='იმპორტირებული ფაილების ტრეკინგი ავტომატური აღმოჩენისთვის';
+
+CREATE TABLE `importedpaymentslog` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `PaymentDate` datetime NOT NULL,
+  `Amount` decimal(10,2) NOT NULL,
+  `PersonalId` bigint DEFAULT NULL,
+  `Description` varchar(500) DEFAULT NULL,
+  `ImportSource` varchar(100) DEFAULT NULL,
+  `CreatedAt` datetime NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `payments` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int DEFAULT NULL,
+  `GroupId` int NOT NULL,
+  `Amount` decimal(10,2) NOT NULL,
+  `PaymentDate` datetime NOT NULL,
+  `PaymentStatus` varchar(50) DEFAULT NULL,
+  `Description` varchar(500) DEFAULT NULL,
+  `PayerName` varchar(255) DEFAULT NULL,
+  `PersonalId` bigint DEFAULT NULL,
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  KEY `idx_payments_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_payments_deleted` (`IsDeleted`,`UpdatedAt`,`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pendingstudentgroups` (
+  `Id` int NOT NULL,
+  `StudentId` int NOT NULL,
+  `GroupId` int NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pendingstudents` (
+  `Id` int NOT NULL,
+  `FirstName` varchar(255) DEFAULT NULL,
+  `LastName` varchar(255) DEFAULT NULL,
+  `Age` int DEFAULT NULL,
+  `ParentName` varchar(255) DEFAULT NULL,
+  `PhoneNumber` varchar(50) DEFAULT NULL,
+  `Id_Numb` bigint DEFAULT NULL,
+  `Address` varchar(500) DEFAULT NULL,
+  `TuitionFee` decimal(10,2) DEFAULT NULL,
+  `DiscountPercentage` decimal(10,2) DEFAULT NULL,
+  `StudentCode` varchar(25) DEFAULT NULL,
+  `IdCardPath` varchar(500) DEFAULT NULL,
+  `AdditionalDocsPath` varchar(500) DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `CreatedAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `pendingstudentsubgroups` (
+  `Id` int NOT NULL,
+  `StudentId` int NOT NULL,
+  `GroupId` int NOT NULL,
+  `SubGroupId` int NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `groups` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(255) NOT NULL,
+  `Price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `Teacher` varchar(255) DEFAULT NULL,
+  `ContractTemplatePath` varchar(500) DEFAULT NULL,
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `StudentCount` int NOT NULL DEFAULT '0',
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `ux_groups_name` (`Name`),
+  KEY `idx_groups_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_groups_deleted` (`IsDeleted`,`UpdatedAt`,`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `subgroups` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `GroupId` int NOT NULL,
+  `Name` varchar(255) NOT NULL,
+  `TuitionFee` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `StudentCount` int NOT NULL DEFAULT '0',
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  KEY `fk_subgroups_group` (`GroupId`),
+  KEY `idx_subgroups_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_subgroups_deleted` (`IsDeleted`,`UpdatedAt`,`Id`),
+  CONSTRAINT `fk_subgroups_group` FOREIGN KEY (`GroupId`) REFERENCES `groups` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `students` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `FirstName` text NOT NULL,
+  `LastName` text NOT NULL,
+  `Age` int NOT NULL,
+  `ParentName` text NOT NULL,
+  `PhoneNumber` text NOT NULL,
+  `Id_Numb` bigint NOT NULL,
+  `Address` text NOT NULL,
+  `RegistrationDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `StudentCode` varchar(25) DEFAULT NULL,
+  `StudentStatus` text,
+  `IdCardPath` text,
+  `AdditionalDocsPath` text,
+  `user_id` bigint unsigned NOT NULL,
+  `Balance` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `Info` text,
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `ux_students_code` (`StudentCode`),
+  KEY `idx_students_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_students_deleted` (`IsDeleted`,`UpdatedAt`,`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `studentgroups` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `GroupId` int NOT NULL,
+  `PaymentStatus` varchar(50) DEFAULT NULL,
+  `DateOfPayment` datetime DEFAULT NULL,
+  `Price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `Discount` double NOT NULL DEFAULT '0',
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  KEY `fk_student_group_student` (`StudentId`),
+  KEY `fk_student_group_group` (`GroupId`),
+  KEY `idx_studentgroups_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_studentgroups_deleted` (`IsDeleted`,`UpdatedAt`,`Id`),
+  CONSTRAINT `fk_student_group_group` FOREIGN KEY (`GroupId`) REFERENCES `groups` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_student_group_student` FOREIGN KEY (`StudentId`) REFERENCES `students` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `studentsubgroups` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `StudentId` int NOT NULL,
+  `GroupId` int NOT NULL,
+  `SubGroupId` int NOT NULL,
+  `PaymentStatus` varchar(50) DEFAULT NULL,
+  `DateOfPayment` datetime DEFAULT NULL,
+  `Price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `Discount` double NOT NULL DEFAULT '0',
+  `Status` tinyint(1) NOT NULL DEFAULT '1',
+  `UpdatedAt` datetime DEFAULT NULL,
+  `IsDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`Id`),
+  KEY `fk_ssg_student` (`StudentId`),
+  KEY `fk_ssg_group` (`GroupId`),
+  KEY `fk_ssg_subgroup` (`SubGroupId`),
+  KEY `idx_studentsubgroups_updated` (`UpdatedAt`,`Id`),
+  KEY `idx_studentsubgroups_deleted` (`IsDeleted`,`UpdatedAt`,`Id`),
+  CONSTRAINT `fk_ssg_group` FOREIGN KEY (`GroupId`) REFERENCES `groups` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_ssg_student` FOREIGN KEY (`StudentId`) REFERENCES `students` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_ssg_subgroup` FOREIGN KEY (`SubGroupId`) REFERENCES `subgroups` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `users` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Username` varchar(255) NOT NULL,
+  `FullName` varchar(255) DEFAULT NULL,
+  `Email` varchar(255) DEFAULT NULL,
+  `Password` varchar(255) DEFAULT NULL,
+  `Role` varchar(50) DEFAULT NULL,
+  `CreatedAt` datetime DEFAULT NULL,
+  `LastLogin` datetime DEFAULT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

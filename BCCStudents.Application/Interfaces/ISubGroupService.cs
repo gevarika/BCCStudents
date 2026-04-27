@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
 using BCCStudents.Domain.Entities;
-using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Application.Interfaces
 {
@@ -35,8 +32,8 @@ namespace BCCStudents.Application.Interfaces
         // სტუდენტების რაოდენობა
         int GetCurrentStudentSubGroupId(int studentId, int groupId, bool status);
         int GetStudentCountInSubGroup(int subGroupId);
-        void UpdateSubGroupStudentCount(int subGroupId, int count);
-        void IncrementSubGroupCount(int subGroupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null);
+        //void UpdateSubGroupStudentCount(int subGroupId, int count);
+        //void IncrementSubGroupCount(int subGroupId, MySqlConnection externalConnection = null, MySqlTransaction externalTransaction = null);
         void DecreaseStudentCount(int SubGroupId);
 
         // ქვეჯგუფების განახლება და წაშლა

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
-using BCCStudents.Infrastructure.Data;
+﻿using BCCStudents.Presentation.Properties;
 using System.Text;
-using System.Linq;
 
 namespace BCCStudents.Presentation
 {
@@ -17,30 +12,30 @@ namespace BCCStudents.Presentation
         {
             InitializeComponent();
             _fileName = fileName;
-            _filePath = filePath; // filePath áƒáƒ áƒ˜áƒ¡ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ’áƒ–áƒ
+            _filePath = filePath; // filePath არის ფაილის გზა
             InitializeForm();
         }
 
         private void InitializeForm()
         {
-            FormTitleHelper.SetTitle(this, $"áƒ‘áƒ”áƒ¥áƒáƒžáƒ˜áƒ¡ áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜ - {_fileName}");
-            
-            // áƒ¤áƒáƒ áƒ›áƒ˜áƒ¡ áƒ–áƒáƒ›áƒ˜áƒ¡ áƒ“áƒáƒ§áƒ”áƒœáƒ”áƒ‘áƒ
+            FormTitleHelper.SetTitle(this, string.Format(Resources.Backup_ViewContent_Title, _fileName));
+
+            // ფორმის ზომის დაყენება
             this.Size = new Size(1000, 700);
             this.StartPosition = FormStartPosition.CenterParent;
-            
-            // áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ˜áƒœáƒ˜áƒªáƒ˜áƒáƒšáƒ˜áƒ–áƒáƒªáƒ˜áƒ
+
+            // ტექსტური ველის ინიციალიზაცია
             txtContent.Font = new Font("Consolas", 10);
             txtContent.BackColor = Color.White;
             txtContent.ForeColor = Color.Black;
             txtContent.ReadOnly = true;
             txtContent.ScrollBars = ScrollBars.Both;
             txtContent.WordWrap = false;
-            
-            // áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ
+
+            // შიგთავსის ჩატვირთვა
             LoadContent();
-            
-            // áƒ¦áƒ˜áƒšáƒáƒ™áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ”áƒ‘áƒ˜
+
+            // ღილაკების ივენთები
             btnSave.Click += BtnSave_Click;
             btnCopy.Click += BtnCopy_Click;
             btnSearch.Click += BtnSearch_Click;
@@ -48,42 +43,42 @@ namespace BCCStudents.Presentation
             btnTestEncoding.Click += BtnTestEncoding_Click;
             btnDecodeGeorgian.Click += BtnDecodeGeorgian_Click;
             btnDebug.Click += BtnDebug_Click;
-            
-            // áƒ«áƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ•áƒ”áƒšáƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ”áƒ‘áƒ˜
+
+            // ძიების ველის ივენთები
             txtSearch.KeyDown += TxtSearch_KeyDown;
-            
-            // áƒ™áƒáƒœáƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ›áƒ”áƒœáƒ˜áƒ£ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ•áƒ”áƒšáƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡
+
+            // კონტექსტური მენიუ ტექსტური ველისთვის
             txtContent.ContextMenuStrip = CreateContextMenu();
-            
-            // áƒ¤áƒáƒ áƒ›áƒ˜áƒ¡ áƒ“áƒáƒ®áƒ£áƒ áƒ•áƒ˜áƒ¡ áƒ˜áƒ•áƒ”áƒœáƒ—áƒ˜
+
+            // ფორმის დახურვის ივენთი
             this.FormClosing += BackupContentViewerForm_FormClosing;
         }
 
         private ContextMenuStrip CreateContextMenu()
         {
             var contextMenu = new ContextMenuStrip();
-            
-            // áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ•áƒ
-            var encodingMenu = new ToolStripMenuItem("áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒáƒ áƒ©áƒ”áƒ•áƒ");
+
+            // კოდირების არჩევა
+            var encodingMenu = new ToolStripMenuItem("კოდირების არჩევა");
             encodingMenu.DropDownItems.Add("UTF-8", null, (s, e) => ReloadWithEncoding(Encoding.UTF8));
             encodingMenu.DropDownItems.Add("UTF-8 BOM", null, (s, e) => ReloadWithEncoding(new UTF8Encoding(true)));
             encodingMenu.DropDownItems.Add("Windows-1252", null, (s, e) => ReloadWithEncoding(Encoding.GetEncoding(1252)));
             encodingMenu.DropDownItems.Add("ISO-8859-1", null, (s, e) => ReloadWithEncoding(Encoding.GetEncoding("ISO-8859-1")));
             encodingMenu.DropDownItems.Add("ISO-8859-5", null, (s, e) => ReloadWithEncoding(Encoding.GetEncoding("ISO-8859-5")));
             encodingMenu.DropDownItems.Add("System Default", null, (s, e) => ReloadWithEncoding(Encoding.Default));
-            
+
             contextMenu.Items.Add(encodingMenu);
             contextMenu.Items.Add(new ToolStripSeparator());
-            
-            // áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ
-            contextMenu.Items.Add("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ", null, (s, e) => BtnDecodeGeorgian_Click(s, e));
-            contextMenu.Items.Add("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ¢áƒ”áƒ¡áƒ¢áƒ˜", null, (s, e) => BtnTestEncoding_Click(s, e));
+
+            // ქართული ტექსტის დეკოდირება/ტესტი
+            contextMenu.Items.Add("ქართული ტექსტის დეკოდირება", null, (s, e) => BtnDecodeGeorgian_Click(s, e));
+            contextMenu.Items.Add("ქართული ტექსტის ტესტი", null, (s, e) => BtnTestEncoding_Click(s, e));
             contextMenu.Items.Add(new ToolStripSeparator());
-            
-            // áƒ¡áƒ®áƒ•áƒ áƒáƒžáƒ”áƒ áƒáƒªáƒ˜áƒ”áƒ‘áƒ˜
-            contextMenu.Items.Add("áƒ§áƒ•áƒ”áƒšáƒáƒ¤áƒ áƒ˜áƒ¡ áƒ›áƒáƒœáƒ˜áƒ¨áƒ•áƒœáƒ", null, (s, e) => txtContent.SelectAll());
-            contextMenu.Items.Add("áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ", null, (s, e) => txtContent.Copy());
-            
+
+            // საერთო ოპერაციები
+            contextMenu.Items.Add("ყველაფრის მონიშვნა", null, (s, e) => txtContent.SelectAll());
+            contextMenu.Items.Add("კოპირება", null, (s, e) => txtContent.Copy());
+
             return contextMenu;
         }
 
@@ -93,19 +88,25 @@ namespace BCCStudents.Presentation
             {
                 var content = File.ReadAllText(_filePath, encoding);
                 txtContent.Text = content;
-                lblInfo.Text = $"áƒ¤áƒáƒ˜áƒšáƒ˜: {_fileName} | áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ: {encoding.EncodingName} | áƒ–áƒáƒ›áƒ: {FormatFileSize(content.Length)} | áƒ¡áƒ¢áƒ áƒ˜áƒ¥áƒáƒœáƒ”áƒ‘áƒ˜: {content.Split('\n').Length}";
-                
-                // áƒ•áƒáƒ©áƒ•áƒ”áƒœáƒ”áƒ‘áƒ— áƒ›áƒªáƒ˜áƒ áƒ” áƒ›áƒ”áƒ¡áƒ˜áƒ¯áƒ¡ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ¨áƒ”áƒ¡áƒáƒ®áƒ”áƒ‘
+                lblInfo.Text = $"ფაილი: {_fileName} | კოდირება: {encoding.EncodingName} | ზომა: {FormatFileSize(content.Length)} | სტრიქონები: {content.Split('\n').Length}";
+
+                // თუ კოდირება არ არის UTF-8, ვაჩვენებთ დამატებით ინფორმაციას
                 if (encoding != Encoding.UTF8)
                 {
-                    MessageBox.Show($"áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ£áƒšáƒ˜áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—: {encoding.EncodingName}", 
-                        "áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        $"ფაილი წაიკითხა სხვა კოდირებით: {encoding.EncodingName}",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ— {encoding.EncodingName}: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა კოდირების შეცვლისას ({encoding.EncodingName}): {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -113,34 +114,37 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ“áƒ”áƒ‘áƒáƒ’áƒ˜áƒœáƒ’áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ
+                // დამხმარე ლოგები კონსოლზე
                 Console.WriteLine($"Loading file: {_filePath}");
                 Console.WriteLine($"File exists: {File.Exists(_filePath)}");
-                
+
                 if (File.Exists(_filePath))
                 {
                     var fileInfo = new FileInfo(_filePath);
                     Console.WriteLine($"File size: {fileInfo.Length} bytes");
-                    
-                    // áƒ•áƒ™áƒ˜áƒ—áƒ®áƒ£áƒšáƒáƒ‘áƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒžáƒ˜áƒ áƒ•áƒ”áƒš 100 áƒ‘áƒáƒ˜áƒ¢áƒ¡
+
+                    // ვკითხულობთ ფაილის პირველ 100 ბაიტს
                     byte[] firstBytes = File.ReadAllBytes(_filePath).Take(100).ToArray();
                     Console.WriteLine($"First 100 bytes: {BitConverter.ToString(firstBytes)}");
                 }
-                
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¡áƒ®áƒ•áƒáƒ“áƒáƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¬áƒáƒ¡áƒáƒ™áƒ˜áƒ—áƒ®áƒáƒ“
+
+                // ვცდილობთ ფაილის წაკითხვას სწორი კოდირებით
                 string content = ReadFileWithProperEncoding(_filePath);
                 txtContent.Text = content;
-                lblInfo.Text = $"áƒ¤áƒáƒ˜áƒšáƒ˜: {_fileName} | áƒ–áƒáƒ›áƒ: {FormatFileSize(content.Length)} | áƒ¡áƒ¢áƒ áƒ˜áƒ¥áƒáƒœáƒ”áƒ‘áƒ˜: {content.Split('\n').Length}";
-                
-                // áƒ•áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ— áƒ™áƒ£áƒ áƒ¡áƒáƒ áƒ¡ áƒ“áƒáƒ¡áƒáƒ¬áƒ§áƒ˜áƒ¡áƒ¨áƒ˜
+                lblInfo.Text = $"ფაილი: {_fileName} | ზომა: {FormatFileSize(content.Length)} | სტრიქონები: {content.Split('\n').Length}";
+
+                // კურსორს ვაბრუნებთ ტექსტის დასაწყისში
                 txtContent.SelectionStart = 0;
                 txtContent.SelectionLength = 0;
                 txtContent.ScrollToCaret();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜áƒ¡ áƒ©áƒáƒ¢áƒ•áƒ˜áƒ áƒ—áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა შიგთავსის ჩატვირთვისას: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -148,18 +152,18 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒ™áƒ˜áƒ—áƒ®áƒ£áƒšáƒáƒ‘áƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ‘áƒáƒ˜áƒ¢áƒ”áƒ‘áƒ¡
+                // ვკითხულობთ ფაილის ბაიტებს
                 byte[] fileBytes = File.ReadAllBytes(filePath);
                 Console.WriteLine($"File bytes length: {fileBytes.Length}");
-                
-                // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— BOM-áƒ¡
+
+                // ვამოწმებთ BOM-ს
                 if (fileBytes.Length >= 3 && fileBytes[0] == 0xEF && fileBytes[1] == 0xBB && fileBytes[2] == 0xBF)
                 {
                     Console.WriteLine("UTF-8 BOM detected");
                     return Encoding.UTF8.GetString(fileBytes, 3, fileBytes.Length - 3);
                 }
-                
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¡áƒ®áƒ•áƒáƒ“áƒáƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
+
+                // ვცდილობთ სხვადასხვა კოდირებას
                 var encodings = new[]
                 {
                     Encoding.UTF8,
@@ -172,19 +176,19 @@ namespace BCCStudents.Presentation
                     Encoding.GetEncoding("UTF-32"),
                     Encoding.Default
                 };
-                
+
                 foreach (var encoding in encodings)
                 {
                     try
                     {
                         string testText = encoding.GetString(fileBytes);
-                        
-                        // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜
+
+                        // ვამოწმებთ არის თუ არა ქართული ტექსტი
                         bool hasGeorgian = testText.Any(c => c >= '\u10A0' && c <= '\u10FF');
                         bool hasEncodedGeorgian = testText.Contains("Ã¡Æ’");
-                        
+
                         Console.WriteLine($"Testing {encoding.EncodingName}: hasGeorgian={hasGeorgian}, hasEncodedGeorgian={hasEncodedGeorgian}");
-                        
+
                         if (hasGeorgian && !hasEncodedGeorgian)
                         {
                             Console.WriteLine($"Found proper Georgian text with {encoding.EncodingName}");
@@ -197,8 +201,8 @@ namespace BCCStudents.Presentation
                         continue;
                     }
                 }
-                
-                // áƒ—áƒ£ áƒáƒ áƒáƒ¤áƒ”áƒ áƒ˜ áƒ›áƒ£áƒ¨áƒáƒáƒ‘áƒ¡, áƒ•áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ— UTF-8-áƒ˜áƒ—
+
+                // თუ ვერ ვიპოვეთ სწორი კოდირება, ვიყენებთ UTF-8-ს
                 Console.WriteLine("No proper encoding found, using UTF-8");
                 return Encoding.UTF8.GetString(fileBytes);
             }
@@ -216,19 +220,26 @@ namespace BCCStudents.Presentation
                 var saveDialog = new SaveFileDialog
                 {
                     FileName = _fileName,
-                    Filter = "SQL áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜ (*.sql)|*.sql|áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ£áƒ áƒ˜ áƒ¤áƒáƒ˜áƒšáƒ”áƒ‘áƒ˜ (*.txt)|*.txt|áƒ§áƒ•áƒ”áƒšáƒ áƒ¤áƒáƒ˜áƒšáƒ˜ (*.*)|*.*"
+                    Filter = "SQL ფაილები (*.sql)|*.sql|ტექსტური ფაილები (*.txt)|*.txt|ყველა ფაილი (*.*)|*.*"
                 };
 
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
                     File.WriteAllText(saveDialog.FileName, txtContent.Text);
-                    MessageBox.Show("áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ¨áƒ”áƒœáƒáƒ®áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        "ფაილი წარმატებით შეინახა!",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ¨áƒ”áƒœáƒáƒ®áƒ•áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა ფაილის შენახვისას: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -239,18 +250,29 @@ namespace BCCStudents.Presentation
                 if (txtContent.SelectionLength > 0)
                 {
                     Clipboard.SetText(txtContent.SelectedText);
-                    MessageBox.Show("áƒ›áƒáƒœáƒ˜áƒ¨áƒœáƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ“áƒáƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        "მონიშნული ტექსტი დაკოპირებულია!",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
                 else
                 {
                     Clipboard.SetText(txtContent.Text);
-                    MessageBox.Show("áƒ›áƒ—áƒ”áƒšáƒ˜ áƒ¨áƒ˜áƒ’áƒ—áƒáƒ•áƒ¡áƒ˜ áƒ“áƒáƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜áƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        "მთელი შიგთავსი დაკოპირებულია!",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ™áƒáƒžáƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა კოპირების დროს: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -272,22 +294,26 @@ namespace BCCStudents.Presentation
         {
             if (string.IsNullOrEmpty(txtSearch.Text))
             {
-                MessageBox.Show("áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒ¨áƒ”áƒ˜áƒ§áƒ•áƒáƒœáƒáƒ— áƒ«áƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜!", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "გთხოვთ, შეიყვანოთ საძიებო ტექსტი!",
+                    Properties.Resources.Common_WarningTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
             try
             {
-                // áƒ•áƒžáƒáƒ•áƒáƒ— áƒ¨áƒ”áƒ›áƒ“áƒ”áƒ’áƒ˜ áƒ¨áƒ”áƒ›áƒ—áƒ®áƒ•áƒ”áƒ•áƒ
+                // ვპოულობთ შემდეგ შესაბამისობას
                 int startIndex = txtContent.SelectionStart + txtContent.SelectionLength;
                 int index = txtContent.Text.IndexOf(txtSearch.Text, startIndex, StringComparison.OrdinalIgnoreCase);
-                
+
                 if (index == -1)
                 {
-                    // áƒ—áƒ£ áƒ•áƒ”áƒ  áƒ•áƒ˜áƒžáƒáƒ•áƒ”áƒ—, áƒ•áƒ˜áƒ¬áƒ§áƒ”áƒ‘áƒ— áƒ“áƒáƒ¡áƒáƒ¬áƒ§áƒ˜áƒ¡áƒ˜áƒ“áƒáƒœ
+                    // თუ ვერ ვიპოვეთ, ვეძებთ თავიდან
                     index = txtContent.Text.IndexOf(txtSearch.Text, 0, StringComparison.OrdinalIgnoreCase);
                 }
-                
+
                 if (index != -1)
                 {
                     txtContent.SelectionStart = index;
@@ -297,13 +323,20 @@ namespace BCCStudents.Presentation
                 }
                 else
                 {
-                    MessageBox.Show("áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ!", "áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        "ტექსტი ვერ მოიძებნა!",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ«áƒ˜áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა ძებნისას: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -314,7 +347,7 @@ namespace BCCStudents.Presentation
 
         private void BackupContentViewerForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // áƒ¤áƒáƒ áƒ›áƒ˜áƒ¡ áƒ“áƒáƒ®áƒ£áƒ áƒ•áƒ˜áƒ¡áƒáƒ¡ áƒáƒ áƒáƒ¤áƒ”áƒ áƒ˜ áƒ’áƒ•áƒ­áƒ˜áƒ áƒ“áƒ”áƒ‘áƒ
+            // ფორმის დახურვისას არაფერს ვაკეთებთ
         }
 
         private string FormatFileSize(int characterCount)
@@ -337,29 +370,38 @@ namespace BCCStudents.Presentation
 
         private void TestGeorgianText()
         {
-            // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒœáƒáƒ¬áƒ˜áƒšáƒ¡
+            // ვამოწმებთ ქართული ტექსტის ნიმუშს
             string sampleText = txtContent.Text.Substring(0, Math.Min(2000, txtContent.Text.Length));
-            
-            // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ¡ (UTF-8 áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ“áƒ˜áƒáƒžáƒáƒ–áƒáƒœáƒ˜)
+
+            // ვეძებთ სწორად UTF-8-ით კოდირებულ ქართულ სიმბოლოებს
             bool hasGeorgian = sampleText.Any(c => c >= '\u10A0' && c <= '\u10FF');
-            
-            // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒáƒ¡áƒ”áƒ•áƒ” UTF-8 áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒš áƒ•áƒ”áƒ áƒ¡áƒ˜áƒ”áƒ‘áƒ¡
+
+            // ვამოწმებთ UTF-8-ის არასწორად კოდირებულ ნიშნებს (მაგ. Ã¡Æ’ ...)
             bool hasEncodedGeorgian = sampleText.Contains("Ã¡Æ’") || sampleText.Contains("Ã¡Æ’");
-            
+
             if (!hasGeorgian && !hasEncodedGeorgian)
             {
-                MessageBox.Show("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ•áƒ”áƒ  áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ. áƒ¨áƒ”áƒ˜áƒ«áƒšáƒ”áƒ‘áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒžáƒ áƒáƒ‘áƒšáƒ”áƒ›áƒ áƒ˜áƒ§áƒáƒ¡.", 
-                    "áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ’áƒáƒ¤áƒ áƒ—áƒ®áƒ˜áƒšáƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "ქართულ ტექსტი ვერ მოიძებნა. სცადეთ კოდირების პრობლემა იყოს.",
+                    Properties.Resources.Common_WarningTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
             else if (hasEncodedGeorgian && !hasGeorgian)
             {
-                MessageBox.Show("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒáƒ áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¤áƒáƒ áƒ›áƒ˜áƒ—. áƒ’áƒ—áƒ®áƒáƒ•áƒ—, áƒ¨áƒ”áƒªáƒ•áƒáƒšáƒáƒ— áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ.", 
-                    "áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    "ქართულ ტექსტი ჩანს არასწორად კოდირებული. გთხოვთ, სცადოთ კოდირების შეცვლა.",
+                    Properties.Resources.Common_InfoTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             else
             {
-                MessageBox.Show("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ›áƒáƒ˜áƒ«áƒ”áƒ‘áƒœáƒ!", 
-                    "áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    "ქართულ ტექსტი სწორად იკითხება!",
+                    Properties.Resources.Common_InfoTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
         }
 
@@ -367,7 +409,7 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ’áƒáƒ•áƒ¨áƒ˜áƒ¤áƒ áƒáƒ— UTF-8 áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜
+                // ვცდილობთ UTF-8-ით დეკოდირებას
                 byte[] bytes = Encoding.UTF8.GetBytes(encodedText);
                 return Encoding.UTF8.GetString(bytes);
             }
@@ -381,12 +423,12 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒš áƒ¥áƒáƒ áƒ—áƒ£áƒš áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ¡
+                // თუ ტექსტი შეიცავს არასწორად კოდირებულ ქართულს, ვცდილობთ გასწორებას
                 if (text.Contains("Ã¡Æ’"))
                 {
                     Console.WriteLine("Found encoded Georgian text, attempting to fix...");
-                    
-                    // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¡áƒ®áƒ•áƒáƒ“áƒáƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
+
+                    // ვცდილობთ სხვადასხვა კოდირებებს, რომ ვიპოვოთ სწორი ქართული ტექსტი
                     var encodings = new[]
                     {
                         Encoding.GetEncoding("ISO-8859-1"),
@@ -395,17 +437,17 @@ namespace BCCStudents.Presentation
                         Encoding.GetEncoding("UTF-7"),
                         Encoding.Default
                     };
-                    
+
                     byte[] originalBytes = Encoding.UTF8.GetBytes(text);
-                    
+
                     foreach (var encoding in encodings)
                     {
                         try
                         {
-                            // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ•áƒ˜áƒžáƒáƒ•áƒáƒ— áƒ¡áƒ¬áƒáƒ áƒ˜ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ
+                            // ვცდილობთ ტექსტის წაკითხვას მოცემული კოდირებით
                             string testText = encoding.GetString(originalBytes);
-                            
-                            // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜
+
+                            // ვამოწმებთ, შეიცავს თუ არა სწორი ქართული სიმბოლოებს
                             if (testText.Any(c => c >= '\u10A0' && c <= '\u10FF'))
                             {
                                 Console.WriteLine($"Fixed Georgian text with {encoding.EncodingName}");
@@ -417,11 +459,11 @@ namespace BCCStudents.Presentation
                             continue;
                         }
                     }
-                    
-                    // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ®áƒ”áƒšáƒ˜áƒ— áƒ’áƒáƒ•áƒáƒ¡áƒ¬áƒáƒ áƒáƒ— áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ
+
+                    // თუ ვერ ვიპოვეთ, გადავდივართ მექანიკურ აღდგენაზე
                     return ManualGeorgianFix(text);
                 }
-                
+
                 return text;
             }
             catch (Exception ex)
@@ -435,13 +477,13 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ®áƒ”áƒšáƒ˜áƒ— áƒ’áƒáƒ•áƒáƒ¡áƒ¬áƒáƒ áƒáƒ— áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ˜
-                // áƒ”áƒ¡ áƒáƒ áƒ˜áƒ¡ áƒ áƒ—áƒ£áƒšáƒ˜ áƒžáƒ áƒáƒªáƒ”áƒ¡áƒ˜, áƒ›áƒáƒ’áƒ áƒáƒ› áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ—
-                
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¡áƒ®áƒ•áƒáƒ“áƒáƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ™áƒáƒ›áƒ‘áƒ˜áƒœáƒáƒªáƒ˜áƒ”áƒ‘áƒ¡
+                // ვცდილობთ მექანიკურად აღვადგინოთ ქართული სიმბოლოები
+                // ეს არის ბოლო ვარიანტი და ყოველთვის არ იმუშავებს
+
+                // ვცდილობთ სხვადასხვა კოდირებებს
                 byte[] bytes = Encoding.UTF8.GetBytes(text);
-                
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— UTF-16-áƒ˜áƒ—
+
+                // ვცდილობთ UTF-16-ით
                 try
                 {
                     string utf16Text = Encoding.Unicode.GetString(bytes);
@@ -451,8 +493,8 @@ namespace BCCStudents.Presentation
                     }
                 }
                 catch { }
-                
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— BigEndianUnicode-áƒ˜áƒ—
+
+                // ვცდილობთ BigEndianUnicode-ით
                 try
                 {
                     string bigEndianText = Encoding.BigEndianUnicode.GetString(bytes);
@@ -462,7 +504,7 @@ namespace BCCStudents.Presentation
                     }
                 }
                 catch { }
-                
+
                 return text;
             }
             catch
@@ -475,20 +517,23 @@ namespace BCCStudents.Presentation
         {
             try
             {
-                // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ’áƒáƒ¨áƒ˜áƒ¤áƒ•áƒ áƒáƒ¡
+                // ვცდილობთ ქართული ტექსტის გასწორებას
                 string originalText = txtContent.Text;
                 string fixedText = FixGeorgianEncoding(originalText);
-                
+
                 if (fixedText != originalText)
                 {
                     txtContent.Text = fixedText;
-                    MessageBox.Show("áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ’áƒáƒ¨áƒ˜áƒ¤áƒ áƒ£áƒšáƒ˜áƒ!", 
-                        "áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        "ქართულ ტექსტი წარმატებით გასწორდა!",
+                        Properties.Resources.Common_InfoTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                 }
                 else
                 {
-                    // áƒ•áƒªáƒ“áƒ˜áƒšáƒáƒ‘áƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ“áƒáƒœ áƒ®áƒ”áƒšáƒáƒ®áƒšáƒ áƒ¬áƒáƒ¡áƒáƒ™áƒ˜áƒ—áƒ®áƒáƒ“ áƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
-                    var encodings = new[] 
+                    // თუ ფაილიდანაც ვერ ვიპოვეთ სწორი კოდირებით
+                    var encodings = new[]
                     {
                         Encoding.GetEncoding("ISO-8859-1"),
                         Encoding.GetEncoding("Windows-1252"),
@@ -498,20 +543,23 @@ namespace BCCStudents.Presentation
                         Encoding.BigEndianUnicode,
                         Encoding.Default
                     };
-                    
+
                     foreach (var encoding in encodings)
                     {
                         try
                         {
                             byte[] bytes = File.ReadAllBytes(_filePath);
                             string testText = encoding.GetString(bytes);
-                            
-                            // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒáƒ áƒ˜áƒ¡ áƒ—áƒ£ áƒáƒ áƒ áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜
+
+                            // ვამოწმებთ შეიცავს თუ არა ტექსტი სწორ ქართულ სიმბოლოებს
                             if (testText.Any(c => c >= '\u10A0' && c <= '\u10FF'))
                             {
                                 txtContent.Text = testText;
-                                MessageBox.Show($"áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ áƒ¬áƒáƒ áƒ›áƒáƒ¢áƒ”áƒ‘áƒ˜áƒ— áƒ’áƒáƒ¨áƒ˜áƒ¤áƒ áƒ£áƒšáƒ˜áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—: {encoding.EncodingName}", 
-                                    "áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                MessageBox.Show(
+                                    $"ქართულ ტექსტი წარმატებით გასწორდა კოდირებით: {encoding.EncodingName}",
+                                    Properties.Resources.Common_InfoTitle,
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information);
                                 return;
                             }
                         }
@@ -520,15 +568,21 @@ namespace BCCStudents.Presentation
                             continue;
                         }
                     }
-                    
-                    MessageBox.Show("áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ’áƒáƒ¨áƒ˜áƒ¤áƒ•áƒ áƒ. áƒ¨áƒ”áƒ˜áƒ«áƒšáƒ”áƒ‘áƒ áƒ¤áƒáƒ˜áƒšáƒ˜ áƒ£áƒ™áƒ•áƒ” áƒ¡áƒ¬áƒáƒ áƒáƒ“ áƒáƒ áƒ˜áƒ¡ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜.", 
-                        "áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                    MessageBox.Show(
+                        "ვერ მოხერხდა ქართული ტექსტის გასწორება. შეამოწმეთ ფაილი სხვა რედაქტორით ან კოდირებით.",
+                        Properties.Resources.Common_WarningTitle,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ áƒ“áƒ”áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒ áƒáƒ¡: {ex.Message}", 
-                    "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"შეცდომა დეკოდირებისას: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
@@ -537,41 +591,41 @@ namespace BCCStudents.Presentation
             try
             {
                 var debugInfo = new StringBuilder();
-                debugInfo.AppendLine($"áƒ¤áƒáƒ˜áƒšáƒ˜: {_filePath}");
-                debugInfo.AppendLine($"áƒ¤áƒáƒ˜áƒšáƒ˜ áƒáƒ áƒ¡áƒ”áƒ‘áƒáƒ‘áƒ¡: {File.Exists(_filePath)}");
-                
+                debugInfo.AppendLine($"ფაილი: {_filePath}");
+                debugInfo.AppendLine($"ფაილი არსებობს: {File.Exists(_filePath)}");
+
                 if (File.Exists(_filePath))
                 {
                     var fileInfo = new FileInfo(_filePath);
-                    debugInfo.AppendLine($"áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒ–áƒáƒ›áƒ: {fileInfo.Length} áƒ‘áƒáƒ˜áƒ¢áƒ˜");
-                    
-                    // áƒ•áƒ™áƒ˜áƒ—áƒ®áƒ£áƒšáƒáƒ‘áƒ— áƒ¤áƒáƒ˜áƒšáƒ˜áƒ¡ áƒžáƒ˜áƒ áƒ•áƒ”áƒš 200 áƒ‘áƒáƒ˜áƒ¢áƒ¡
+                    debugInfo.AppendLine($"ფაილის ზომა: {fileInfo.Length} ბაიტი");
+
+                    // წავისმენთ ფაილის პირველ 200 ბაიტს
                     byte[] firstBytes = File.ReadAllBytes(_filePath).Take(200).ToArray();
-                    debugInfo.AppendLine($"áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜ 200 áƒ‘áƒáƒ˜áƒ¢áƒ˜: {BitConverter.ToString(firstBytes)}");
-                    
-                    // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— BOM-áƒ¡
+                    debugInfo.AppendLine($"პირველი 200 ბაიტი: {BitConverter.ToString(firstBytes)}");
+
+                    // BOM-ის შემოწმება
                     if (firstBytes.Length >= 3)
                     {
                         debugInfo.AppendLine($"BOM: {firstBytes[0]:X2} {firstBytes[1]:X2} {firstBytes[2]:X2}");
                         if (firstBytes[0] == 0xEF && firstBytes[1] == 0xBB && firstBytes[2] == 0xBF)
                         {
-                            debugInfo.AppendLine("UTF-8 BOM áƒœáƒáƒžáƒáƒ•áƒœáƒ˜áƒ");
+                            debugInfo.AppendLine("UTF-8 BOM ნაპოვნია");
                         }
                     }
-                    
-                    // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ¡
+
+                    // ვამატებთ მიმდინარე ტექსტის სიგრძეს
                     string currentText = txtContent.Text;
-                    debugInfo.AppendLine($"áƒ›áƒ˜áƒ›áƒ“áƒ˜áƒœáƒáƒ áƒ” áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜áƒ¡ áƒ¡áƒ˜áƒ’áƒ áƒ«áƒ”: {currentText.Length}");
-                    
-                    // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ¡
+                    debugInfo.AppendLine($"მიმდინარე ტექსტის სიგრძე: {currentText.Length}");
+
+                    // პირველი 10 ქართული სიმბოლო
                     var georgianChars = currentText.Where(c => c >= '\u10A0' && c <= '\u10FF').Take(10).ToArray();
-                    debugInfo.AppendLine($"áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ˜ (áƒžáƒ˜áƒ áƒ•áƒ”áƒšáƒ˜ 10): {string.Join(", ", georgianChars)}");
-                    
-                    // áƒ•áƒ”áƒ«áƒ”áƒ‘áƒ— áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒš áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ¡
+                    debugInfo.AppendLine($"ქართული სიმბოლოები (პირველი 10): {string.Join(", ", georgianChars)}");
+
+                    // არასწორად კოდირებული ნიშნების რაოდენობა
                     int encodedCount = currentText.Split(new[] { "Ã¡Æ’" }, StringSplitOptions.None).Length - 1;
-                    debugInfo.AppendLine($"áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ¡áƒ˜áƒ›áƒ‘áƒáƒšáƒáƒ”áƒ‘áƒ˜áƒ¡ áƒ áƒáƒáƒ“áƒ”áƒœáƒáƒ‘áƒ: {encodedCount}");
-                    
-                    // áƒ•áƒáƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒ— áƒ¡áƒ®áƒ•áƒáƒ“áƒáƒ¡áƒ®áƒ•áƒ áƒ™áƒáƒ“áƒ˜áƒ áƒ”áƒ‘áƒ˜áƒ—
+                    debugInfo.AppendLine($"დაშლილი ქართული სიმბოლოების რაოდენობა: {encodedCount}");
+
+                    // სხვადასხვა კოდირების ტესტი
                     var encodings = new[] { "UTF-8", "ISO-8859-1", "Windows-1252", "ISO-8859-5" };
                     foreach (var encodingName in encodings)
                     {
@@ -580,21 +634,29 @@ namespace BCCStudents.Presentation
                             var encoding = Encoding.GetEncoding(encodingName);
                             string testText = encoding.GetString(firstBytes);
                             bool hasGeorgian = testText.Any(c => c >= '\u10A0' && c <= '\u10FF');
-                            debugInfo.AppendLine($"{encodingName}: áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜ áƒ¢áƒ”áƒ¥áƒ¡áƒ¢áƒ˜ = {hasGeorgian}");
+                            debugInfo.AppendLine($"{encodingName}: ქართული ტექსტი = {hasGeorgian}");
                         }
                         catch
                         {
-                            debugInfo.AppendLine($"{encodingName}: áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ");
+                            debugInfo.AppendLine($"{encodingName}: შეცდომა");
                         }
                     }
                 }
-                
-                MessageBox.Show(debugInfo.ToString(), "áƒ“áƒ”áƒ‘áƒáƒ’áƒ˜áƒœáƒ’áƒ˜áƒ¡ áƒ˜áƒœáƒ¤áƒáƒ áƒ›áƒáƒªáƒ˜áƒ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                MessageBox.Show(
+                    debugInfo.ToString(),
+                    "დაბაგინგის ინფორმაცია",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"áƒ“áƒ”áƒ‘áƒáƒ’áƒ˜áƒœáƒ’áƒ˜áƒ¡ áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ: {ex.Message}", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"დაბაგინგის შეცდომა: {ex.Message}",
+                    Properties.Resources.Common_ErrorTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
     }
-} 
+}

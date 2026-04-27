@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using MySql.Data.MySqlClient;
 using BCCStudents.Domain.Entities;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace BCCStudents.Domain.Interfaces
 {
@@ -300,6 +298,16 @@ namespace BCCStudents.Domain.Interfaces
         List<Student> GetStudentsByGroupId(int groupId);
 
         /// <summary>
+        /// მოსწავლეები რამდენიმე ჯგუფის მიხედვით
+        /// </summary>
+        List<Student> GetStudentsByGroupIds(List<int> groupIds);
+
+        /// <summary>
+        /// მოსწავლეები რომლებიც 1-ზე მეტ ჯგუფში არიან
+        /// </summary>
+        List<Student> GetStudentsInMultipleGroups();
+
+        /// <summary>
         /// მოსწავლის დეტალები ID-ით და GroupId-ით
         /// </summary>
         Student GetStudentDetailsById(int studentId, int groupId);
@@ -378,7 +386,7 @@ namespace BCCStudents.Domain.Interfaces
         /// <summary>
         /// StudentGroups-ის მიგრაცია
         /// </summary>
-        void MigrateStudentGroups();
+        //void MigrateStudentGroups();
 
         #endregion
 

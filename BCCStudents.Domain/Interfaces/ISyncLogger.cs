@@ -7,8 +7,6 @@
 // - Implement the interface with matching signatures so SyncLogger can compile.
 // - Keep the interface minimal and focused on the logging contract.
 
-using System;
-
 namespace BCCStudents.Domain.Interfaces
 {
     public interface ISyncLogger

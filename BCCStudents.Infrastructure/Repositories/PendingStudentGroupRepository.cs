@@ -1,25 +1,20 @@
-﻿using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
     public class PendingStudentGroupRepository : IPendingStudentGroupRepository
     {
-        private readonly DatabaseHelper _dbHelper;
-        public PendingStudentGroupRepository(DatabaseHelper databaseHelper)
-        { _dbHelper = databaseHelper; }
+        private readonly IDatabaseConnectionProvider _connectionProvider;
+        public PendingStudentGroupRepository(IDatabaseConnectionProvider connectionProvider)
+        { _connectionProvider = connectionProvider; }
         public List<int> GetGroupsForPendingStudent(int pendingStudentId)
         {
             var groupIds = new List<int>();
 
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 string query = "SELECT GroupId FROM PendingStudentGroups WHERE StudentId = @StudentId";
@@ -42,7 +37,7 @@ namespace BCCStudents.Infrastructure.Repositories
         public List<PendingStudentSubGroup> GetPendingSubGroupsByStudentId(int studentId)
         {
             var list = new List<PendingStudentSubGroup>();
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 var query = "SELECT GroupId, SubGroupId FROM PendingStudentSubGroups WHERE StudentId = @StudentId";
                 conn.Open();
@@ -68,7 +63,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         /*public void AddGroupForPendingStudent(int pendingStudentId, int groupId)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 string query = "INSERT INTO PendingStudentGroups (PendingStudentId, GroupId) VALUES (@PendingStudentId, @GroupId)";
@@ -84,7 +79,7 @@ namespace BCCStudents.Infrastructure.Repositories
 
         public void DeleteByPendingStudentId(int pendingStudentId)
         {
-            using (var conn = _dbHelper.GetLocalConnection())
+            using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
                 string query = "DELETE FROM PendingStudentGroups WHERE PendingStudentId = @PendingStudentId";

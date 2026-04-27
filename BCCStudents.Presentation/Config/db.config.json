@@ -1,0 +1,9 @@
+{
+  "UseLocalDb": true,
+  "IsTestDb": false,
+  "LocalMySqlConnectionString": "Server=localhost;Port=3307;Database=bccstudents_local;User=root;Password=CHANGE_ME;SslMode=Preferred;CharSet=utf8mb4;",
+  "LocalMySqlConnectionString_Test": "",
+  "ServerMySqlConnectionString": "",
+  "ServerMySqlConnectionString_Test": "",
+  "InitScriptPath": "db_init.sql"
+}

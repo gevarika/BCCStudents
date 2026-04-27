@@ -1,14 +1,14 @@
-﻿using BCCStudents.Domain.Entities;
+using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using System;
-using System.Collections.Generic;
 
-namespace BCCStudents.Application.Services {
+namespace BCCStudents.Application.Services
+{
     public class PendingStudentService : IPendingStudentService
     {
         private readonly IPendingStudentRepository _pendingRepo;
         private readonly IStudentRepository _studentRepo;
-        private readonly StudentCodeGenerator _studentCodeGenerator;
+        private readonly IStudentCodeGenerator _studentCodeGenerator;
         private readonly IGroupRepository _groupRepository;
         private readonly IPendingStudentGroupRepository _pendingGroupRepo;
         private readonly IStudentGroupRepository _studentGroupRepo;
@@ -19,7 +19,7 @@ namespace BCCStudents.Application.Services {
             IGroupRepository groupRepository,
             IPendingStudentRepository pendingRepo,
             IStudentRepository studentRepo,
-            StudentCodeGenerator studentCodeGenerator,
+            IStudentCodeGenerator studentCodeGenerator,
             IPendingStudentGroupRepository pendingStudentGroupRepository,
             IStudentGroupRepository studentGroupRepo,
             IStudentSubGroupRepository studentSubGroupRepo,

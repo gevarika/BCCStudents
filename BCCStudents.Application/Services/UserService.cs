@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BCCStudents.Application.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         //UserSession UserSession = new UserSession();
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IUpStreamChangeTracker upStreamChangeTracker = null)
         {
             _userRepository = userRepository;
+            _upStreamChangeTracker = upStreamChangeTracker; // Optional - თუ null-ია, sync არ მოხდება
         }
         public UserModel GetUserByUsername(string username)
         { return _userRepository.GetUserByUsername(username); }
@@ -45,16 +44,16 @@ namespace BCCStudents.Application.Services
                 UserSession.LastLogin = user.LastLogin;
 
                 _userRepository.UpdateLastLogin(userId, DateTime.Now);
-                
+
                 return true;
             }
 
             return false;
         }
         public void UpdateLastLogin(int userId, DateTime lastLogin)
-        { 
+        {
             _userRepository.UpdateLastLogin(userId, lastLogin);
-            
+
         }
         private bool VerifyPassword(string password, string storedHash)
         {
@@ -72,7 +71,7 @@ namespace BCCStudents.Application.Services
             return _userRepository.GetUserByUsername(username) != null;
         }
 
-        public void RegisterUser(string username, string fullName, string email, string password, string role)
+        public int RegisterUser(string username, string fullName, string email, string password, string role, string permissionsJson = null)
         {
             // შეამოწმე არის თუ არა username უკვე არსებული
             if (IsUsernameExists(username))
@@ -89,18 +88,30 @@ namespace BCCStudents.Application.Services
                 Email = email,
                 Password = passwordHash,
                 Role = role,
+                Permissions = permissionsJson,
                 CreatedAt = DateTime.Now
             };
 
-            _userRepository.RegisterUser(user);
-            
+            int userId = _userRepository.RegisterUser(user);
+
+            // Sync to server
+            if (_upStreamChangeTracker != null && userId > 0)
+            {
+                var createdUser = _userRepository.GetUserById(userId);
+                if (createdUser != null)
+                {
+                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Insert, createdUser);
+                }
+            }
+
+            return userId;
         }
         public bool IsCurrentUserAdmin()
         {
             var user = _userRepository.GetUserById(UserSession.Id);
             return user != null && user.Role?.ToLower() == "administrator";
         }
-        private string HashPassword(string password)
+        public string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
             {
@@ -119,7 +130,54 @@ namespace BCCStudents.Application.Services
         { return _userRepository.GetFullName(userId); }
         public List<UserModel> GetAllUsers()
         {
-           return _userRepository.GetAllUsers();
+            return _userRepository.GetAllUsers();
+        }
+
+        // Permissions Management
+        public void UpdateUser(int userId, string fullName, string email, string role, string permissionsJson)
+        {
+            _userRepository.UpdateUser(userId, fullName, email, role, permissionsJson);
+
+            // Sync to server
+            if (_upStreamChangeTracker != null)
+            {
+                var updatedUser = _userRepository.GetUserById(userId);
+                if (updatedUser != null)
+                {
+                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
+                }
+            }
+        }
+
+        public void UpdateUserPermissions(int userId, string permissionsJson)
+        {
+            _userRepository.UpdatePermissions(userId, permissionsJson);
+
+            // Sync to server
+            if (_upStreamChangeTracker != null)
+            {
+                var updatedUser = _userRepository.GetUserById(userId);
+                if (updatedUser != null)
+                {
+                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
+                }
+            }
+        }
+
+        public void UpdateUserPassword(int userId, string newPassword)
+        {
+            string passwordHash = HashPassword(newPassword);
+            _userRepository.UpdatePassword(userId, passwordHash);
+
+            // Sync to server (Password changes are also synced)
+            if (_upStreamChangeTracker != null)
+            {
+                var updatedUser = _userRepository.GetUserById(userId);
+                if (updatedUser != null)
+                {
+                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
+                }
+            }
         }
     }
 }

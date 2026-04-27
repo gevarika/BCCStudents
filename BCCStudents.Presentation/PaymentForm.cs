@@ -1,38 +1,32 @@
-﻿using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
+using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace BCCStudents.Presentation
 {
     public partial class PaymentForm : Form
     {
-        private readonly PaymentService _paymentService;
-        private readonly StudentService _studentService;
+        private readonly IPaymentService _paymentService;
+        private readonly IStudentService _studentService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IExcelPaymentImportService _excelPaymentImportService;
         private readonly IStudentRepository _studentRepository;
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly IGroupRepository _groupRepository;
-        
+        private readonly IUserContext _userContext;
+
         public PaymentForm(
-            IServiceProvider serviceProvider, 
-            PaymentService paymentService, 
-            StudentService studentService, 
+            IServiceProvider serviceProvider,
+            IPaymentService paymentService,
+            IStudentService studentService,
             IExcelPaymentImportService excelPaymentImportService,
             IStudentRepository studentRepository,
             IStudentGroupRepository studentGroupRepository,
-            IGroupRepository groupRepository)
+            IGroupRepository groupRepository,
+            IUserContext userContext)
         {
             InitializeComponent();
             FormTitleHelper.SetTitle(this, "გადახდის ხელით დაფიქსირება");
@@ -43,10 +37,29 @@ namespace BCCStudents.Presentation
             _studentRepository = studentRepository;
             _studentGroupRepository = studentGroupRepository;
             _groupRepository = groupRepository;
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             LoadStudents(); // მოსწავლეების ჩამოტვირთვა ComboBox-ში
             cmbStudents.SelectedIndexChanged += CmbStudents_SelectedIndexChanged;
             label1.Text = "მოსწავლე:";
             label2.Text = "თანხა:";
+
+            // Apply security checks after form is loaded
+            this.Load += PaymentForm_Load;
+        }
+
+        private void PaymentForm_Load(object sender, EventArgs e)
+        {
+            ApplySecurityChecks();
+        }
+
+        private void ApplySecurityChecks()
+        {
+            // btnConfirmPayment - CanAddPayments permission
+            if (btnConfirmPayment != null)
+            {
+                btnConfirmPayment.Tag = $"Permission_{Permission.CanAddPayments}";
+                btnConfirmPayment.Enabled = _userContext.HasPermission(Permission.CanAddPayments);
+            }
         }
         private void LoadStudents()
         {
@@ -59,6 +72,13 @@ namespace BCCStudents.Presentation
 
         private async void btnConfirmPayment_Click(object sender, EventArgs e)
         {
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanAddPayments))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             if (cmbStudents.SelectedItem == null || string.IsNullOrWhiteSpace(txtAmount.Text))
             {
                 MessageBox.Show("⚠️ გთხოვთ, შეავსოთ ყველა ველი!", "შეტყობინება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -79,7 +99,7 @@ namespace BCCStudents.Presentation
             AddLog($"გადახდის პროცესის დაწყება");
             AddLog($"═══════════════════════════════════════════════════════");
             AddLog($"");
-            
+
             // მოსწავლის ინფორმაცია
             var student = _studentRepository.GetStudentById(studentId);
             if (student != null)
@@ -94,12 +114,12 @@ namespace BCCStudents.Presentation
             // ⚠️ დროებითი ფუნქცია სატესტოდ: მხოლოდ ბალანსზე თანხის დამატება
             AddLog("ბალანსის განახლება (დროებითი ფუნქცია სატესტოდ)...");
             AddLog("");
-            
+
             try
             {
                 // მხოლოდ ბალანსის განახლება (ProcessPayment-ის გარეშე)
                 bool success = _studentRepository.IncrementStudentBalance(studentId, amount);
-                
+
                 if (success)
                 {
                     // განახლებული ინფორმაცია
@@ -113,7 +133,7 @@ namespace BCCStudents.Presentation
                         AddLog("");
                         AddLog("⚠️ შენიშვნა: ეს არის დროებითი ფუნქცია სატესტოდ.");
                         AddLog("გადახდის სრული დამუშავება არ მოხდა (Payments ცხრილი, StudentGroups განახლება და ა.შ.)");
-                        
+
                         MessageBox.Show(
                             $"თანხა წარმატებით დაემატა ბალანსზე!\n\n" +
                             $"ძველი ბალანსი: {student.Balance} ₾\n" +
@@ -124,7 +144,7 @@ namespace BCCStudents.Presentation
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information
                         );
-                        
+
                         RefreshStudentInfo(studentId);
                     }
                     else
@@ -145,7 +165,7 @@ namespace BCCStudents.Presentation
                 AddLog($"Stack Trace: {ex.StackTrace}");
                 MessageBox.Show($"შეცდომა ბალანსის განახლებისას:\n{ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            
+
             // ==================== კომენტარი: სრული გადახდის დამუშავებისთვის ====================
             // თუ გსურთ სრული გადახდის დამუშავება (Payments ცხრილი, StudentGroups განახლება და ა.შ.),
             // გამოიყენეთ ეს კოდი:
@@ -172,7 +192,8 @@ namespace BCCStudents.Presentation
         {
             if (txtLogs.InvokeRequired)
             {
-                txtLogs.Invoke(new Action(() => {
+                txtLogs.Invoke(new Action(() =>
+                {
                     txtLogs.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
                     txtLogs.ScrollToCaret();
                 }));
@@ -199,7 +220,7 @@ namespace BCCStudents.Presentation
             if (student != null)
             {
                 lblBalance.Text = $"ბალანსი: {student.Balance} ₾";
-                
+
                 // ჯგუფების ინფორმაცია
                 var groups = _studentGroupRepository.GetForPayment(studentId);
                 var groupInfo = new StringBuilder();
@@ -207,7 +228,7 @@ namespace BCCStudents.Presentation
                 groupInfo.AppendLine($"ბალანსი: {student.Balance} ₾");
                 groupInfo.AppendLine("");
                 groupInfo.AppendLine("აქტიური ჯგუფები:");
-                
+
                 if (groups != null && groups.Any())
                 {
                     foreach (var group in groups.OrderBy(g => g.DateOfPayment))
@@ -217,7 +238,7 @@ namespace BCCStudents.Presentation
                         var finalFee = group.Price - discount;
                         var dateStr = group.DateOfPayment.HasValue ? group.DateOfPayment.Value.ToString("dd.MM.yyyy") : "არ არის დაყენებული";
                         var statusStr = group.PaymentStatus ?? "Pending";
-                        
+
                         groupInfo.AppendLine($"  • {groupName} (ID: {group.GroupId})");
                         groupInfo.AppendLine($"    ფასი: {group.Price} ₾, ფასდაკლება: {discount} ₾ ({group.Discount}%), საბოლოო: {finalFee} ₾");
                         groupInfo.AppendLine($"    გადახდის თარიღი: {dateStr}");
@@ -229,7 +250,7 @@ namespace BCCStudents.Presentation
                 {
                     groupInfo.AppendLine("  არ არის აქტიური ჯგუფები");
                 }
-                
+
                 lblStudentInfo.Text = groupInfo.ToString();
             }
         }

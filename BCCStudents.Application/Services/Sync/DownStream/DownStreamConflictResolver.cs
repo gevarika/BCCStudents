@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Application.Interfaces;
+﻿using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.DownStream
 {
@@ -10,13 +6,13 @@ namespace BCCStudents.Application.Services.Sync.DownStream
     {
         public Task<IReadOnlyList<SyncConflict>> DetectConflictsAsync<T>(string tableName, IReadOnlyList<T> serverData, CancellationToken cancellationToken = default)
         {
-            // áƒ¡áƒáƒ¬áƒ§áƒ˜áƒ¡áƒ˜ áƒ•áƒ”áƒ áƒ¡áƒ˜áƒ˜áƒ¡áƒ—áƒ•áƒ˜áƒ¡ áƒáƒ  áƒ•áƒáƒ¢áƒáƒ áƒ”áƒ‘áƒ— áƒ™áƒáƒœáƒ¤áƒšáƒ˜áƒ¥áƒ¢áƒ˜áƒ¡ áƒ¨áƒ”áƒ›áƒáƒ¬áƒ›áƒ”áƒ‘áƒáƒ¡ (ServerWins).
+            // საწყისი ვერსიისთვის არ ვატარებთ კონფლიქტის შემოწმებას (ServerWins).
             return Task.FromResult<IReadOnlyList<SyncConflict>>(new List<SyncConflict>());
         }
 
         public Task<bool> ResolveConflictAsync(SyncConflict conflict, object serverEntity, CancellationToken cancellationToken = default)
         {
-            // ServerWins â€“ áƒ£áƒ‘áƒ áƒáƒšáƒáƒ“ áƒ•áƒáƒ‘áƒ áƒ£áƒœáƒ”áƒ‘áƒ— true-áƒ¡, áƒ áƒáƒ“áƒ’áƒáƒœ áƒ¡áƒ”áƒ áƒ•áƒ”áƒ áƒ˜áƒ¡ áƒ›áƒáƒœáƒáƒªáƒ”áƒ›áƒ”áƒ‘áƒ¡ áƒ•áƒ˜áƒ§áƒ”áƒœáƒ”áƒ‘áƒ—.
+            // ServerWins – უბრალოდ ვაბრუნებთ true-ს, რადგან სერვერის მონაცემებს ვიყენებთ.
             return Task.FromResult(true);
         }
     }

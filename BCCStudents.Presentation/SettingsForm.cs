@@ -1,13 +1,11 @@
-﻿using BCCStudents.Application.Services;
-using System;
-using System.Windows.Forms;
+﻿using BCCStudents.Application.Interfaces;
 
 namespace BCCStudents.Presentation
 {
     public partial class SettingsForm : Form
     {
-        private readonly PaymentDateService _paymentDateService;
-        public SettingsForm(PaymentDateService paymentDateService)
+        private readonly IPaymentDateService _paymentDateService;
+        public SettingsForm(IPaymentDateService paymentDateService)
         {
             InitializeComponent();
             _paymentDateService = paymentDateService;

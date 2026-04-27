@@ -1,15 +1,11 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using BCCStudents.Domain.Entities;
-using BCCStudents;
-using BCCStudents.Domain.Interfaces;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.UpStream
 {
     /// <summary>
-    /// áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ”áƒ‘áƒ˜áƒ¡ áƒ“áƒáƒ¤áƒ˜áƒ¥áƒ¡áƒ˜áƒ áƒ”áƒ‘áƒ áƒ“áƒ áƒ“áƒáƒ£áƒ§áƒáƒ•áƒœáƒ”áƒ‘áƒšáƒ˜áƒ•áƒ˜/áƒ’áƒáƒ“áƒáƒ•áƒáƒ“áƒ”áƒ‘áƒ£áƒšáƒ˜ áƒ’áƒáƒ’áƒ–áƒáƒ•áƒœáƒ áƒ¡áƒ”áƒ áƒ•áƒ”áƒ áƒ–áƒ”.
+    /// ცვლილებების დაფიქსირება და დაუყოვნებლივი/გადავადებული გაგზავნა სერვერზე.
     /// </summary>
     public class UpStreamChangeTracker : IUpStreamChangeTracker
     {
@@ -205,6 +201,56 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
         #endregion
 
+        #region Payments
+
+        public Task TrackPaymentChangeAsync(int paymentId, SyncOperationType operation, Payment snapshot, CancellationToken cancellationToken = default)
+        {
+            var payload = _payloadBuilder.BuildPaymentPayload(paymentId, operation, snapshot);
+            return ProcessPayloadAsync(payload, cancellationToken);
+        }
+
+        public Task TrackPaymentChangeAsync(int paymentId, string operation, Payment snapshot, CancellationToken cancellationToken = default)
+        {
+            return TrackPaymentChangeAsync(paymentId, ParseOperation(operation), snapshot, cancellationToken);
+        }
+
+        public void TrackPaymentChange(int paymentId, SyncOperationType operation, Payment snapshot)
+        {
+            _ = TrackPaymentChangeAsync(paymentId, operation, snapshot);
+        }
+
+        public void TrackPaymentChange(int paymentId, string operation, Payment snapshot)
+        {
+            _ = TrackPaymentChangeAsync(paymentId, operation, snapshot);
+        }
+
+        #endregion
+
+        #region Users
+
+        public Task TrackUserChangeAsync(int userId, SyncOperationType operation, UserModel snapshot, CancellationToken cancellationToken = default)
+        {
+            var payload = _payloadBuilder.BuildUserPayload(userId, operation, snapshot);
+            return ProcessPayloadAsync(payload, cancellationToken);
+        }
+
+        public Task TrackUserChangeAsync(int userId, string operation, UserModel snapshot, CancellationToken cancellationToken = default)
+        {
+            return TrackUserChangeAsync(userId, ParseOperation(operation), snapshot, cancellationToken);
+        }
+
+        public void TrackUserChange(int userId, SyncOperationType operation, UserModel snapshot)
+        {
+            _ = TrackUserChangeAsync(userId, operation, snapshot);
+        }
+
+        public void TrackUserChange(int userId, string operation, UserModel snapshot)
+        {
+            _ = TrackUserChangeAsync(userId, operation, snapshot);
+        }
+
+        #endregion
+
         private async Task ProcessPayloadAsync(SyncChangePayload payload, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -219,7 +265,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             }
             catch (Exception ex)
             {
-                _logger.Error($"áƒªáƒ•áƒšáƒ˜áƒšáƒ”áƒ‘áƒ˜áƒ¡ Track áƒ•áƒ”áƒ  áƒ›áƒáƒ®áƒ”áƒ áƒ®áƒ“áƒ ({payload.TableName}/{payload.RecordKey}). SyncOutbox-áƒ¨áƒ˜ áƒ˜áƒœáƒáƒ®áƒ”áƒ‘áƒ.", ex);
+                _logger.Error($"ცვლილებების Track ვერ მოხერხდა ({payload.TableName}/{payload.RecordKey}). SyncOutbox-ში ინახება.", ex);
                 await _repository.EnqueueChangeAsync(payload, cancellationToken).ConfigureAwait(false);
             }
         }

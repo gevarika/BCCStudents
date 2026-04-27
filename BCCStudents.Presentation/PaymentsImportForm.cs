@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Application.Services;
-using ClosedXML.Excel;
+﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Application.Interfaces;
+using ClosedXML.Excel;
+using System.Data;
 
 namespace BCCStudents.Presentation
 {
@@ -25,12 +14,12 @@ namespace BCCStudents.Presentation
         /// ფორმა დაიხურა იმპორტის გარეშე
         /// </summary>
         Cancelled,
-        
+
         /// <summary>
         /// იმპორტი წარმატებით დასრულდა
         /// </summary>
         Success,
-        
+
         /// <summary>
         /// იმპორტი შეცდომით დასრულდა
         /// </summary>
@@ -38,12 +27,12 @@ namespace BCCStudents.Presentation
     }
     public partial class PaymentsImportForm : Form
     {
-        private readonly IExcelPaymentImportService _importService;
+        private readonly IExcelPaymentImportService _paymentImportService;
         private string _selectedFilePath;
         private DataTable _previewData;
         private readonly string _defaultImportPath;
         private readonly IPaymentDescriptionAnalyzer _descriptionAnalyzer;
-        
+
         /// <summary>
         /// ფორმის დაბრუნების სტატუსი
         /// </summary>
@@ -52,13 +41,13 @@ namespace BCCStudents.Presentation
         public PaymentsImportForm(IExcelPaymentImportService importService, IPaymentDescriptionAnalyzer descriptionAnalyzer)
         {
             InitializeComponent();
-            _importService = importService;
+            _paymentImportService = importService;
             _defaultImportPath = Path.Combine(System.Windows.Forms.Application.StartupPath, "Students");
             _descriptionAnalyzer = descriptionAnalyzer;
-            
+
             InitializeForm();
             SetupDataGridView();
-            
+
             // Form closing event handler
             this.FormClosing += PaymentsImportForm_FormClosing;
         }
@@ -85,31 +74,31 @@ namespace BCCStudents.Presentation
         private void InitializeForm()
         {
             FormTitleHelper.SetTitle(this, "გადახდების იმპორტი ფაილიდან");
-            
+
             // ფაილის არჩევის ღილაკი
             btnSelectFile.Click += BtnSelectFile_Click;
-            
+
             // იმპორტის ღილაკი
             btnImport.Click += BtnImport_Click;
-            
+
             // პრევიუს ღილაკი
             btnPreview.Click += BtnPreview_Click;
-            
+
             // არჩევის ღილაკები
             btnSelectAll.Click += BtnSelectAll_Click;
             btnDeselectAll.Click += BtnDeselectAll_Click;
             btnSelectValid.Click += BtnSelectValid_Click;
-            
+
             // Add tooltips for selection buttons
             var toolTip = new ToolTip();
             toolTip.SetToolTip(btnSelectAll, "აირჩიეთ ყველა ჩანაწერი იმპორტისთვის");
             toolTip.SetToolTip(btnDeselectAll, "მოახსენეთ ყველა ჩანაწერის არჩევა");
             toolTip.SetToolTip(btnSelectValid, "აირჩიეთ მხოლოდ ის ჩანაწერები, რომლებიც არ საჭიროებენ გადასახედს");
-            
+
             // პროგრეს ბარის ინიციალიზაცია
             progressBar.Style = ProgressBarStyle.Continuous;
             progressBar.Visible = false;
-            
+
             // სტატუს ლეიბლის ინიციალიზაცია
             lblStatus.Text = "მზადაა იმპორტისთვის";
             lblStatus.ForeColor = Color.Gray;
@@ -119,7 +108,7 @@ namespace BCCStudents.Presentation
         {
             dgvPreview.AutoGenerateColumns = false;
             dgvPreview.Columns.Clear();
-            
+
             // Add checkbox column for selection
             var selectColumn = new DataGridViewCheckBoxColumn
             {
@@ -129,7 +118,7 @@ namespace BCCStudents.Presentation
                 Width = 50
             };
             dgvPreview.Columns.Add(selectColumn);
-            
+
             // Add checkbox column for review status
             dgvPreview.Columns.Add(new DataGridViewCheckBoxColumn
             {
@@ -139,7 +128,7 @@ namespace BCCStudents.Presentation
                 Width = 80,
                 ReadOnly = true
             });
-            
+
             // Add status column
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
@@ -148,7 +137,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "Status",
                 Width = 100
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PaymentDate",
@@ -156,7 +145,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "PaymentDate",
                 Width = 100
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Amount",
@@ -165,7 +154,7 @@ namespace BCCStudents.Presentation
                 Width = 100,
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" }
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PersonalId",
@@ -173,7 +162,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "PersonalId",
                 Width = 120
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "PayerName",
@@ -181,7 +170,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "PayerName",
                 Width = 150
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Description",
@@ -189,7 +178,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "Description",
                 Width = 200
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "MatchedStudentName",
@@ -197,7 +186,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "MatchedStudentName",
                 Width = 150
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "MatchedGroupName",
@@ -205,7 +194,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "MatchedGroupName",
                 Width = 100
             });
-            
+
             dgvPreview.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "AnalysisResult",
@@ -213,7 +202,7 @@ namespace BCCStudents.Presentation
                 DataPropertyName = "AnalysisResult",
                 Width = 200
             });
-            
+
             // Add cell formatting for review status
             dgvPreview.CellFormatting += (s, e) =>
             {
@@ -223,7 +212,7 @@ namespace BCCStudents.Presentation
                     e.CellStyle.BackColor = requiresReview ? Color.LightYellow : Color.White;
                 }
             };
-            
+
             // Add cell value changed handler for selection
             dgvPreview.CellValueChanged += (s, e) =>
             {
@@ -232,7 +221,7 @@ namespace BCCStudents.Presentation
                     UpdateImportButtonState();
                 }
             };
-            
+
             // Add cell click handler for selection (for better UX)
             dgvPreview.CellClick += (s, e) =>
             {
@@ -243,7 +232,7 @@ namespace BCCStudents.Presentation
                     row.Cells["IsSelected"].Value = !currentValue;
                 }
             };
-            
+
             // Add header click handler for select all/none
             dgvPreview.ColumnHeaderMouseClick += (s, e) =>
             {
@@ -258,13 +247,13 @@ namespace BCCStudents.Presentation
                             break;
                         }
                     }
-                    
+
                     // Toggle selection
                     foreach (DataGridViewRow row in dgvPreview.Rows)
                     {
                         row.Cells["IsSelected"].Value = !allSelected;
                     }
-                    
+
                     UpdateImportButtonState();
                 }
             };
@@ -286,7 +275,7 @@ namespace BCCStudents.Presentation
         {
             int selectedCount = 0;
             int totalCount = 0;
-            
+
             if (_previewData != null)
             {
                 totalCount = _previewData.Rows.Count;
@@ -298,24 +287,24 @@ namespace BCCStudents.Presentation
                     }
                 }
             }
-            
+
             bool hasSelectedRows = selectedCount > 0;
-            
+
             btnImport.Enabled = hasSelectedRows;
-            
+
             if (totalCount > 0)
             {
-                lblStatus.Text = hasSelectedRows ? 
-                    $"არჩეულია {selectedCount}/{totalCount} ჩანაწერი იმპორტისთვის" : 
+                lblStatus.Text = hasSelectedRows ?
+                    $"არჩეულია {selectedCount}/{totalCount} ჩანაწერი იმპორტისთვის" :
                     $"გთხოვთ, აირჩიოთ ჩანაწერები იმპორტისთვის ({totalCount} ხელმისაწვდომია)";
             }
             else
             {
-                lblStatus.Text = hasSelectedRows ? 
-                    "არჩეულია იმპორტისთვის" : 
+                lblStatus.Text = hasSelectedRows ?
+                    "არჩეულია იმპორტისთვის" :
                     "გთხოვთ, აირჩიოთ ჩანაწერები იმპორტისთვის";
             }
-            
+
             lblStatus.ForeColor = hasSelectedRows ? Color.Green : Color.Red;
         }
 
@@ -363,13 +352,13 @@ namespace BCCStudents.Presentation
                 btnSelectAll.Enabled = true;
                 btnDeselectAll.Enabled = true;
                 btnSelectValid.Enabled = true;
-                
+
                 // Update the import button state and status
                 UpdateImportButtonState();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"შეცდომა მონაცემების წინასწარი ნახვის დროს: {ex.Message}", 
+                MessageBox.Show($"შეცდომა მონაცემების წინასწარი ნახვის დროს: {ex.Message}",
                     "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -419,10 +408,10 @@ namespace BCCStudents.Presentation
                         // 7 - აღწერა
 
                         var currentRow = worksheet.Row(row);
-                        
+
                         // დავამატოთ დეტალური ლოგირება თარიღის უჯრისთვის
                         var dateCell = currentRow.Cell(1);
-                        
+
                         DateTime paymentDate;
                         if (dateCell.DataType == XLDataType.DateTime)
                         {
@@ -471,7 +460,7 @@ namespace BCCStudents.Presentation
                         var description = currentRow.Cell(7).GetString()?.Trim() ?? "";
 
                         var analysis = await _descriptionAnalyzer.AnalyzeDescription(description, personalId);
-                        
+
                         dt.Rows.Add(
                             row, // RowNumber
                             false, // IsSelected
@@ -551,19 +540,19 @@ namespace BCCStudents.Presentation
                 progressBar.Value = 0;
                 progressBar.Maximum = selectedRows.Count;
 
-                var importResult = await _importService.ImportSelectedPayments(_selectedFilePath, selectedRows, (current, total) =>
+                var importResult = await _paymentImportService.ImportSelectedPayments(_selectedFilePath, selectedRows, (current, total) =>
                 {
                     progressBar.Value = current;
                     lblStatus.Text = $"იმპორტი მიმდინარეობს... {current}/{total}";
                     System.Windows.Forms.Application.DoEvents();
                 });
-                
+
                 if (importResult.Success)
                 {
                     Result = ImportFormResult.Success;
-                    MessageBox.Show($"იმპორტი დასრულდა!\nწარმატებით იმპორტირებული: {importResult.ImportedCount}\nშეცდომებით: {importResult.FailedRows.Count}", 
+                    MessageBox.Show($"იმპორტი დასრულდა!\nწარმატებით იმპორტირებული: {importResult.ImportedCount}\nშეცდომებით: {importResult.FailedRows.Count}",
                         "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    
+
                     /*if (importResult.FailedRows.Any())
                     {
                         var failedRowsMessage = string.Join("\n", importResult.FailedRows.Select(f => 
@@ -575,7 +564,7 @@ namespace BCCStudents.Presentation
                 else
                 {
                     Result = ImportFormResult.Failed;
-                    MessageBox.Show($"იმპორტი ვერ მოხერხდა: {importResult.ErrorMessage}", 
+                    MessageBox.Show($"იმპორტი ვერ მოხერხდა: {importResult.ErrorMessage}",
                         "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 // statusLabel.Text = $"იმპორტის სრული დრო: {sw.Elapsed.TotalSeconds:N1} წამი"; // This line was removed as per the edit hint
@@ -583,7 +572,7 @@ namespace BCCStudents.Presentation
             catch (Exception ex)
             {
                 Result = ImportFormResult.Failed;
-                MessageBox.Show($"შეცდომა იმპორტის დროს: {ex.Message}", 
+                MessageBox.Show($"შეცდომა იმპორტის დროს: {ex.Message}",
                     "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

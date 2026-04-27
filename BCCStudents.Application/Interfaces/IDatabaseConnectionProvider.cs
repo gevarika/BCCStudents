@@ -21,7 +21,7 @@ namespace BCCStudents.Application.Interfaces
         MySqlConnection GetServerConnection();
 
         /// <summary>
-        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი, კონფიგურაციის მიხედვით)
+        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი - კონფიგურაციის მიხედვით)
         /// </summary>
         /// <returns>MySqlConnection ინსტანსი</returns>
         MySqlConnection GetMySqlConnection();

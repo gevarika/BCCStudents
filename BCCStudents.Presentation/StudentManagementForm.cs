@@ -1,49 +1,53 @@
-﻿using ClosedXML.Excel;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Data.SqlClient;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using BCCStudents.Application.Services;
-using Microsoft.Extensions.DependencyInjection;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Domain.Entities;
-using BCCStudents.Infrastructure.Data;
-using BCCStudents.Infrastructure.Services;
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services;
+using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Infrastructure.Services;
+using Microsoft.Extensions.DependencyInjection;
+using System.Data;
 
 namespace BCCStudents.Presentation
 {
+    public delegate SetStudyStartDateForm SetStudyStartDateFormFactory();
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public partial class StudentManagementForm : Form
     {
-        private readonly StudentService _studentService;
-        private readonly GroupService _groupService;
-        private readonly PaymentDateService _paymentDateService;
-        private readonly SubGroupService _subGroupService;
-        private readonly StudentExportService _studentExportService;
+        private readonly IStudentService _studentService;
+        private readonly IGroupService _groupService;
+        private readonly IPaymentDateService _paymentDateService;
+        private readonly ISystemConfigurationService _systemConfigService;
+        private readonly ISubGroupService _subGroupService;
+        private readonly IStudentExportService _studentExportService;
         //private readonly ImportService _importService;
-        private readonly StudentCodeGenerator _studentCodeGenerator;
+        private readonly IStudentCodeGenerator _studentCodeGenerator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly BackupManager _backupManager;
+        private readonly BackupService _backupManager;
         private readonly ISmsService _smsservice;
+
+        private readonly ImportFormFactory _importFormFactory;
+        private readonly StudentsEditFormFactory _studentsEditFormFactory;
+        private readonly PendingStudentsFormFactory _pendingStudentsFormFactory;
+        private readonly FailedStudentsFormFactory _failedStudentsFormFactory;
+        private readonly SetStudyStartDateFormFactory _setStudyStartDateFormFactory;
+        private readonly IUserContext _userContext;
         //UserSession _userSession = new UserSession();
         public StudentManagementForm(
-            StudentService studentService,
-            GroupService groupService, 
-            SubGroupService subGroupService,
-            StudentCodeGenerator studentCodeGenerator,
+            IStudentService studentService,
+            IGroupService groupService,
+            ISubGroupService subGroupService,
+            IStudentCodeGenerator studentCodeGenerator,
             IServiceProvider serviceProvider,
-            PaymentDateService paymentDateService,
-            StudentExportService studentExportService,
-            BackupManager backupManager,
-            ISmsService smsService
-            //LoginForm loginForm
+            IPaymentDateService paymentDateService,
+            ISystemConfigurationService systemConfigService,
+            IStudentExportService studentExportService,
+            BackupService backupManager,
+            ISmsService smsService,
+            ImportFormFactory importFormFactory,
+            StudentsEditFormFactory studentsEditFormFactory,
+            PendingStudentsFormFactory pendingStudentsFormFactory,
+            FailedStudentsFormFactory failedStudentsFormFactory,
+            SetStudyStartDateFormFactory setStudyStartDateFormFactory,
+            IUserContext userContext
             )
         {
             InitializeComponent();
@@ -53,13 +57,100 @@ namespace BCCStudents.Presentation
             _studentCodeGenerator = studentCodeGenerator;
             _serviceProvider = serviceProvider;
             _paymentDateService = paymentDateService;
+            _systemConfigService = systemConfigService ?? throw new ArgumentNullException(nameof(systemConfigService));
             _studentExportService = studentExportService;
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია");
             else FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია - სატესტო რეჟიმი");
             _backupManager = backupManager;
             _smsservice = smsService;
+            _importFormFactory = importFormFactory;
+            _studentsEditFormFactory = studentsEditFormFactory;
+            _pendingStudentsFormFactory = pendingStudentsFormFactory;
+            _failedStudentsFormFactory = failedStudentsFormFactory;
+            _setStudyStartDateFormFactory = setStudyStartDateFormFactory;
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+
+            // Apply security checks after form is loaded
+            this.Load += StudentManagementForm_Load;
         }
+        private void StudentManagementForm_Load(object sender, EventArgs e)
+        {
+            ApplySecurityChecks();
+            if (UserSession.Role != "Administrator")
+            {
+                btnImportFromExcell.Enabled = false;
+            }
+            CheckGroupsExistence(); // პირველი ნაბიჯი
+            DateTime? studyStartDate = PaymentDateManager.GetNextPaymentDate();
+
+            if (studyStartDate == null)
+            {
+                MessageBox.Show("⚠️ ჯერ უნდა მიუთითოთ სწავლის დაწყების თარიღი!", "შეტყობინება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SetStudyStartDate();
+                studyStartDate = PaymentDateManager.GetNextPaymentDate();
+            }
+            txtStudentInfo.Enabled = false;
+            string filePath = "cachedTexts.txt";
+            LoadCachedTextsFromFile(filePath, txtFirstName);
+            LoadStudents();
+            LoadGroups();
+        }
+        private void ApplySecurityChecks()
+        {
+            // btnAddStudent - CanAddStudents or CanManageStudents permission
+            if (btnAddStudent != null)
+            {
+                btnAddStudent.Tag = $"Permission_{Permission.CanAddStudents}";
+                btnAddStudent.Enabled = _userContext.HasPermission(Permission.CanAddStudents) ||
+                                       _userContext.HasPermission(Permission.CanManageStudents);
+            }
+
+            // მოსწავლისრედაქტირებაToolStripMenuItem - CanEditStudents or CanManageStudents permission
+            if (მოსწავლისრედაქტირებაToolStripMenuItem != null)
+            {
+                მოსწავლისრედაქტირებაToolStripMenuItem.Tag = $"Permission_{Permission.CanEditStudents}";
+                მოსწავლისრედაქტირებაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanEditStudents) ||
+                                                                   _userContext.HasPermission(Permission.CanManageStudents);
+            }
+
+            // tsmFailedStudents - CanViewReports or CanManageStudents permission (viewing failed students is a read operation)
+            if (tsmFailedStudents != null)
+            {
+                tsmFailedStudents.Tag = $"Permission_{Permission.CanViewReports}";
+                tsmFailedStudents.Enabled = _userContext.HasPermission(Permission.CanViewReports) ||
+                                           _userContext.HasPermission(Permission.CanManageStudents);
+            }
+
+            // ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem - CanViewReports or CanManageStudents permission
+            if (ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem != null)
+            {
+                ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem.Tag = $"Permission_{Permission.CanViewReports}";
+                ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanViewReports) ||
+                                                                              _userContext.HasPermission(Permission.CanManageStudents);
+            }
+
+            // btnExportToExcell - CanExportData permission
+            if (btnExportToExcell != null)
+            {
+                btnExportToExcell.Tag = $"Permission_{Permission.CanExportData}";
+                btnExportToExcell.Enabled = _userContext.HasPermission(Permission.CanExportData);
+            }
+
+            // btnImportFromExcell - CanImport permission
+            if (btnImportFromExcell != null)
+            {
+                btnImportFromExcell.Tag = $"Permission_{Permission.CanImport}";
+                btnImportFromExcell.Enabled = _userContext.HasPermission(Permission.CanImport);
+            }
+        }
+        #region Delegates
+        public delegate ImportFormV2 ImportFormFactory();
+        public delegate StudentsEditForm StudentsEditFormFactory();
+        public delegate PendingStudentsForm PendingStudentsFormFactory();
+        public delegate FailedStudentsForm FailedStudentsFormFactory();
+
+        #endregion
         private void LoadCachedTextsFromFile(string filePath, TextBox textBox)
         {
             if (File.Exists(filePath))
@@ -96,7 +187,7 @@ namespace BCCStudents.Presentation
 
             // განახლება პროცესში და სტატუსბარის განახლება
             LoadStudents();
-            
+
         }
         private async void btnAddStudent_Click(object sender, EventArgs e)
         {
@@ -149,59 +240,124 @@ namespace BCCStudents.Presentation
 
                 // ვამოწმებთ არის თუ არა ეს პირველი მოსწავლე
                 var existingStudentsCount = _studentService.GetAllStudents().Count;
-                DateTime? studyStartDate = StudyStartDateManager.GetStudyStartDate().Value.AddMonths(1);
-                
+                var studyStartDate = _systemConfigService?.GetStudyStartDate();
+                var paymentStartDate = _systemConfigService.GetDefaultPaymentDate();
+                if (!studyStartDate.HasValue && !paymentStartDate.HasValue)
+                {
+                    var dateresult = MessageBox.Show(
+                        "⚠️ ჯერ უნდა მიუთითოთ სწავლის დაწყების თარიღი! '\n " +
+                        "ასევე უნდა დააყენოთ პირველი გადახდის თარიღი! ",
+                        "შეტყობინება",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                        );
+                    if (dateresult != DialogResult.OK)
+                        SetStudyStartDate();
+                    studyStartDate = _systemConfigService?.GetStudyStartDate();
+                    paymentStartDate = _systemConfigService.GetDefaultPaymentDate();
+                }
+
+
+
                 // თუ ეს პირველი მოსწავლეა, ვამოწმებთ სწავლის დაწყების თარიღს
                 if (existingStudentsCount == 0)
                 {
-                    var studyDate = StudyStartDateManager.GetStudyStartDate();
-                    if (studyDate.HasValue)
+                    if (studyStartDate.HasValue)
                     {
                         var resultMessage = MessageBox.Show(
                             $"ეს არის პირველი მოსწავლე რეგისტრაცია.\n\n" +
-                            $"სწავლის დაწყების თარიღი: {studyDate.Value:dd-MM-yyyy}\n" +
-                            $"პირველი გადახდის თარიღი: {studyDate.Value.AddMonths(1):dd-MM-yyyy}\n\n" +
+                            $"სწავლის დაწყების თარიღი: {studyStartDate.Value:dd-MM-yyyy}\n" +
+                            $"პირველი გადახდის თარიღი: {paymentStartDate.Value:dd-MM-yyyy}\n\n" +
                             $"გსურთ გაგრძელება ამ თარიღებით?",
                             "სწავლის დაწყების თარიღის დადასტურება",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Question
                         );
-                        
+
                         if (resultMessage != DialogResult.Yes)
                         {
-                            MessageBox.Show("რეგისტრაცია გაუქმებულია. გთხოვთ შეცვალოთ სწავლის დაწყების თარიღი.", 
+                            MessageBox.Show("რეგისტრაცია გაუქმებულია. გთხოვთ შეცვალოთ სწავლის დაწყების თარიღი.",
                                 "რეგისტრაცია გაუქმებულია", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
                     }
                 }
-                
+
                 Student student = new Student
-                    {
-                        FirstName = txtFirstName.Text.Trim(),
-                        LastName = txtLastName.Text.Trim(),
-                        ParentName = txtParentName.Text.Trim(),
-                        PhoneNumber = txtPhoneNumber.Text.Trim(),
-                        Id_Numb = Convert.ToInt64(txtIdNumb.Text.Trim()),
-                        Address = txtAddress.Text.Trim(),
-                        Age = int.Parse(txtAge.Text.Trim()),
-                        RegistrationDate = DateTime.Now,
-                        DateOfPayment = studyStartDate, // მთავარი ხაზი
-                        TuitionFee = Convert.ToDecimal(numTuitionFee.Text),
-                        Discount = int.Parse(cmbDiscount.Text.Replace("%", "").Trim()),
-                        StudentCode = _studentCodeGenerator.GenerateStudentCode(),
-                        Status = true,
-                        Info = txtStudentInfo.Text,
-                        PaymentStatus = "Pending",
-                        IdCardPath = "FromPC",
-                        AdditionalDocsPath = "FromPC",
-                        Balance = 0
-                    };
-               
-                var selectedGroupIds = clbGroups.CheckedItems
+                {
+                    FirstName = txtFirstName.Text.Trim(),
+                    LastName = txtLastName.Text.Trim(),
+                    ParentName = txtParentName.Text.Trim(),
+                    PhoneNumber = txtPhoneNumber.Text.Trim(),
+                    Id_Numb = Convert.ToInt64(txtIdNumb.Text.Trim()),
+                    Address = txtAddress.Text.Trim(),
+                    Age = int.Parse(txtAge.Text.Trim()),
+                    RegistrationDate = DateTime.Now,
+                    DateOfPayment = paymentStartDate, // მთავარი ხაზი
+                    TuitionFee = Convert.ToDecimal(numTuitionFee.Text),
+                    Discount = int.Parse(cmbDiscount.Text.Replace("%", "").Trim()),
+                    StudentCode = _studentCodeGenerator.GenerateStudentCode(),
+                    Status = true,
+                    Info = txtStudentInfo.Text,
+                    PaymentStatus = "Pending",
+                    IdCardPath = "FromPC",
+                    AdditionalDocsPath = "FromPC",
+                    Balance = 0
+                };
+
+                var selectedGroups = clbGroups.CheckedItems
                     .Cast<Group>()
-                    .Select(g => g.Id)
                     .ToList();
+
+                var selectedGroupIds = selectedGroups.Select(g => g.Id).ToList();
+
+                // ვალიდაცია: შემოწმება ჯგუფების სიმძლავრისთვის
+                List<string> fullGroups = new List<string>();
+                List<string> nearFullGroups = new List<string>();
+
+                foreach (var group in selectedGroups)
+                {
+                    // ვამოწმებთ არსებულ ჯგუფს ბაზიდან (თანამედროვე მონაცემებისთვის)
+                    var currentGroup = _groupService.GetGroupById(group.Id);
+                    if (currentGroup == null) continue;
+
+                    // თუ MaxStudents = 0, შეზღუდვა არ არის
+                    if (currentGroup.MaxStudents == 0) continue;
+
+                    // თუ ჯგუფი სავსეა
+                    if (currentGroup.StudentCount >= currentGroup.MaxStudents)
+                    {
+                        fullGroups.Add($"{group.Name} ({currentGroup.StudentCount}/{currentGroup.MaxStudents})");
+                    }
+                    // თუ მაქსიმალურ რაოდენობამდე 1-ით ნაკლებია (ბოლო ადგილი)
+                    else if (currentGroup.StudentCount == currentGroup.MaxStudents - 1)
+                    {
+                        nearFullGroups.Add($"{group.Name} ({currentGroup.StudentCount}/{currentGroup.MaxStudents})");
+                    }
+                }
+
+                // თუ რომელიმე ჯგუფი სავსეა - გაჩერება
+                if (fullGroups.Count > 0)
+                {
+                    string message = "შემდეგ ჯგუფებში მაქსიმალური რაოდენობა უკვე დარეგისტრირებულია:\n\n";
+                    message += string.Join("\n", fullGroups);
+                    message += "\n\nგთხოვთ აირჩიოთ სხვა ჯგუფები.";
+                    MessageBox.Show(message, "ჯგუფი სავსეა", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // თუ რომელიმე ჯგუფში ბოლო ადგილია - შეტყობინება
+                if (nearFullGroups.Count > 0)
+                {
+                    string message = "ყურადღება! შემდეგ ჯგუფებში ბოლო ადგილია:\n\n";
+                    message += string.Join("\n", nearFullGroups);
+                    message += "\n\nგსურთ გაგრძელება?";
+                    var dialogResult = MessageBox.Show(message, "ბოლო ადგილი", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (dialogResult != DialogResult.Yes)
+                    {
+                        return;
+                    }
+                }
 
                 int studentId;
                 bool success = _studentService.AddStudent(student, selectedGroupIds, UserSession.Id, chkPrintContract.Checked, result, out studentId);
@@ -239,30 +395,7 @@ namespace BCCStudents.Presentation
                 MessageBox.Show($"დამატების შეცდომა: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        private decimal baseFee = 0; 
-        private void StudentManagementForm_Load(object sender, EventArgs e)
-        {
-            if (UserSession.Role != "Administrator")
-            {
-                btnImportFromExcell.Enabled = false;
-            }
-            CheckGroupsExistence(); // პირველი ნაბიჯი
-            DateTime? studyStartDate = PaymentDateManager.GetNextPaymentDate();
-
-            if (studyStartDate == null)
-            {
-                MessageBox.Show("⚠️ ჯერ უნდა მიუთითოთ სწავლის დაწყების თარიღი!", "შეტყობინება", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                SetStudyStartDate();
-                studyStartDate = PaymentDateManager.GetNextPaymentDate();
-            }
-            txtStudentInfo.Enabled = false;
-            string filePath = "cachedTexts.txt";
-            LoadCachedTextsFromFile(filePath, txtFirstName);
-            LoadStudents();
-            LoadGroups();
-
-            //_groupService.LoadGroupsFromDatabase(groupIds);
-        }
+        private decimal baseFee = 0;
         private void CheckGroupsExistence()
         {
             var groups = _groupService.GetAllGroups();
@@ -298,7 +431,7 @@ namespace BCCStudents.Presentation
         }
         private void SetStudyStartDate()
         {
-            using (var dateForm = _serviceProvider.GetRequiredService<SetStudyStartDateForm>())
+            using (var dateForm = _setStudyStartDateFormFactory.Invoke())
             {
                 if (dateForm.ShowDialog() == DialogResult.OK)
                 {
@@ -323,14 +456,13 @@ namespace BCCStudents.Presentation
                     txtStudentInfo.Enabled = false;
                 decimal finalFee = _studentService.CalculateFinalFee(baseFee, discountPercentage);
                 lblTuitionFee.Text = finalFee.ToString();
-                
+
             }
         }
         private void cmbDiscount_SelectedIndexChanged(object sender, EventArgs e)
         {
             ApplyDiscount();
         }
-        
         private void btnExportToExcell_Click(object sender, EventArgs e)
         {
             ExportStudentsToExcel();
@@ -358,35 +490,16 @@ namespace BCCStudents.Presentation
         }
         private void btnImportFromExcell_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanImport))
             {
-                openFileDialog.Filter = "Excel Files|*.xlsx;*.xls";
-                openFileDialog.Title = "აირჩიეთ Excel ფაილი";
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string filePath = openFileDialog.FileName;
-
-                    // ფაილის არჩევის შემდეგ, გახსენით ImportForm
-                    //ImportForm importForm = new ImportForm(filePath);
-                    //importForm.ImportCompleted += ImportForm_ImportCompleted;
-                    //importForm.ShowDialog();
-                    using (var importForm = _serviceProvider.GetRequiredService<ImportForm>())
-                    {
-                        importForm.InitializeImport(filePath);
-                        //importForm.ImportCompleted += ImportForm_ImportCompleted;
-                        if (importForm.ShowDialog() == DialogResult.OK)
-                        {
-                            // იმპორტის შემდეგ განახლება
-                            LoadStudents();
-                        }
-                    }
-                }
-                else if(openFileDialog.ShowDialog() == DialogResult.Cancel)
-                    MessageBox.Show("მონაცემები გადმოტანილია!");
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
+
+            var importForm = _importFormFactory.Invoke();
+            importForm.ShowDialog();
         }
-       
         private void clbGroups_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             decimal totalBaseFee = 0;
@@ -412,33 +525,45 @@ namespace BCCStudents.Presentation
         }
         private void tsmFailedStudents_Click(object sender, EventArgs e)
         {
-            FailedStudentsForm failedStudentsForm = new FailedStudentsForm(_studentService);
+            var failedStudentsForm = _failedStudentsFormFactory.Invoke();
             failedStudentsForm.ShowDialog();
         }
         private void ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var approvalForm = _serviceProvider.GetRequiredService<PendingStudentsForm>();
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanViewReports) &&
+                !_userContext.HasPermission(Permission.CanManageStudents))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var approvalForm = _pendingStudentsFormFactory.Invoke();
             approvalForm.ShowDialog();
 
         }
-
         private void btnSearchFolder_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
             if (folderBrowser.ShowDialog() == DialogResult.OK)
                 txtStudentDocPath.Text = folderBrowser.SelectedPath;
         }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            var testform = _serviceProvider.GetRequiredService<ImportTestForm>();
-            testform.Show();
-        }
-
         private void მოსწავლისრედაქტირებაToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var studentsEditForm = _serviceProvider.GetRequiredService<StudentsEditForm>();
+            // Security check
+            if (!_userContext.HasPermission(Permission.CanEditStudents) &&
+                !_userContext.HasPermission(Permission.CanManageStudents))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var studentsEditForm = _studentsEditFormFactory.Invoke();
             studentsEditForm.ShowDialog();
+        }
+        private void LinklblRefresh_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            LoadGroups();
         }
     }
 }

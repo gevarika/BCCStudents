@@ -1,6 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace BCCStudents.Domain.Entities
 {
     public class ImportResult
@@ -10,6 +7,11 @@ namespace BCCStudents.Domain.Entities
         public int Dublicates { get; set; }
         public string ErrorMessage { get; set; }
         public List<FailedRow> FailedRows { get; set; } = new List<FailedRow>();
+
+        /// <summary>
+        /// იმპორტის პროცესში დაფიქსირებული შეცდომების სია (როგორც ტექსტური შეტყობინებები)
+        /// </summary>
+        public List<string> Errors { get; set; } = new List<string>();
 
         // Existing 'Success' property might be causing confusion.
         // Let's rely on IsSuccess for clarity.
@@ -25,4 +27,4 @@ namespace BCCStudents.Domain.Entities
             return new ImportResult { IsSuccess = false, ErrorMessage = message };
         }
     }
-} 
+}
