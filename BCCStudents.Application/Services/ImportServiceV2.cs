@@ -423,7 +423,7 @@ namespace BCCStudents.Application.Services
             int totalRecords,
             List<string> errors)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 var importedCount = 0;
                 var duplicateCount = 0;
@@ -664,8 +664,20 @@ namespace BCCStudents.Application.Services
 
                             transaction.Commit();
 
-                            // Sync to server
-                            SyncToServerAsync(importedStudentIds, importedStudentGroupIds, importedStudentSubGroupIds, updatedGroupIds, updatedSubGroupIds).Wait();
+                            // Sync to server should not fail the already committed import.
+                            try
+                            {
+                                await SyncToServerAsync(
+                                    importedStudentIds,
+                                    importedStudentGroupIds,
+                                    importedStudentSubGroupIds,
+                                    updatedGroupIds,
+                                    updatedSubGroupIds);
+                            }
+                            catch (Exception syncEx)
+                            {
+                                errors.Add($"სერვერთან სინქრონიზაციის შეცდომა: {syncEx.Message}");
+                            }
                         }
                     }
 

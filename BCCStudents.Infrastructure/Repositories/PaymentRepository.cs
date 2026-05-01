@@ -431,16 +431,19 @@ namespace BCCStudents.Infrastructure.Repositories
                     AND p.Amount = @amount 
                     AND p.Description = @description";
 
+                if (personalId.HasValue)
+                {
+                    query += " AND s.Id_Numb = @personalId";
+                }
+
                 using (var cmd = new MySqlCommand(query, connection))
                 {
                     cmd.Parameters.AddWithValue("@paymentDate", paymentDate.Date);
                     cmd.Parameters.AddWithValue("@amount", amount);
                     cmd.Parameters.AddWithValue("@description", description);
 
-                    // თუ პირადი ნომერი არის, დავამატოთ დამატებითი პირობა
                     if (personalId.HasValue)
                     {
-                        query += " AND s.Id_Numb = @personalId";
                         cmd.Parameters.AddWithValue("@personalId", personalId.Value);
                     }
 

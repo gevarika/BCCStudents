@@ -76,7 +76,15 @@ namespace BCCStudents.Application.Services
                     AddStudentToSubGroup(studentId, newGroupId, subGroup.Id, "Pending", null, 0, 0, true);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Avoid silent partial migration; keep flow but leave an audit trail.
+                _loggerRepository.WriteLog(
+                    "Student Migration",
+                    "Warning",
+                    $"StudentId={studentId}, OldGroupId={oldGroupId}, NewGroupId={newGroupId}, SubGroupAssignmentFailed: {ex.Message}",
+                    "System");
+            }
 
             // ძველი ჯგუფის ქვეჯგუფებიდან წაშლა
             _subGroupService.RemoveStudentFromAllSubGroups(studentId, oldGroupId);
