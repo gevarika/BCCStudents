@@ -275,7 +275,7 @@ namespace BCCStudents.Application.Services
             {
                 if (string.IsNullOrWhiteSpace(relPath)) continue;
 
-                string fileUrl = FileServerBaseUrl + relPath.Replace("\\", "/");
+                string fileUrl = BuildFileUrl(relPath);
                 string fileName = Path.GetFileName(relPath);
                 string originalFileName = Path.GetFileName(relPath);
                 string destination = GetUniqueFileName(folderPath, student.FirstName, originalFileName);
@@ -314,6 +314,25 @@ namespace BCCStudents.Application.Services
 
             return allSuccess && !failedFiles.Any();
         }
+
+        private string BuildFileUrl(string relPath)
+        {
+            string baseUrl = (FileServerBaseUrl ?? string.Empty).Trim();
+            string normalizedPath = (relPath ?? string.Empty).Trim().Replace("\\", "/");
+            if (baseUrl.Length == 0) return normalizedPath;
+            if (normalizedPath.Length == 0) return baseUrl;
+
+            bool baseEndsWithSlash = baseUrl.EndsWith("/");
+            bool pathStartsWithSlash = normalizedPath.StartsWith("/");
+
+            if (baseEndsWithSlash && pathStartsWithSlash)
+                return baseUrl + normalizedPath.TrimStart('/');
+            if (!baseEndsWithSlash && !pathStartsWithSlash)
+                return baseUrl + "/" + normalizedPath;
+
+            return baseUrl + normalizedPath;
+        }
+
         public void OpenStudentFolder(PendingStudent student)
         {
             string folder = GetStudentFolder(student);

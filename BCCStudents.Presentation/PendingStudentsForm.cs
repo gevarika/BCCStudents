@@ -145,7 +145,7 @@ namespace BCCStudents.Presentation
                 // შეინახე ორიგინალები Clone-ით
                 _originalStudents = list.ToDictionary(
                     s => s.Id,
-                    s => new PendingStudent
+                    s => new PendingStudent 
                     {
                         Id = s.Id,
                         FirstName = s.FirstName,
