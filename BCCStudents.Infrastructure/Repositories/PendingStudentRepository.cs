@@ -36,8 +36,6 @@ namespace BCCStudents.Infrastructure.Repositories
                         Id_Numb = reader["Id_Numb"] != DBNull.Value ? Convert.ToInt64(reader["Id_Numb"]) : 0,
                         Address = reader["Address"]?.ToString(),
                         CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : DateTime.Now,
-                        TuitionFee = reader["TuitionFee"] != DBNull.Value ? Convert.ToDecimal(reader["TuitionFee"]) : 0,
-                        Discount = reader["DiscountPercentage"] != DBNull.Value ? Convert.ToInt32(reader["DiscountPercentage"]) : 0,
                         //Status = Convert.ToBoolean(reader["status"]),
                         IdCardPath = reader["IdCardPath"]?.ToString(),
                         AdditionalDocsPath = reader["AdditionalDocsPath"]?.ToString()
@@ -74,7 +72,6 @@ namespace BCCStudents.Infrastructure.Repositories
                     Id_Numb, 
                     Address, 
                     CreatedAt,
-                    TuitionFee,
                     IdCardPath,
                     AdditionalDocsPath,
                     user_id
@@ -99,7 +96,6 @@ namespace BCCStudents.Infrastructure.Repositories
                                 Id_Numb = reader.GetInt64("Id_Numb"),
                                 Address = reader.GetString("Address"),
                                 RegistrationDate = reader.GetDateTime("CreatedAt"),
-                                TuitionFee = reader.GetDecimal("TuitionFee"),
                                 //Discount = reader.IsDBNull("Discount") ? 0 : reader.GetDecimal("Discount"),
                                 IdCardPath = reader.GetString("IdCardPath"),
                                 AdditionalDocsPath = reader.GetString("AdditionalDocsPath"),

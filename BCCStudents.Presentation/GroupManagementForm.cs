@@ -45,17 +45,12 @@ namespace BCCStudents.Presentation
             numMaxStudents.ValueChanged += (s, e) =>
             {
                 ValidateGroupFields();
-                // თუ ქვეჯგუფები უკვე შექმნილია, განვაახლოთ მნიშვნელობები
-                if (_subGroupMaxStudentsControls.Count > 0)
-                {
-                    UpdateSubGroupDefaultValues();
-                }
             };
 
-            // CheckBox-ის ინიციალიზაცია Settings-დან
-            chkEnableSubGroupMaxStudents.Checked = Properties.Settings.Default.EnableCustomSubGroupMaxStudents;
-            chkEnableSubGroupMaxStudents.CheckedChanged += ChkEnableSubGroupMaxStudents_CheckedChanged;
-            UpdateGroupBox1Enabled();
+            // ქვეჯგუფზე MaxStudents კონტროლი გაუქმებულია: მხოლოდ Group-ზე მუშაობს.
+            chkEnableSubGroupMaxStudents.Checked = false;
+            chkEnableSubGroupMaxStudents.Visible = false;
+            groupBox1.Visible = false;
 
             // ... სხვა საჭირო ველები
 
@@ -138,45 +133,18 @@ namespace BCCStudents.Presentation
             if (group == null) return;
 
             int subGroupCount = int.Parse(cmbSubGroupCount.SelectedItem.ToString());
-            int groupMaxStudents = group.MaxStudents;
 
-            // თუ CheckBox ჩართულია, გამოვიყენოთ custom MaxStudents
-            if (chkEnableSubGroupMaxStudents.Checked && _subGroupMaxStudentsControls.Count > 0)
+            for (int i = 1; i <= subGroupCount; i++)
             {
-                // ვალიდაცია
-                int totalSubGroupMaxStudents = _subGroupMaxStudentsControls.Sum(n => (int)n.Value);
-                if (totalSubGroupMaxStudents > groupMaxStudents)
+                var newSubGroup = new SubGroup
                 {
-                    MessageBox.Show(
-                        $"ქვეჯგუფების მოსწავლეების საერთო რაოდენობა ({totalSubGroupMaxStudents}) აღემატება ჯგუფის მაქსიმალურ რაოდენობას ({groupMaxStudents}).\n\nგთხოვთ შეასწოროთ მნიშვნელობები.",
-                        "ვალიდაციის შეცდომა",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // თითოეული ქვეჯგუფისთვის შევქმნათ MaxStudents-ით
-                for (int i = 1; i <= subGroupCount; i++)
-                {
-                    int maxStudents = i <= _subGroupMaxStudentsControls.Count
-                        ? (int)_subGroupMaxStudentsControls[i - 1].Value
-                        : groupMaxStudents / subGroupCount;
-
-                    var newSubGroup = new SubGroup
-                    {
-                        GroupId = _currentGroupId.Value,
-                        TuitionFee = group.Price,
-                        MaxStudents = maxStudents,
-                        Status = true
-                    };
-                    newSubGroup.Name = $"კლასი {i}";
-                    _subGroupService.AddSubGroup(newSubGroup);
-                }
-            }
-            else
-            {
-                // ძველი ლოგიკა - ერთნაირი MaxStudents ყველა ქვეჯგუფისთვის
-                _subGroupService.AddSubGroups(_subgroup, subGroupCount);
+                    GroupId = _currentGroupId.Value,
+                    TuitionFee = group.Price,
+                    MaxStudents = 0,
+                    Status = true
+                };
+                newSubGroup.Name = $"კლასი {i}";
+                _subGroupService.AddSubGroup(newSubGroup);
             }
 
             ClearGroupFields();
@@ -258,25 +226,6 @@ namespace BCCStudents.Presentation
 
                 if (cmbSubGroupCount.SelectedIndex > 0)
                 {
-                    // ვალიდაცია: ქვეჯგუფების საერთო რაოდენობა
-                    int groupMaxStudents = (int)numMaxStudents.Value;
-
-                    // თუ CheckBox ჩართულია და custom MaxStudents controls არსებობს
-                    if (chkEnableSubGroupMaxStudents.Checked && _subGroupMaxStudentsControls.Count > 0)
-                    {
-                        int totalSubGroupMaxStudents = _subGroupMaxStudentsControls.Sum(n => (int)n.Value);
-
-                        if (totalSubGroupMaxStudents > groupMaxStudents)
-                        {
-                            MessageBox.Show(
-                                $"ქვეჯგუფების მოსწავლეების საერთო რაოდენობა ({totalSubGroupMaxStudents}) აღემატება ჯგუფის მაქსიმალურ რაოდენობას ({groupMaxStudents}).\n\nგთხოვთ შეასწოროთ მნიშვნელობები.",
-                                "ვალიდაციის შეცდომა",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
-                            return;
-                        }
-                    }
-
                     // ვალიდაცია: cmbSubGroupCount-ის SelectedItem
                     if (cmbSubGroupCount.SelectedItem == null)
                     {
@@ -290,25 +239,14 @@ namespace BCCStudents.Presentation
                         return;
                     }
 
-                    // თითოეული ქვეჯგუფისთვის შევქმნათ ცალ-ცალკე MaxStudents-ით
+                    // ქვეჯგუფზე MaxStudents გაუქმებულია (0 = შეუზღუდავი)
                     for (int i = 1; i <= subGroupCount; i++)
                     {
-                        int maxStudents;
-                        if (chkEnableSubGroupMaxStudents.Checked && _subGroupMaxStudentsControls.Count > 0 && i <= _subGroupMaxStudentsControls.Count)
-                        {
-                            maxStudents = (int)_subGroupMaxStudentsControls[i - 1].Value;
-                        }
-                        else
-                        {
-                            maxStudents = groupMaxStudents / subGroupCount;
-                            if (maxStudents <= 0) maxStudents = 1; // Ensure at least 1
-                        }
-
                         var newSubGroup = new SubGroup
                         {
                             GroupId = groupId.Value,
                             TuitionFee = group.Price,
-                            MaxStudents = maxStudents,
+                            MaxStudents = 0,
                             Status = true
                         };
                         newSubGroup.Name = $"კლასი {i}";

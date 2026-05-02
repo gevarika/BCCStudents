@@ -50,6 +50,7 @@ namespace BCCStudents.Presentation
         private readonly AdminPanelFormFactory _adminPanelFormFactory;
         private readonly UserManagementFormFactory _userManagementFormFactory;
         private readonly BalanceTransferFormFactory _balanceTransferFormFactory;
+        private readonly Dictionary<Type, Form> _openSingletonForms = new();
         private bool _allowClose;
         public MainForm(IPaymentService paymentService,
             IStudentService studentService,
@@ -317,8 +318,7 @@ namespace BCCStudents.Presentation
             }
 
             // StudentManagementForm გამოძახება
-            var studentForm = _studentFormFactory.Invoke();
-            studentForm.Show();
+            OpenOrActivateForm(_studentFormFactory.Invoke);
         }
         private void btnGroups_Click(object sender, EventArgs e)
         {
@@ -330,8 +330,7 @@ namespace BCCStudents.Presentation
             }
 
             // GroupManagementForm გამოძახება
-            var groupForm = _groupManFormFactory.Invoke();
-            groupForm.Show();
+            OpenOrActivateForm(_groupManFormFactory.Invoke);
         }
 
         private void btnGroupsEdit_Click(object sender, EventArgs e)
@@ -344,8 +343,35 @@ namespace BCCStudents.Presentation
             }
 
             // GroupsEdit ფორმის გამოძახება
-            var groupsEditForm = _groupsEditFormFactory.Invoke();
-            groupsEditForm.Show();
+            OpenOrActivateForm(_groupsEditFormFactory.Invoke);
+        }
+
+        private void OpenOrActivateForm<TForm>(Func<TForm> formFactory) where TForm : Form
+        {
+            var formType = typeof(TForm);
+            if (_openSingletonForms.TryGetValue(formType, out var existingForm))
+            {
+                if (existingForm != null && !existingForm.IsDisposed)
+                {
+                    if (existingForm.WindowState == FormWindowState.Minimized)
+                    {
+                        existingForm.WindowState = FormWindowState.Normal;
+                    }
+
+                    existingForm.BringToFront();
+                    existingForm.Activate();
+                    return;
+                }
+
+                _openSingletonForms.Remove(formType);
+            }
+
+            var newForm = formFactory();
+            _openSingletonForms[formType] = newForm;
+            newForm.FormClosed += (_, __) => _openSingletonForms.Remove(formType);
+            newForm.Show();
+            newForm.BringToFront();
+            newForm.Activate();
         }
 
         //ფორმის ჩატვირთვისას და ავტომატური გადახდების გაშვება
@@ -880,8 +906,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var statisticForm = _statisticsFormFactory.Invoke();
-            statisticForm.Show();
+            OpenOrActivateForm(_statisticsFormFactory.Invoke);
         }
         private void PaymentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -892,8 +917,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var financeManagementForm = _financeFormFactory.Invoke();
-            financeManagementForm.Show();
+            OpenOrActivateForm(_financeFormFactory.Invoke);
         }
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -1197,8 +1221,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var adminForm = _adminPanelFormFactory.Invoke();
-            adminForm.Show();
+            OpenOrActivateForm(_adminPanelFormFactory.Invoke);
         }
 
         private void BackupToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1210,8 +1233,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var backupForm = _backupManagementFormFactory.Invoke();
-            backupForm.Show();
+            OpenOrActivateForm(_backupManagementFormFactory.Invoke);
         }
 
         private async void btnRefreshPaymentProcess_Click(object sender, EventArgs e)
@@ -1235,8 +1257,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var logViewer = _logViewerFormFactory.Invoke();
-            logViewer.Show();
+            OpenOrActivateForm(_logViewerFormFactory.Invoke);
         }
 
         private void balanceTransferToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1260,8 +1281,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var paymentTestForm = _paymentTestFormFactory.Invoke();
-            paymentTestForm.Show();
+            OpenOrActivateForm(_paymentTestFormFactory.Invoke);
         }
 
         private void userManagementToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1274,8 +1294,7 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            var usrerManagementForm = _userManagementFormFactory.Invoke();
-            usrerManagementForm.Show();
+            OpenOrActivateForm(_userManagementFormFactory.Invoke);
         }
     }
 }

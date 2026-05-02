@@ -156,7 +156,6 @@ namespace BCCStudents.Presentation
                         Age = s.Age,
                         Id_Numb = s.Id_Numb,
                         Address = s.Address,
-                        TuitionFee = s.TuitionFee,
                         // სხვა ველები
                     });
                 SetupContextMenu();
@@ -271,11 +270,9 @@ namespace BCCStudents.Presentation
                 CheckChange("LastName", original.LastName);
                 CheckChange("PhoneNumber", original.PhoneNumber);
                 CheckChange("ParentName", original.ParentName);
-                CheckChange("Discount", original.Discount);
                 CheckChange("Age", original.Age);
                 CheckChange("Id_Numb", original.Id_Numb);
                 CheckChange("Address", original.Address);
-                CheckChange("TuitionFee", original.TuitionFee);
                 // დაამატე სხვა ველები რაც გინდა
 
                 if (updatedFields.Count > 0)
@@ -324,11 +321,9 @@ namespace BCCStudents.Presentation
             Check("LastName", original.LastName);
             Check("PhoneNumber", original.PhoneNumber);
             Check("ParentName", original.ParentName);
-            Check("Discount", original.Discount);
             Check("Age", original.Age);
             Check("Id_Numb", original.Id_Numb);
             Check("Address", original.Address);
-            Check("TuitionFee", original.TuitionFee);
             // ... და სხვა ველები
 
             row.DefaultCellStyle.BackColor = hasChanges ? Color.LightYellow : Color.White;

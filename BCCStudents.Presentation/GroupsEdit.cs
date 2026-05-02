@@ -33,7 +33,6 @@ namespace BCCStudents.Presentation
         // SubGroup editing controls
         private TextBox txtSubGroupName;
         private TextBox txtSubGroupPrice;
-        private TextBox txtSubGroupMaxStudents;
         private CheckBox chkSubGroupStatus;
         private Button btnSaveSubGroup;
         private Button btnCancelSubGroup;
@@ -252,20 +251,18 @@ namespace BCCStudents.Presentation
 
             var lblSubGroupPrice = new Label { Text = "ფასი:", Location = new Point(10, 70), Size = new Size(80, 20) };
             txtSubGroupPrice = new TextBox { Location = new Point(140, 70), Size = new Size(300, 20) };
-            var lblSubGroupMaxStudents = new Label { Text = "მაქს. მოსწავლეები:", Location = new Point(10, 100), Size = new Size(130, 20) };
-            txtSubGroupMaxStudents = new TextBox { Location = new Point(140, 100), Size = new Size(300, 20) };
-            chkSubGroupStatus = new CheckBox { Text = "აქტიური", Location = new Point(140, 130), Size = new Size(100, 20), Checked = true };
+            chkSubGroupStatus = new CheckBox { Text = "აქტიური", Location = new Point(140, 100), Size = new Size(100, 20), Checked = true };
 
-            btnSaveSubGroup = new Button { Text = "შენახვა", Location = new Point(140, 160), Size = new Size(80, 25) };
-            btnCancelSubGroup = new Button { Text = "გაუქმება", Location = new Point(230, 160), Size = new Size(80, 25) };
-            btnDeleteSubGroup = new Button { Text = "წაშლა", Location = new Point(320, 160), Size = new Size(80, 25) };
+            btnSaveSubGroup = new Button { Text = "შენახვა", Location = new Point(140, 140), Size = new Size(80, 25) };
+            btnCancelSubGroup = new Button { Text = "გაუქმება", Location = new Point(230, 140), Size = new Size(80, 25) };
+            btnDeleteSubGroup = new Button { Text = "წაშლა", Location = new Point(320, 140), Size = new Size(80, 25) };
 
             // Close button - moved to center bottom
             btnClose = new Button { Text = "დახურვა", Location = new Point(450, 670), Size = new Size(100, 30) };
 
             // Add controls to subgroup panel
             pnlEditSubGroup.Controls.AddRange(new Control[] {
-                lblSubGroupTitle, lblSubGroupName, txtSubGroupName, lblSubGroupPrice, txtSubGroupPrice, lblSubGroupMaxStudents, txtSubGroupMaxStudents,
+                lblSubGroupTitle, lblSubGroupName, txtSubGroupName, lblSubGroupPrice, txtSubGroupPrice,
                 chkSubGroupStatus, btnSaveSubGroup, btnCancelSubGroup, btnDeleteSubGroup
             });
 
@@ -331,7 +328,7 @@ namespace BCCStudents.Presentation
                 dgvSubGroups.Columns["Name"].HeaderText = "სახელი";
                 dgvSubGroups.Columns["TuitionFee"].HeaderText = "ფასი";
                 dgvSubGroups.Columns["Status"].HeaderText = "სტატუსი";
-                dgvSubGroups.Columns["MaxStudents"].HeaderText = "მაქს. მოსწავლეები";
+                dgvSubGroups.Columns["MaxStudents"].Visible = false;
                 dgvSubGroups.Columns["GroupId"].Visible = false;
             }
         }
@@ -432,7 +429,6 @@ namespace BCCStudents.Presentation
                 txtSubGroupName.Text = _selectedSubGroup.Name;
                 txtSubGroupPrice.Text = _selectedSubGroup.TuitionFee.ToString();
                 chkSubGroupStatus.Checked = _selectedSubGroup.Status;
-                txtSubGroupMaxStudents.Text = _selectedSubGroup.MaxStudents.ToString();
             }
         }
 
@@ -451,7 +447,6 @@ namespace BCCStudents.Presentation
             txtSubGroupName.Text = "";
             txtSubGroupPrice.Text = "";
             chkSubGroupStatus.Checked = true;
-            txtSubGroupMaxStudents.Text = "";
         }
 
         private void BtnSaveGroup_Click(object sender, EventArgs e)
@@ -543,22 +538,9 @@ namespace BCCStudents.Presentation
 
             try
             {
-                // MaxStudents-ის ვალიდაცია
-                int newMaxStudents = int.TryParse(txtSubGroupMaxStudents.Text, out int maxStudents) ? maxStudents : 0;
-                if (newMaxStudents > 0 && !_groupService.CanUpdateSubGroupMaxStudents(_selectedSubGroup.Id, newMaxStudents))
-                {
-                    var currentSubGroup = _subGroupService.GetSubGroupById(_selectedSubGroup.Id);
-                    MessageBox.Show(
-                        $"ქვეჯგუფში არსებული მოსწავლეების რაოდენობა ({currentSubGroup?.StudentCount ?? 0}) აღემატება ახალ მაქსიმალურ რაოდენობას ({newMaxStudents}).\n\nგთხოვთ შეიყვანოთ მინიმუმ {currentSubGroup?.StudentCount ?? 0} ან მეტი.",
-                        "ვალიდაციის შეცდომა",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    return;
-                }
-
                 _selectedSubGroup.Name = txtSubGroupName.Text.Trim();
                 _selectedSubGroup.TuitionFee = price;
-                _selectedSubGroup.MaxStudents = newMaxStudents;
+                _selectedSubGroup.MaxStudents = 0;
                 _selectedSubGroup.Status = chkSubGroupStatus.Checked;
 
                 bool success = _subGroupService.UpdateSubGroup(_selectedSubGroup);
