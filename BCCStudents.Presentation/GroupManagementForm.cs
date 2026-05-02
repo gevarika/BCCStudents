@@ -16,9 +16,6 @@ namespace BCCStudents.Presentation
         private readonly IUserContext _userContext;
         //private Button btnDeleteGroup;
         private int? _currentGroupId = null; // კლასის member
-        private SubGroup _subgroup;
-        private List<NumericUpDown> _subGroupMaxStudentsControls = new List<NumericUpDown>();
-        private List<Label> _subGroupLabels = new List<Label>();
         public GroupManagementForm(IGroupService groupService, ISubGroupService subGroupService, BackupService backupManager, IStudentService studentService, IStudentGroupsService studentGroupsService, IUserContext userContext)
         {
             InitializeComponent();
@@ -46,11 +43,6 @@ namespace BCCStudents.Presentation
             {
                 ValidateGroupFields();
             };
-
-            // ქვეჯგუფზე MaxStudents კონტროლი გაუქმებულია: მხოლოდ Group-ზე მუშაობს.
-            chkEnableSubGroupMaxStudents.Checked = false;
-            chkEnableSubGroupMaxStudents.Visible = false;
-            groupBox1.Visible = false;
 
             // ... სხვა საჭირო ველები
 
@@ -82,7 +74,6 @@ namespace BCCStudents.Presentation
                         btnAddGroup.Text = "შენახვა";
                         btnAddGroup.Enabled = true;
                         _currentGroupId = group.Id;
-                        _subgroup = new SubGroup { GroupId = group.Id, TuitionFee = group.Price, Status = true };
                     }
                 }
             }
@@ -101,7 +92,6 @@ namespace BCCStudents.Presentation
             txtTeacher.Text = "";
             txtDocPath.Text = "";
             cmbSubGroupCount.SelectedIndex = -1; // ან თუ გინდა, აირჩიოს პირველი, 0
-            ClearSubGroupControls(); // ქვეჯგუფების კონტროლების გასუფთავება
             // შეგიძლია დაამატო სხვა ველებიც, თუ გაქვს
         }
 
@@ -397,165 +387,6 @@ namespace BCCStudents.Presentation
                     txtDocPath.Text = fileDialog.FileName;
                 }
             }
-        }
-        private void ChkEnableSubGroupMaxStudents_CheckedChanged(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.EnableCustomSubGroupMaxStudents = chkEnableSubGroupMaxStudents.Checked;
-            Properties.Settings.Default.Save();
-            UpdateGroupBox1Enabled();
-
-            // თუ გამორთულია, გავასუფთავოთ კონტროლები
-            if (!chkEnableSubGroupMaxStudents.Checked)
-            {
-                ClearSubGroupControls();
-            }
-            else if (cmbSubGroupCount.SelectedIndex > 0)
-            {
-                // თუ ჩართულია და ქვეჯგუფების რაოდენობა არჩეულია, განვაახლოთ
-                cmbSubGroupCount_TextChanged(sender, e);
-            }
-        }
-
-        private void UpdateGroupBox1Enabled()
-        {
-            groupBox1.Enabled = chkEnableSubGroupMaxStudents.Checked;
-        }
-
-        private void cmbSubGroupCount_TextChanged(object sender, EventArgs e)
-        {
-            ClearSubGroupControls();
-
-            // თუ CheckBox გამორთულია, არ გავაგრძელოთ
-            if (!chkEnableSubGroupMaxStudents.Checked)
-            {
-                return;
-            }
-
-            if (cmbSubGroupCount.SelectedIndex <= 0)
-            {
-                groupBox1.Text = "ქვეჯგუფები";
-                return;
-            }
-
-            int subGroupCount = int.Parse(cmbSubGroupCount.SelectedItem.ToString());
-            if (subGroupCount <= 0)
-            {
-                groupBox1.Text = "ქვეჯგუფები";
-                return;
-            }
-
-            groupBox1.Text = $"ქვეჯგუფების მოსწავლეების რაოდენობა ({subGroupCount})";
-
-            // ჯგუფის MaxStudents
-            int groupMaxStudents = (int)numMaxStudents.Value;
-            if (groupMaxStudents <= 0) groupMaxStudents = 1; // default
-
-            // ნაგულისხმევი მნიშვნელობა თითოეული ქვეჯგუფისთვის
-            int defaultMaxStudents = groupMaxStudents / subGroupCount;
-            if (defaultMaxStudents <= 0) defaultMaxStudents = 1;
-
-            // სიმაღლე თითოეული რიგისთვის
-            int rowHeight = 35;
-            int startY = 25;
-            int labelWidth = 120;
-            int numericWidth = 100;
-            int spacing = 10;
-
-            for (int i = 1; i <= subGroupCount; i++)
-            {
-                int yPos = startY + (i - 1) * rowHeight;
-
-                // Label
-                var label = new Label
-                {
-                    Text = $"კლასი {i}:",
-                    Location = new System.Drawing.Point(10, yPos),
-                    Size = new System.Drawing.Size(labelWidth, 25),
-                    Font = new System.Drawing.Font("Microsoft Sans Serif", 10F)
-                };
-                groupBox1.Controls.Add(label);
-                _subGroupLabels.Add(label);
-
-                // NumericUpDown
-                var numericUpDown = new NumericUpDown
-                {
-                    Minimum = 1,
-                    Maximum = groupMaxStudents,
-                    Value = defaultMaxStudents,
-                    Location = new System.Drawing.Point(10 + labelWidth + spacing, yPos),
-                    Size = new System.Drawing.Size(numericWidth, 25),
-                    Font = new System.Drawing.Font("Microsoft Sans Serif", 10F)
-                };
-                numericUpDown.ValueChanged += (s, args) => ValidateSubGroupMaxStudents();
-                groupBox1.Controls.Add(numericUpDown);
-                _subGroupMaxStudentsControls.Add(numericUpDown);
-            }
-
-            // შემოწმება თავიდან
-            ValidateSubGroupMaxStudents();
-        }
-
-        private void ClearSubGroupControls()
-        {
-            foreach (var control in _subGroupMaxStudentsControls)
-            {
-                groupBox1.Controls.Remove(control);
-                control.Dispose();
-            }
-            _subGroupMaxStudentsControls.Clear();
-
-            foreach (var label in _subGroupLabels)
-            {
-                groupBox1.Controls.Remove(label);
-                label.Dispose();
-            }
-            _subGroupLabels.Clear();
-        }
-
-        private void ValidateSubGroupMaxStudents()
-        {
-            if (_subGroupMaxStudentsControls.Count == 0) return;
-
-            int groupMaxStudents = (int)numMaxStudents.Value;
-            if (groupMaxStudents <= 0) return;
-
-            int total = _subGroupMaxStudentsControls.Sum(n => (int)n.Value);
-
-            if (total > groupMaxStudents)
-            {
-                groupBox1.BackColor = System.Drawing.Color.LightCoral;
-                // შეგვიძლია დავამატოთ label-იც შეტყობინებით
-                // ან MessageBox, მაგრამ ValueChanged-ში MessageBox ძალიან არის intrusive
-            }
-            else
-            {
-                groupBox1.BackColor = System.Drawing.SystemColors.Control;
-            }
-        }
-
-        private void UpdateSubGroupDefaultValues()
-        {
-            if (_subGroupMaxStudentsControls.Count == 0) return;
-
-            int groupMaxStudents = (int)numMaxStudents.Value;
-            if (groupMaxStudents <= 0) return;
-
-            int subGroupCount = _subGroupMaxStudentsControls.Count;
-            int defaultMaxStudents = groupMaxStudents / subGroupCount;
-            if (defaultMaxStudents <= 0) defaultMaxStudents = 1;
-
-            // განვაახლოთ Maximum-ები
-            foreach (var numeric in _subGroupMaxStudentsControls)
-            {
-                numeric.Maximum = groupMaxStudents;
-                // თუ მიმდინარე მნიშვნელობა აღემატება ახალ maximum-ს, შევცვალოთ
-                if (numeric.Value > groupMaxStudents)
-                {
-                    numeric.Value = groupMaxStudents;
-                }
-            }
-
-            ValidateSubGroupMaxStudents();
         }
     }
 }
