@@ -1,0 +1,118 @@
+=== BCCStudents Update Script Started ===
+PID to wait for: 7752
+ZIP file: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\updates\1.0.2.6\update.zip                                     Target exe name: BCCStudents.exe                                                                                        Log directory: C:\Users\Giorgi\AppData\Local\BCCStudents\logs                                                           Running with Administrator privileges ✓                                                                                 Update script started                                                                                                   Log file: C:\Users\Giorgi\AppData\Local\BCCStudents\logs\Updater_20260517_170617.txt                                    Waiting for process (PID: 7752) to exit...
+..
+Process exited after 5 checks!
+Waiting for file handles to release...
+Target: C:\\Program Files (x86)\\BCCStudents
+
+=== Preparing Update ===
+Creating staging folder: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9
+Staging folder created ✓
+Checking ZIP file: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\updates\1.0.2.6\update.zip
+ZIP file found ✓
+Extracting ZIP archive...
+Extraction completed! (834 files extracted)
+Source: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9
+Backing up App.config...
+
+=== Copying Files ===
+Starting file copy with Robocopy...
+Source: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9
+Target: C:\\Program Files (x86)\\BCCStudents
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows
+-------------------------------------------------------------------------------
+
+  Started : კვირა, 17 მაისი, 2026 17:06:31
+   Source - C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9\
+     Dest - C:\Program\
+
+    Files : Files
+
+  Options : /DCOPY:DA /COPY:DAT /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+ERROR : Invalid Parameter #4 : "(x86)\\BCCStudents"
+
+       Simple Usage :: ROBOCOPY source destination /MIR
+
+             source :: Source Directory (drive:\path or \\server\share\path).
+        destination :: Destination Dir  (drive:\path or \\server\share\path).
+               /MIR :: Mirror a complete directory tree.
+
+    For more usage information run ROBOCOPY /?
+
+
+****  /MIR can DELETE files as well as copy them !
+Robocopy exit code: 16
+Retry attempt 1 of 3...
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows
+-------------------------------------------------------------------------------
+
+  Started : კვირა, 17 მაისი, 2026 17:06:35
+   Source - C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9\
+     Dest - C:\Program\
+
+    Files : Files
+
+  Options : /DCOPY:DA /COPY:DAT /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+ERROR : Invalid Parameter #4 : "(x86)\\BCCStudents"
+
+       Simple Usage :: ROBOCOPY source destination /MIR
+
+             source :: Source Directory (drive:\path or \\server\share\path).
+        destination :: Destination Dir  (drive:\path or \\server\share\path).
+               /MIR :: Mirror a complete directory tree.
+
+    For more usage information run ROBOCOPY /?
+
+
+****  /MIR can DELETE files as well as copy them !
+Robocopy exit code: 16
+Retry attempt 2 of 3...
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows
+-------------------------------------------------------------------------------
+
+  Started : კვირა, 17 მაისი, 2026 17:06:39
+   Source - C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9\
+     Dest - C:\Program\
+
+    Files : Files
+
+  Options : /DCOPY:DA /COPY:DAT /R:1000000 /W:30
+
+------------------------------------------------------------------------------
+
+ERROR : Invalid Parameter #4 : "(x86)\\BCCStudents"
+
+       Simple Usage :: ROBOCOPY source destination /MIR
+
+             source :: Source Directory (drive:\path or \\server\share\path).
+        destination :: Destination Dir  (drive:\path or \\server\share\path).
+               /MIR :: Mirror a complete directory tree.
+
+    For more usage information run ROBOCOPY /?
+
+
+****  /MIR can DELETE files as well as copy them !
+Robocopy exit code: 16
+ERROR: Robocopy failed after 3 attempts (exit code: 16)
+Files may still be in use. Please close all instances of BCCStudents and try again.
+
+=== Robocopy Result ===
+ERROR: Serious error - files are still in use or locked!
+
+=== UPDATE FAILED ===
+=== UPDATE FAILED ===
+Robocopy failed with exit code 16
+Please close all instances of BCCStudents and try again.
