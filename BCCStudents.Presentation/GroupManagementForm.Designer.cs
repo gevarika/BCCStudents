@@ -49,8 +49,6 @@ namespace BCCStudents.Presentation
             txtDocPath = new TextBox();
             lblDocPath = new Label();
             btnFileDialog = new Button();
-            groupBox1 = new GroupBox();
-            chkEnableSubGroupMaxStudents = new CheckBox();
             groupBox2 = new GroupBox();
             btnDeleteGroup = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvMainGroup).BeginInit();
@@ -183,7 +181,6 @@ namespace BCCStudents.Presentation
             cmbSubGroupCount.Name = "cmbSubGroupCount";
             cmbSubGroupCount.Size = new Size(257, 28);
             cmbSubGroupCount.TabIndex = 2;
-            cmbSubGroupCount.TextChanged += cmbSubGroupCount_TextChanged;
             // 
             // lblClass
             // 
@@ -266,26 +263,6 @@ namespace BCCStudents.Presentation
             btnFileDialog.UseVisualStyleBackColor = true;
             btnFileDialog.Click += btnFileDialog_Click;
             // 
-            // groupBox1
-            // 
-            groupBox1.Font = new Font("Microsoft Sans Serif", 10F);
-            groupBox1.Location = new Point(680, 63);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(423, 305);
-            groupBox1.TabIndex = 11;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "ქვეჯგუფები";
-            // 
-            // chkEnableSubGroupMaxStudents
-            // 
-            chkEnableSubGroupMaxStudents.AutoSize = true;
-            chkEnableSubGroupMaxStudents.Location = new Point(713, 37);
-            chkEnableSubGroupMaxStudents.Name = "chkEnableSubGroupMaxStudents";
-            chkEnableSubGroupMaxStudents.Size = new Size(329, 19);
-            chkEnableSubGroupMaxStudents.TabIndex = 12;
-            chkEnableSubGroupMaxStudents.Text = "ქვეჯგუფების მოსწავლეების რაოდენობის მართვა";
-            chkEnableSubGroupMaxStudents.UseVisualStyleBackColor = true;
-            // 
             // groupBox2
             // 
             groupBox2.Controls.Add(lblGroupName);
@@ -326,8 +303,6 @@ namespace BCCStudents.Presentation
             ClientSize = new Size(1113, 899);
             Controls.Add(btnDeleteGroup);
             Controls.Add(groupBox2);
-            Controls.Add(chkEnableSubGroupMaxStudents);
-            Controls.Add(groupBox1);
             Controls.Add(dgvSubGroups);
             Controls.Add(dgvMainGroup);
             Controls.Add(menuStrip1);
@@ -372,8 +347,6 @@ namespace BCCStudents.Presentation
         private System.Windows.Forms.TextBox txtDocPath;
         private System.Windows.Forms.Label lblDocPath;
         private System.Windows.Forms.Button btnFileDialog;
-        private GroupBox groupBox1;
-        private CheckBox chkEnableSubGroupMaxStudents;
         private GroupBox groupBox2;
         private Button btnDeleteGroup;
     }

@@ -142,7 +142,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
         public Task<List<PendingStudent>> FetchPendingStudentsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default)
         {
             const string sql = @"SELECT Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
-                                        TuitionFee, DiscountPercentage, StudentCode, IdCardPath, AdditionalDocsPath, user_id, CreatedAt
+                                         StudentCode, IdCardPath, AdditionalDocsPath, user_id, CreatedAt
                                  FROM PendingStudents
                                  WHERE (@LastSyncedAt IS NULL AND @LastSyncedId = 0)
                                     OR (CreatedAt > @LastSyncedAt)
@@ -380,8 +380,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                 PhoneNumber = reader["PhoneNumber"] == DBNull.Value ? null : reader["PhoneNumber"]?.ToString(),
                 Id_Numb = reader["Id_Numb"] == DBNull.Value ? 0 : Convert.ToInt64(reader["Id_Numb"]),
                 Address = reader["Address"] == DBNull.Value ? null : reader["Address"]?.ToString(),
-                TuitionFee = reader["TuitionFee"] == DBNull.Value ? 0 : Convert.ToDecimal(reader["TuitionFee"]),
-                Discount = reader["DiscountPercentage"] == DBNull.Value ? 0 : Convert.ToInt32(reader["DiscountPercentage"]),
                 StudentCode = reader["StudentCode"] == DBNull.Value ? null : reader["StudentCode"]?.ToString(),
                 IdCardPath = reader["IdCardPath"] == DBNull.Value ? null : reader["IdCardPath"]?.ToString(),
                 AdditionalDocsPath = reader["AdditionalDocsPath"] == DBNull.Value ? null : reader["AdditionalDocsPath"]?.ToString(),

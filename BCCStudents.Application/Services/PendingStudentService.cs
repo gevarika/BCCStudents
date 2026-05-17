@@ -53,23 +53,18 @@ namespace BCCStudents.Application.Services
                 return new ApprovalResult { IsSuccess = false, Message = "სტუდენტი ვერ მოიძებნა." };
             }
 
-            var calculator = new DiscountCalculator(
-                tuitionFee: pendingStudent.TuitionFee,
-                discountAmount: discountAmount
-            );
-
-            decimal finalAmount = calculator.GetFinalAmount();
-
             var groupIds = _pendingGroupRepo.GetGroupsForPendingStudent(pendingStudentId);
             var pendingSubGroups = _pendingGroupRepo.GetPendingSubGroupsByStudentId(pendingStudentId);
 
-            return ConfirmPendingStudent(pendingStudent, groupIds, pendingSubGroups, finalAmount, Convert.ToDouble(discountAmount));
+            return ConfirmPendingStudent(pendingStudent, groupIds, pendingSubGroups, Convert.ToDouble(discountAmount));
         }
 
-        public ApprovalResult ConfirmPendingStudent(PendingStudent pendingStudent, List<int> selectedGroupIds, List<PendingStudentSubGroup> pendingSubGroups, decimal finalAmount, double discountAmount)
+        public ApprovalResult ConfirmPendingStudent(PendingStudent pendingStudent, List<int> selectedGroupIds, List<PendingStudentSubGroup> pendingSubGroups, double discountAmount)
         {
             if (selectedGroupIds.Count > 0)
             {
+                var discountPercent = Convert.ToDecimal(discountAmount);
+
                 // 1. დამატება Students ცხრილში
                 var student = new Student
                 {
@@ -93,6 +88,14 @@ namespace BCCStudents.Application.Services
                     // 2. ჯგუფ(ებ)ში დამატება და რაოდენობის გაზრდა
                     foreach (int groupId in selectedGroupIds)
                     {
+                        var group = _groupRepository.GetGroupById(groupId);
+                        if (group == null)
+                        {
+                            continue;
+                        }
+
+                        var discountedGroupPrice = GetDiscountedAmount(group.Price, discountPercent);
+
                         // StudentGroups ცხრილში ჩასმა
                         var studentGroup = new StudentGroups
                         {
@@ -100,7 +103,7 @@ namespace BCCStudents.Application.Services
                             GroupId = groupId,
                             PaymentStatus = "Pending",
                             DateOfPayment = DateTime.Today.AddMonths(1), // გადახდის თარიღი: დღეს + 1 თვე
-                            Price = finalAmount,      // ფასდაკლებული ფასი
+                            Price = discountedGroupPrice,
                             Discount = discountAmount // ფასდაკლების პროცენტი
                         };
                         _studentGroupRepo.InsertStudentGroup(studentGroup);
@@ -112,6 +115,14 @@ namespace BCCStudents.Application.Services
                     // 2.5 ქვეჯგუფებში დამატება
                     foreach (var subGroup in pendingSubGroups)
                     {
+                        var subGroupEntity = _subGroupRepository.GetSubGroupById(subGroup.SubGroupId);
+                        if (subGroupEntity == null)
+                        {
+                            continue;
+                        }
+
+                        var discountedSubGroupPrice = GetDiscountedAmount(subGroupEntity.TuitionFee, discountPercent);
+
                         // StudentSubGroups ცხრილში ჩასმა
                         var studentSubGroup = new StudentSubGroups
                         {
@@ -120,7 +131,7 @@ namespace BCCStudents.Application.Services
                             SubGroupId = subGroup.SubGroupId,
                             PaymentStatus = "Pending",
                             DateOfPayment = DateTime.Today.AddMonths(1), // გადახდის თარიღი: დღეს + 1 თვე
-                            Price = finalAmount,      // ფასდაკლებული ფასი
+                            Price = discountedSubGroupPrice,
                             Discount = discountAmount // ფასდაკლების პროცენტი
                         };
                         _studentSubGroupRepo.InsertStudentSubGroup(studentSubGroup);
@@ -143,6 +154,16 @@ namespace BCCStudents.Application.Services
             {
                 return new ApprovalResult { IsSuccess = false, Message = "მოსწავლისთვის ჯგუფი ვერ მოიძებნა." };
             }
+        }
+
+        private static decimal GetDiscountedAmount(decimal baseAmount, decimal discountPercent)
+        {
+            var calculator = new DiscountCalculator(
+                tuitionFee: baseAmount,
+                discountAmount: discountPercent
+            );
+
+            return calculator.GetFinalAmount();
         }
 
         public void Update(PendingStudent pendingStudent)

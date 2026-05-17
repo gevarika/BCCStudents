@@ -8,6 +8,17 @@ namespace BCCStudents.Application.Services.Sync
         private readonly string _logFilePath;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
+        public SyncLogger()
+        {
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BCCStudents",
+                "logs");
+
+            Directory.CreateDirectory(logDir);
+            _logFilePath = Path.Combine(logDir, "sync_log.txt");
+        }
+
         public void Info(string message) => Write("INFO", message);
 
         public void Warn(string message) => Write("WARN", message);
