@@ -216,7 +216,8 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("Start-Sleep -Seconds 5"); // მნიშვნელოვანი: Windows-ს სჭირდება დრო file handles-ის გასათავისუფლებლად
 
             // Target ფოლდერი (დინამიური პათი)
-            ps.AppendLine($"$target = '{targetDir.Replace("\\", "\\\\")}'");
+            var escapedTargetDir = (targetDir ?? string.Empty).Replace("'", "''");
+            ps.AppendLine($"$target = '{escapedTargetDir}'");
 
             ps.AppendLine("Write-Host \"Target: $target\"");
             ps.AppendLine("if (!(Test-Path $target)) { ");
@@ -305,9 +306,9 @@ namespace BCCStudents.Application.Services.Update
             // /W:2 = wait 2 seconds between retries
             // /NP = no progress (cleaner output)
             // /NFL = no file list (cleaner output)
-            ps.AppendLine("    $robocopyArgs = @(\"$src\", \"$target\", '/E', '/XO', '/R:5', '/W:2', '/NP', '/NFL', \"/LOG+:$logFile\", '/TEE')");
-            ps.AppendLine("    $process = Start-Process -FilePath 'robocopy.exe' -ArgumentList $robocopyArgs -Wait -PassThru -NoNewWindow");
-            ps.AppendLine("    $exitCode = $process.ExitCode");
+            ps.AppendLine("    $robocopyArgs = @($src, $target, '/E', '/XO', '/R:5', '/W:2', '/NP', '/NFL', \"/LOG+:$logFile\", '/TEE')");
+            ps.AppendLine("    & robocopy.exe @robocopyArgs");
+            ps.AppendLine("    $exitCode = $LASTEXITCODE");
             ps.AppendLine("    $color = if ($exitCode -lt 8) {'Green'} else {'Red'}");
             ps.AppendLine("    Write-Log \"Robocopy exit code: $exitCode\" $color");
             ps.AppendLine("    $retryCount++");
@@ -315,7 +316,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("");
             ps.AppendLine("if ($exitCode -ge 8) {");
             ps.AppendLine("    Write-Log \"ERROR: Robocopy failed after $maxRetries attempts (exit code: $exitCode)\" 'Red'");
-            ps.AppendLine("    Write-Log 'Files may still be in use. Please close all instances of BCCStudents and try again.' 'Yellow'");
+            ps.AppendLine("    Write-Log 'Robocopy failed. Check command-line arguments/path quoting and make sure all BCCStudents instances are closed.' 'Yellow'");
             ps.AppendLine("}");
 
             // Robocopy exit code-ების დეტალური ანალიზი
@@ -331,7 +332,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    6 { Write-Host 'Extra files and mismatches' -ForegroundColor Yellow }");
             ps.AppendLine("    7 { Write-Host 'Files copied, extras and mismatches' -ForegroundColor Yellow }");
             ps.AppendLine("    8 { Write-Host 'ERROR: Some files or directories could not be copied!' -ForegroundColor Red }");
-            ps.AppendLine("    16 { Write-Host 'ERROR: Serious error - files are still in use or locked!' -ForegroundColor Red }");
+            ps.AppendLine("    16 { Write-Host 'ERROR: Serious error - invalid parameters, path quoting issue, or locked files!' -ForegroundColor Red }");
             ps.AppendLine("    default { Write-Host \"ERROR: Unexpected exit code $exitCode\" -ForegroundColor Red }");
             ps.AppendLine("}");
             ps.AppendLine("");
@@ -366,7 +367,7 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("    Write-Host '=== UPDATE FAILED ===' -ForegroundColor Red");
             ps.AppendLine("    Write-Log '=== UPDATE FAILED ===' 'Red'");
             ps.AppendLine("    Write-Log \"Robocopy failed with exit code $exitCode\" 'Red'");
-            ps.AppendLine("    Write-Host 'Please close all instances of BCCStudents and try again.' -ForegroundColor Yellow");
+            ps.AppendLine("    Write-Host 'Check the Robocopy message above. If files are locked, close all BCCStudents instances and try again.' -ForegroundColor Yellow");
             ps.AppendLine("    Write-Host ''");
             ps.AppendLine("    Write-Host 'Press Enter to close...'");
             ps.AppendLine("    $null = Read-Host");
