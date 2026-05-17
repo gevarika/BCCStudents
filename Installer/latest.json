@@ -1,0 +1,11 @@
+{
+  "latestVersion": "1.0.2.6",
+  "minimumRequiredVersion": "1.0.1.2",
+  "releaseDate": "2025-10-19 T00:00:00Z",
+  "notes": "ბაგფიქსები და გაუმჯობესებები",
+  "package": {
+    "url": "https://www.bccenter.ge/updates/BCCStudents-1.0.2.6.zip",
+    "size": 12345678,
+    "sha256": "2d4dbbadfda688a0f2d1cdb064e03cbce2328b8052354b04009de220d1f3d0bd" 
+  }
+}

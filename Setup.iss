@@ -1,6 +1,6 @@
 ; --- პროექტის ძირითადი პარამეტრები ---
 #define MyAppName "სტუდენტების მართვის სისტემა"
-#define MyAppVersion "1.0.2.5"
+#define MyAppVersion "1.0.2.6"
 #define MyAppPublisher "ბოლნისის კულტურის ცენტრი"
 #define MyAppExeName "BCCStudents.Presentation.exe"
 #define BuildOutput "BCCStudents.Presentation\bin\Release\net8.0-windows"
