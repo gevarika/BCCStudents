@@ -1,0 +1,19 @@
+[2026-05-17 17:06:17] Update script started
+[2026-05-17 17:06:17] Log file: C:\Users\Giorgi\AppData\Local\BCCStudents\logs\Updater_20260517_170617.txt
+[2026-05-17 17:06:17] Waiting for process (PID: 7752) to exit...
+[2026-05-17 17:06:19] Process exited after 5 checks!
+[2026-05-17 17:06:19] Waiting for file handles to release...
+[2026-05-17 17:06:24] Checking ZIP file: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\updates\1.0.2.6\update.zip
+[2026-05-17 17:06:24] ZIP file found ?
+[2026-05-17 17:06:24] Extracting ZIP archive...
+[2026-05-17 17:06:31] Extraction completed! (834 files extracted)
+[2026-05-17 17:06:31] Starting file copy with Robocopy...
+[2026-05-17 17:06:31] Source: C:\Users\Giorgi\AppData\Local\Temp\BCCStudents\staging\a8e815a78f76439896cf0c75ed87b8e9
+[2026-05-17 17:06:31] Target: C:\\Program Files (x86)\\BCCStudents
+[2026-05-17 17:06:32] Robocopy exit code: 16
+[2026-05-17 17:06:36] Robocopy exit code: 16
+[2026-05-17 17:06:40] Robocopy exit code: 16
+[2026-05-17 17:06:40] ERROR: Robocopy failed after 3 attempts (exit code: 16)
+[2026-05-17 17:06:40] Files may still be in use. Please close all instances of BCCStudents and try again.
+[2026-05-17 17:06:40] === UPDATE FAILED ===
+[2026-05-17 17:06:40] Robocopy failed with exit code 16
