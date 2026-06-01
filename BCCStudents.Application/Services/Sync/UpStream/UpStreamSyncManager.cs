@@ -109,6 +109,19 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             {
                 Interlocked.Exchange(ref _isProcessing, 0);
 
+                try
+                {
+                    var stats = await _repository.GetStatsAsync().ConfigureAwait(false);
+                    if (stats.PendingCount > 0 || stats.DeadLetterCount > 0)
+                    {
+                        _logger.Warn($"SyncOutbox queue: pending={stats.PendingCount}, dead-letter={stats.DeadLetterCount}");
+                    }
+                }
+                catch (Exception statsEx)
+                {
+                    _logger.Error("SyncOutbox stats query failed.", statsEx);
+                }
+
                 // Event-ის გამოძახება
                 if (SyncCompleted != null)
                 {
@@ -129,15 +142,15 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             try
             {
                 var payload = item.ToPayload();
-                var sent = await _syncService.TrySyncImmediatelyAsync(payload).ConfigureAwait(false);
-                if (sent)
+                var result = await _syncService.TrySyncImmediatelyAsync(payload).ConfigureAwait(false);
+                if (result.Success)
                 {
                     await _repository.MarkAsSuccessAsync(item.Id).ConfigureAwait(false);
                     return;
                 }
 
                 var giveUp = item.Attempts + 1 >= _maxAttempts;
-                await _repository.MarkAsFailedAsync(item.Id, "Immediate retry failed.", giveUp).ConfigureAwait(false);
+                await _repository.MarkAsFailedAsync(item.Id, result.ErrorMessage ?? "Immediate retry failed.", giveUp).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -4,6 +4,7 @@ using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Presentation.Data.Configuration;
 using BCCStudents.Presentation.Properties;
+using BCCStudents.Presentation.Services;
 using System.Configuration;
 
 namespace BCCStudents.Presentation
@@ -50,6 +51,7 @@ namespace BCCStudents.Presentation
         private readonly AdminPanelFormFactory _adminPanelFormFactory;
         private readonly UserManagementFormFactory _userManagementFormFactory;
         private readonly BalanceTransferFormFactory _balanceTransferFormFactory;
+        private readonly PendingRegistrationMonitor _pendingRegistrationMonitor;
         private readonly Dictionary<Type, Form> _openSingletonForms = new();
         private bool _allowClose;
         public MainForm(IPaymentService paymentService,
@@ -79,6 +81,7 @@ namespace BCCStudents.Presentation
             PaymentTestFormFactory paymentTestFormFactory,
             BalanceTransferFormFactory balanceTransferFormFactory,
             UserManagementFormFactory userManagementFormFactory,
+            PendingRegistrationMonitor pendingRegistrationMonitor,
             IApplicationStatus appStatus,
             ISystemConfigurationService systemConfigService,
             IPaymentDateService paymentDateService,
@@ -116,6 +119,8 @@ namespace BCCStudents.Presentation
             _financeFormFactory = financeFormFactory;
             _userManagementFormFactory = userManagementFormFactory;
             _balanceTransferFormFactory = balanceTransferFormFactory ?? throw new ArgumentNullException(nameof(balanceTransferFormFactory));
+            _pendingRegistrationMonitor = pendingRegistrationMonitor ?? throw new ArgumentNullException(nameof(pendingRegistrationMonitor));
+            _pendingRegistrationMonitor.SetInvokeControl(this);
             _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
             _systemConfigService = systemConfigService ?? throw new ArgumentNullException(nameof(systemConfigService));
             _paymentDateService = paymentDateService ?? throw new ArgumentNullException(nameof(paymentDateService));
@@ -377,6 +382,8 @@ namespace BCCStudents.Presentation
         //ფორმის ჩატვირთვისას და ავტომატური გადახდების გაშვება
         private async void MainForm_Load(object sender, EventArgs e)
         {
+            _pendingRegistrationMonitor.Initialize();
+
             // Security Checks - უფლებების შემოწმება IUserContext-ის მეშვეობით
             ApplySecurityChecks();
             SetStudyStartDate();
@@ -1001,23 +1008,6 @@ namespace BCCStudents.Presentation
         /// </summary>
         private void StartDownStreamSync()
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    var syncResult = await _downStreamSyncService.SyncFromServerAsync().ConfigureAwait(false);
-                    if (!syncResult.Success && syncResult.Errors.Count > 0)
-                    {
-                        var message = string.Join(" | ", syncResult.Errors);
-                        _loggerRepository.WriteLog("DownStream", "Failed", message, Environment.UserName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _loggerRepository.WriteLog("DownStream", "Failed", ex.ToString(), Environment.UserName);
-                }
-            });
-
             _downStreamSyncManager.Start();
         }
 
@@ -1068,19 +1058,18 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            // მხოლოდ მაშინ ვაახლებთ UI-ს, როცა სერვერიდან ცვლილებები მოვიდა
-            if (!args.Success || args.RecordsSynced <= 0)
-            {
-                return;
-            }
-
             if (InvokeRequired)
             {
                 BeginInvoke(new Action(() => RefreshUiAfterDownStreamSync(args)));
                 return;
             }
 
-            LoadUpcomingPayments();
+            if (args.Success && args.RecordsSynced > 0)
+            {
+                LoadUpcomingPayments();
+            }
+
+            _pendingRegistrationMonitor.HandleSyncCompleted(args);
         }
 
         private void PaymentToolStripMenuItem_Click(object sender, EventArgs e)

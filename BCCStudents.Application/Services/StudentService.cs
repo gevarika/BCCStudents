@@ -141,6 +141,13 @@ namespace BCCStudents.Application.Services
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. Student add operation is blocked.");
 
+            if (student.Discount > 0 && string.IsNullOrWhiteSpace(student.Info))
+            {
+                result.AddError("რეგისტრაცია", "ფასდაკლების მითითებისას სავალდებულია მოსწავლის სტატუსი (Info).");
+                studentId = 0;
+                return false;
+            }
+
             studentId = 0;
             var postCommitSyncActions = new List<Action>();
             var studentSyncScheduled = false;
@@ -351,11 +358,17 @@ namespace BCCStudents.Application.Services
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. Student group update operation is blocked.");
             _studentRepository.UpdateStudentGroupFields(original, updated);
+            SyncStudentGroupSnapshot(original.StudentId, original.GroupId, SyncOperationType.Update);
         }
 
         public bool UpdateStudentStatus(int studentId, int groupId, bool status)
         {
-            return _studentRepository.UpdateStudentStatus(studentId, groupId, status);
+            var ok = _studentRepository.UpdateStudentStatus(studentId, groupId, status);
+            if (ok)
+            {
+                SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using System.Text.Json;
 
 namespace BCCStudents.Application.Services.AutoFileDetection
 {
@@ -62,6 +63,24 @@ namespace BCCStudents.Application.Services.AutoFileDetection
         /// </summary>
         public static AutoFileDetectionConfig LoadFromConfig()
         {
+            var externalConfigPath = GetExternalConfigPath();
+            if (File.Exists(externalConfigPath))
+            {
+                try
+                {
+                    var json = File.ReadAllText(externalConfigPath);
+                    var externalConfig = JsonSerializer.Deserialize<AutoFileDetectionConfig>(json);
+                    if (externalConfig != null)
+                    {
+                        return externalConfig;
+                    }
+                }
+                catch
+                {
+                    // Fall back to app.config defaults if the writable config is unreadable.
+                }
+            }
+
             return new AutoFileDetectionConfig
             {
                 WatchFolderPath = ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"]
@@ -82,19 +101,21 @@ namespace BCCStudents.Application.Services.AutoFileDetection
         /// </summary>
         public void SaveToConfig()
         {
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var externalConfigPath = GetExternalConfigPath();
+            Directory.CreateDirectory(Path.GetDirectoryName(externalConfigPath)!);
+            File.WriteAllText(externalConfigPath, JsonSerializer.Serialize(this, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }));
+        }
 
-            config.AppSettings.Settings["AutoFileDetection.WatchFolderPath"].Value = WatchFolderPath;
-            config.AppSettings.Settings["AutoFileDetection.FileNamePattern"].Value = FileNamePattern;
-            config.AppSettings.Settings["AutoFileDetection.CheckIntervalMinutes"].Value = CheckIntervalMinutes.ToString();
-            config.AppSettings.Settings["AutoFileDetection.Enabled"].Value = Enabled.ToString();
-            config.AppSettings.Settings["AutoFileDetection.ShowNotifications"].Value = ShowNotifications.ToString();
-            config.AppSettings.Settings["AutoFileDetection.MaxFilesToCheck"].Value = MaxFilesToCheck.ToString();
-            config.AppSettings.Settings["AutoFileDetection.MaxFileSizeMB"].Value = MaxFileSizeMB.ToString();
-            config.AppSettings.Settings["AutoFileDetection.LogLevel"].Value = LogLevel.ToString();
+        private static string GetExternalConfigPath()
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "BCCStudents");
 
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
+            return Path.Combine(dir, "auto-detection.config.json");
         }
     }
 

@@ -545,10 +545,10 @@ namespace BCCStudents.Infrastructure.Repositories
 
             const string sql = @"INSERT INTO PendingStudents
                                 (Id, FirstName, LastName, Age, ParentName, PhoneNumber, Id_Numb, Address,
-                                  StudentCode, IdCardPath, AdditionalDocsPath, user_id, CreatedAt)
+                                  IdCardPath, AdditionalDocsPath, user_id, CreatedAt)
                                 VALUES
                                 (@Id, @FirstName, @LastName, @Age, @ParentName, @PhoneNumber, @IdNumb, @Address,
-                                  @StudentCode, @IdCardPath, @AdditionalDocsPath, @UserId, @CreatedAt)
+                                  @IdCardPath, @AdditionalDocsPath, @UserId, @CreatedAt)
                                 ON DUPLICATE KEY UPDATE
                                  FirstName = VALUES(FirstName),
                                  LastName = VALUES(LastName),
@@ -557,7 +557,6 @@ namespace BCCStudents.Infrastructure.Repositories
                                  PhoneNumber = VALUES(PhoneNumber),
                                  Id_Numb = VALUES(Id_Numb),
                                  Address = VALUES(Address),
-                                 StudentCode = VALUES(StudentCode),
                                  IdCardPath = VALUES(IdCardPath),
                                  AdditionalDocsPath = VALUES(AdditionalDocsPath),
                                  user_id = VALUES(user_id),
@@ -861,7 +860,6 @@ namespace BCCStudents.Infrastructure.Repositories
             command.Parameters.Add("@PhoneNumber", MySqlDbType.VarChar);
             command.Parameters.Add("@IdNumb", MySqlDbType.Int64);
             command.Parameters.Add("@Address", MySqlDbType.VarChar);
-            command.Parameters.Add("@StudentCode", MySqlDbType.VarChar);
             command.Parameters.Add("@IdCardPath", MySqlDbType.VarChar);
             command.Parameters.Add("@AdditionalDocsPath", MySqlDbType.VarChar);
             command.Parameters.Add("@UserId", MySqlDbType.Int32);
@@ -878,7 +876,6 @@ namespace BCCStudents.Infrastructure.Repositories
             command.Parameters["@PhoneNumber"].Value = student.PhoneNumber ?? (object)DBNull.Value;
             command.Parameters["@IdNumb"].Value = student.Id_Numb;
             command.Parameters["@Address"].Value = student.Address ?? (object)DBNull.Value;
-            command.Parameters["@StudentCode"].Value = student.StudentCode ?? (object)DBNull.Value;
             command.Parameters["@IdCardPath"].Value = student.IdCardPath ?? (object)DBNull.Value;
             command.Parameters["@AdditionalDocsPath"].Value = student.AdditionalDocsPath ?? (object)DBNull.Value;
             command.Parameters["@UserId"].Value = student.UserId;

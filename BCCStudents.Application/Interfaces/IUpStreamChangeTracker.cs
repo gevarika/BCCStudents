@@ -60,6 +60,10 @@ namespace BCCStudents.Application.Interfaces
         Task TrackUserChangeAsync(int userId, string operation, UserModel snapshot, CancellationToken cancellationToken = default);
         void TrackUserChange(int userId, SyncOperationType operation, UserModel snapshot);
         void TrackUserChange(int userId, string operation, UserModel snapshot);
+
+        // Generic delete by table + record id
+        Task TrackDeleteAsync(string tableName, int recordId, CancellationToken cancellationToken = default);
+        void TrackDelete(string tableName, int recordId);
     }
 }
 

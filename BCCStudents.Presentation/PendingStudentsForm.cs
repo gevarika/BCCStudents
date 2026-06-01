@@ -1,18 +1,24 @@
 ﻿using BCCStudents.Application.Services;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using BCCStudents.Presentation.Services;
 using System.Data;
 using System.Windows.Forms.VisualStyles;
 
 namespace BCCStudents.Presentation
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public partial class PendingStudentsForm : Form
     {
         private readonly IPendingStudentService _pendingService;
+        private readonly PendingRegistrationMonitor _pendingRegistrationMonitor;
         private Dictionary<int, PendingStudent> _originalStudents = new Dictionary<int, PendingStudent>();
         private readonly DocumentService _documentService;
         //private Dictionary<string, string> failedAdd = new Dictionary<string, string>();
-        public PendingStudentsForm(IPendingStudentService pendingService, DocumentService documentService)
+        public PendingStudentsForm(
+            IPendingStudentService pendingService,
+            DocumentService documentService,
+            PendingRegistrationMonitor pendingRegistrationMonitor)
         {
             InitializeComponent();
             if (!Properties.Settings.Default.IsTestDb)
@@ -20,6 +26,7 @@ namespace BCCStudents.Presentation
             else FormTitleHelper.SetTitle(this, "ონლაინ რეგისტრირებული მოსწავლეები - სატესტო რეჟიმი");
             _pendingService = pendingService;
             _documentService = documentService;
+            _pendingRegistrationMonitor = pendingRegistrationMonitor ?? throw new ArgumentNullException(nameof(pendingRegistrationMonitor));
             dataGridView1.ReadOnly = false;
             dataGridView1.AllowUserToAddRows = false; // თუ არ გინდა დამატება
             dataGridView1.EditMode = DataGridViewEditMode.EditOnEnter;
@@ -31,17 +38,50 @@ namespace BCCStudents.Presentation
 
         private void PendingStudentsForm_Load(object sender, EventArgs e)
         {
+            _pendingRegistrationMonitor.PendingCountChanged += PendingRegistrationMonitor_PendingCountChanged;
             LoadPendingStudents();
-            AddCheckboxColumn();
             UpdateSelectionLabel();
-            AddDiscountColumn();
+        }
+
+        private void PendingRegistrationMonitor_PendingCountChanged(object sender, int count)
+        {
+            if (IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => PendingRegistrationMonitor_PendingCountChanged(sender, count)));
+                return;
+            }
+
+            if (HasUnsavedChanges())
+            {
+                return;
+            }
+
+            LoadPendingStudents();
+        }
+
+        private bool HasUnsavedChanges()
+        {
+            return dataGridView1.Rows
+                .Cast<DataGridViewRow>()
+                .Any(r => r.DefaultCellStyle.BackColor == Color.LightYellow);
+        }
+
+        private void RefreshPendingListAfterLocalChange()
+        {
+            LoadPendingStudents();
+            _pendingRegistrationMonitor.SyncLocalCount();
         }
         private void PendingStudentsForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            _pendingRegistrationMonitor.PendingCountChanged -= PendingRegistrationMonitor_PendingCountChanged;
+
             // გადაამოწმოს თუ არის როუები ყვითელი ფერით (შეცვლილი)
-            bool hasUnsavedChanges = dataGridView1.Rows
-                .Cast<DataGridViewRow>()
-                .Any(r => r.DefaultCellStyle.BackColor == Color.LightYellow);
+            bool hasUnsavedChanges = HasUnsavedChanges();
 
             if (hasUnsavedChanges)
             {
@@ -81,8 +121,8 @@ namespace BCCStudents.Presentation
 
                 // ამოიღე ფასდაკლება იმავე row-დან
                 decimal discountAmount = 0;
-                if (row.Cells["Discount"].Value != null &&
-                    decimal.TryParse(row.Cells["Discount"].Value.ToString(), out decimal parsed))
+                if (row.Cells["ApprovalDiscount"].Value != null &&
+                    decimal.TryParse(row.Cells["ApprovalDiscount"].Value.ToString(), out decimal parsed))
                 {
                     discountAmount = parsed;
                 }
@@ -104,7 +144,7 @@ namespace BCCStudents.Presentation
 
             if (successAdd.Any())
             {
-                message += $"წარმატებით დამატდა: {successAdd.Count}\n";
+                message += $"წარმატებით დაემატა: {successAdd.Count}\n";
                 message += string.Join("\n", successAdd.Select(name => "> " + name));
                 message += "\n\n";
             }
@@ -119,7 +159,7 @@ namespace BCCStudents.Presentation
                 message = "არ არის მონიშნული მოსწავლე.";
 
             MessageBox.Show(message, "დასტურის შედეგი", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            LoadPendingStudents(); // განახლება
+            RefreshPendingListAfterLocalChange();
         }
         private void SetupContextMenu()
         {
@@ -138,47 +178,102 @@ namespace BCCStudents.Presentation
 
         private void LoadPendingStudents()
         {
-            var list = _pendingService.GetAllPending();
-            dataGridView1.DataSource = list;
-            if (list.Count > 0)
+            dataGridView1.CellValueChanged -= dataGridView1_CellValueChanged;
+            try
             {
-                // შეინახე ორიგინალები Clone-ით
-                _originalStudents = list.ToDictionary(
-                    s => s.Id,
-                    s => new PendingStudent 
-                    {
-                        Id = s.Id,
-                        FirstName = s.FirstName,
-                        LastName = s.LastName,
-                        PhoneNumber = s.PhoneNumber,
-                        ParentName = s.ParentName,
-                        Discount = s.Discount,
-                        Age = s.Age,
-                        Id_Numb = s.Id_Numb,
-                        Address = s.Address,
-                        // სხვა ველები
-                    });
-                SetupContextMenu();
+                var list = _pendingService.GetAllPending();
+                dataGridView1.DataSource = list;
+                EnsureManualColumns();
+                ConfigureGridColumns();
+
+                if (list.Count > 0)
+                {
+                    // შეინახე ორიგინალები Clone-ით
+                    _originalStudents = list.ToDictionary(
+                        s => s.Id,
+                        s => new PendingStudent
+                        {
+                            Id = s.Id,
+                            FirstName = s.FirstName,
+                            LastName = s.LastName,
+                            PhoneNumber = s.PhoneNumber,
+                            ParentName = s.ParentName,
+                            Discount = s.Discount,
+                            Age = s.Age,
+                            Id_Numb = s.Id_Numb,
+                            Address = s.Address,
+                            // სხვა ველები
+                        });
+                    SetupContextMenu();
+                }
+                else
+                {
+                    btnApprove.Enabled = false; btnDelete.Enabled = false; btnSaveChanges.Enabled = false; btnDownloadAll.Enabled = false;
+                }
             }
-            else
+            finally
             {
-                btnApprove.Enabled = false; btnDelete.Enabled = false; btnSaveChanges.Enabled = false; btnDownloadAll.Enabled = false;
+                dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+            }
+        }
+
+        private void EnsureManualColumns()
+        {
+            if (!dataGridView1.Columns.Contains("Select"))
+            {
+                AddCheckboxColumn();
+            }
+
+            if (!dataGridView1.Columns.Contains("ApprovalDiscount"))
+            {
+                AddDiscountColumn();
+            }
+        }
+
+        private void ConfigureGridColumns()
+        {
+            var georgianHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["FirstName"] = "სახელი",
+                ["LastName"] = "გვარი",
+                ["Age"] = "ასაკი",
+                ["ParentName"] = "მშობლის სახელი",
+                ["PhoneNumber"] = "ტელეფონი",
+                ["Id_Numb"] = "პირადი ნომერი",
+                ["Address"] = "მისამართი",
+                ["CreatedAt"] = "რეგისტრაციის თარიღი"
+            };
+
+            var hiddenColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Id",
+                "UserId",
+                "RegistrationDate",
+                "TuitionFee",
+                "Discount",
+                "Balance",
+                "IdCardPath",
+                "AdditionalDocsPath"
+            };
+
+            foreach (DataGridViewColumn column in dataGridView1.Columns)
+            {
+                if (hiddenColumns.Contains(column.Name) || hiddenColumns.Contains(column.DataPropertyName))
+                {
+                    column.Visible = false;
+                    continue;
+                }
+
+                if (georgianHeaders.TryGetValue(column.Name, out var header) ||
+                    georgianHeaders.TryGetValue(column.DataPropertyName ?? string.Empty, out header))
+                {
+                    column.HeaderText = header;
+                }
             }
         }
 
         private void AddCheckboxColumn()
         {
-            /*if (!dataGridView1.Columns.Contains("Select"))
-            {
-                DataGridViewCheckBoxColumn checkboxColumn = new DataGridViewCheckBoxColumn
-                {
-                    HeaderText = "",
-                    Name = "Select",
-                    Width = 30
-                };
-                dataGridView1.Columns.Insert(0, checkboxColumn);
-            }*/
-
             var checkColumn = new DataGridViewCheckBoxColumn
             {
                 HeaderText = "",
@@ -197,20 +292,19 @@ namespace BCCStudents.Presentation
 
             checkColumn.HeaderCell = header;
             dataGridView1.Columns.Insert(0, checkColumn);
-
         }
+
         private void AddDiscountColumn()
         {
             var discountColumn = new DataGridViewTextBoxColumn
             {
-                Name = "Discount",
+                Name = "ApprovalDiscount",
                 HeaderText = "ფასდაკლება",
                 ValueType = typeof(decimal),
                 DefaultCellStyle = new DataGridViewCellStyle { Format = "N2" }
             };
 
             dataGridView1.Columns.Insert(1, discountColumn);
-
         }
         private void ViewDocuments_Click(object sender, EventArgs e)
         {
@@ -238,7 +332,7 @@ namespace BCCStudents.Presentation
                 if (result == DialogResult.Yes)
                 {
                     _pendingService.Delete(selected.Id);
-                    LoadPendingStudents();
+                    RefreshPendingListAfterLocalChange();
                 }
             }
         }
@@ -298,23 +392,48 @@ namespace BCCStudents.Presentation
 
         private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.RowIndex >= dataGridView1.Rows.Count)
+            {
+                return;
+            }
+
             if (e.ColumnIndex == 0)
             {
                 UpdateSelectionLabel();
                 return;
             }
-            var row = dataGridView1.Rows[e.RowIndex];
 
-            var student = (PendingStudent)row.DataBoundItem;
-            var original = _originalStudents[student.Id];
+            var columnName = dataGridView1.Columns[e.ColumnIndex].Name;
+            if (columnName == "ApprovalDiscount" || columnName == "Select")
+            {
+                return;
+            }
+
+            var row = dataGridView1.Rows[e.RowIndex];
+            if (row.IsNewRow || row.DataBoundItem is not PendingStudent student)
+            {
+                return;
+            }
+
+            if (!_originalStudents.TryGetValue(student.Id, out var original))
+            {
+                return;
+            }
 
             bool hasChanges = false;
 
-            void Check(string columnName, object originalValue)
+            void Check(string fieldName, object originalValue)
             {
-                var current = row.Cells[columnName].Value;
+                if (!dataGridView1.Columns.Contains(fieldName))
+                {
+                    return;
+                }
+
+                var current = row.Cells[fieldName].Value;
                 if (!Equals(current, originalValue))
+                {
                     hasChanges = true;
+                }
             }
 
             Check("FirstName", original.FirstName);
@@ -324,15 +443,8 @@ namespace BCCStudents.Presentation
             Check("Age", original.Age);
             Check("Id_Numb", original.Id_Numb);
             Check("Address", original.Address);
-            // ... და სხვა ველები
 
             row.DefaultCellStyle.BackColor = hasChanges ? Color.LightYellow : Color.White;
-            // Skip checkbox column (index 0 მაგალითად)
-            /*if (e.ColumnIndex == 0)
-                return;
-
-            var row = dataGridView1.Rows[e.RowIndex];
-            row.DefaultCellStyle.BackColor = Color.LightYellow;*/
         }
 
         private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
@@ -345,6 +457,27 @@ namespace BCCStudents.Presentation
 
         private void btnDownloadAll_Click(object sender, EventArgs e)
         {
+            _documentService.LoadConfig();
+            if (!DocumentService.IsDownloadFolderConfigured(_documentService.DownloadBaseFolder))
+            {
+                MessageBox.Show(
+                    DocumentService.DownloadFolderNotConfiguredMessage,
+                    "შენახვის ადგილი",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!DocumentService.IsFileServerConfigured(_documentService.FileServerBaseUrl))
+            {
+                MessageBox.Show(
+                    DocumentService.FileServerNotConfiguredMessage,
+                    "ფაილები სერვერზე",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
             Task.Run(() =>
             {
                 var list = _pendingService.GetAllPending();

@@ -3,6 +3,7 @@ using BCCStudents.Application.Services;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Infrastructure.Services;
+using BCCStudents.Presentation.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data;
 
@@ -29,7 +30,9 @@ namespace BCCStudents.Presentation
         private readonly PendingStudentsFormFactory _pendingStudentsFormFactory;
         private readonly FailedStudentsFormFactory _failedStudentsFormFactory;
         private readonly SetStudyStartDateFormFactory _setStudyStartDateFormFactory;
+        private readonly PendingRegistrationMonitor _pendingRegistrationMonitor;
         private readonly IUserContext _userContext;
+        private const string PendingMenuBaseText = "ონლაინ რეგისტრაციის დადასტურება";
         //UserSession _userSession = new UserSession();
         public StudentManagementForm(
             IStudentService studentService,
@@ -47,6 +50,7 @@ namespace BCCStudents.Presentation
             PendingStudentsFormFactory pendingStudentsFormFactory,
             FailedStudentsFormFactory failedStudentsFormFactory,
             SetStudyStartDateFormFactory setStudyStartDateFormFactory,
+            PendingRegistrationMonitor pendingRegistrationMonitor,
             IUserContext userContext
             )
         {
@@ -69,14 +73,51 @@ namespace BCCStudents.Presentation
             _pendingStudentsFormFactory = pendingStudentsFormFactory;
             _failedStudentsFormFactory = failedStudentsFormFactory;
             _setStudyStartDateFormFactory = setStudyStartDateFormFactory;
+            _pendingRegistrationMonitor = pendingRegistrationMonitor ?? throw new ArgumentNullException(nameof(pendingRegistrationMonitor));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
 
             // Apply security checks after form is loaded
             this.Load += StudentManagementForm_Load;
+            this.FormClosing += StudentManagementForm_FormClosing;
+        }
+
+        private void StudentManagementForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _pendingRegistrationMonitor.PendingCountChanged -= PendingRegistrationMonitor_PendingCountChanged;
+        }
+
+        private void PendingRegistrationMonitor_PendingCountChanged(object sender, int count)
+        {
+            if (IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => PendingRegistrationMonitor_PendingCountChanged(sender, count)));
+                return;
+            }
+
+            UpdatePendingMenuBadge(count);
+        }
+
+        private void UpdatePendingMenuBadge(int count)
+        {
+            if (ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem == null)
+            {
+                return;
+            }
+
+            ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem.Text = count > 0
+                ? $"{PendingMenuBaseText} ({count})"
+                : PendingMenuBaseText;
         }
         private void StudentManagementForm_Load(object sender, EventArgs e)
         {
             ApplySecurityChecks();
+            _pendingRegistrationMonitor.PendingCountChanged += PendingRegistrationMonitor_PendingCountChanged;
+            UpdatePendingMenuBadge(_pendingRegistrationMonitor.CurrentCount);
             if (UserSession.Role != "Administrator")
             {
                 btnImportFromExcell.Enabled = false;
@@ -205,8 +246,17 @@ namespace BCCStudents.Presentation
                     MessageBox.Show("⚠️ გთხოვთ მონიშნოთ მინიმუმ ერთი ჯგუფი.", "ჯგუფი არ არის არჩეული", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-                if (Convert.ToInt16(cmbDiscount.Text) > 0 && string.IsNullOrWhiteSpace(txtStudentInfo.Text))
-                    MessageBox.Show("თქვენ მოსწავლისთვის დააყენეთ ფასდაკლება, ამითომ ასევე საჭიროა მიუთითოთ მოსწავლის სტატუსი!", "მოსწავლის სტატუსი", MessageBoxButtons.OK);
+                if (int.TryParse(cmbDiscount.Text.Replace("%", "").Trim(), out var discountPercent)
+                    && discountPercent > 0
+                    && string.IsNullOrWhiteSpace(txtStudentInfo.Text))
+                {
+                    MessageBox.Show(
+                        "თქვენ მოსწავლისთვის დააყენეთ ფასდაკლება, ასევე საჭიროა მიუთითოთ მოსწავლის სტატუსი!",
+                        "მოსწავლის სტატუსი",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
 
                 // Duplicate checks
                 var firstName = txtFirstName.Text.Trim();

@@ -69,7 +69,10 @@ namespace BCCStudents.Application.Services
         public SubGroup GetFirstSubGroupByGroupId(int groupId)
         { return _subGroupRepository.GetFirstSubGroupByGroupId(groupId); }
         public void UpdateStudentSubGroupPaymentDate(int studentId, int groupId, int subGroupId, DateTime paymentDate)
-        { _subGroupRepository.UpdateStudentSubGroupPaymentDate(studentId, groupId, subGroupId, paymentDate); }
+        {
+            _subGroupRepository.UpdateStudentSubGroupPaymentDate(studentId, groupId, subGroupId, paymentDate);
+            SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
+        }
 
         public void UpdateStudentSubGroup(int studentId, int groupId, int subGroupId, int oldSubGroupId)
         {
@@ -93,7 +96,12 @@ namespace BCCStudents.Application.Services
         }
         public bool UpdateStudentSubGroupPaymentStatus(int studentId, int groupId, int subGroupId, string status)
         {
-            return _subGroupRepository.UpdateStudentSubGroupPaymentStatus(studentId, groupId, subGroupId, status);
+            var ok = _subGroupRepository.UpdateStudentSubGroupPaymentStatus(studentId, groupId, subGroupId, status);
+            if (ok)
+            {
+                SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
         /*public void UpdateSubGroupStudentCount(int subGroupId, int count)
         { _subGroupRepository.UpdateSubGroupStudentCount(subGroupId, count); }
@@ -223,8 +231,12 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-
-                return _subGroupRepository.UpdateStudentSubGroupStatus(groupId, studentId, subGroupId, status);
+                var ok = _subGroupRepository.UpdateStudentSubGroupStatus(groupId, studentId, subGroupId, status);
+                if (ok)
+                {
+                    SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
+                }
+                return ok;
             }
             catch
             {

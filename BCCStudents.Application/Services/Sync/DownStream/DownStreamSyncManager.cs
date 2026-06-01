@@ -79,7 +79,8 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                         Success = result.Success,
                         RecordsSynced = result.Tables.Sum(t => t.RecordsSynced),
                         Errors = result.Errors.ToList(),
-                        SyncType = "DownStream"
+                        SyncType = "DownStream",
+                        TableResults = result.Tables.ToList()
                     };
                     SyncCompleted?.Invoke(this, args);
                 }

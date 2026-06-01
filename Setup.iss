@@ -11,6 +11,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf64}\{#MyAppName}
+UsePreviousAppDir=no
 DisableProgramGroupPage=yes
 OutputDir={#SourcePath}\Installer
 OutputBaseFilename=BCCStudentsSetup
@@ -31,8 +32,6 @@ Name: "{commonappdata}\BCCStudents"; Permissions: users-modify
 [Files]
 ; ყველა ფაილი bin\Release\net8.0-windows-დან
 Source: "{#BuildOutput}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; გარე კონფიგურაცია MySQL პარამეტრებისთვის
-Source: "BCCStudents.Presentation\Config\db.config.json"; DestDir: "{commonappdata}\BCCStudents"; Flags: onlyifdoesntexist; Permissions: users-modify
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -42,17 +41,65 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+function HasDotNetDesktopRuntime8InRegistry(RootKey: Integer; const Architecture: string): Boolean;
+var
+  VersionNames: TArrayOfString;
+  I: Integer;
+begin
+  Result := False;
+
+  if not RegGetSubkeyNames(
+    RootKey,
+    'SOFTWARE\dotnet\Setup\InstalledVersions\' + Architecture + '\sharedfx\Microsoft.WindowsDesktop.App',
+    VersionNames
+  ) then
+    Exit;
+
+  for I := 0 to GetArrayLength(VersionNames) - 1 do
+  begin
+    if Copy(VersionNames[I], 1, 2) = '8.' then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+function HasDotNetDesktopRuntime8InDirectory(const BaseDir: string): Boolean;
+var
+  FindRec: TFindRec;
+  RuntimeDir: string;
+begin
+  Result := False;
+  RuntimeDir := AddBackslash(BaseDir) + 'dotnet\shared\Microsoft.WindowsDesktop.App';
+
+  if not DirExists(RuntimeDir) then
+    Exit;
+
+  if FindFirst(AddBackslash(RuntimeDir) + '8.*', FindRec) then
+  begin
+    try
+      repeat
+        if DirExists(AddBackslash(RuntimeDir) + FindRec.Name) then
+        begin
+          Result := True;
+          Exit;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
 // .NET Desktop Runtime 8-ის შემოწმება
 function IsDotNetDesktopRuntimeInstalled(): Boolean;
-var
-  Installed: Cardinal;
 begin
-  Result := RegQueryDWordValue(
-    HKLM,
-    'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App',
-    '8.0.0',
-    Installed
-  );
+  Result :=
+    HasDotNetDesktopRuntime8InRegistry(HKLM64, 'x64') or
+    HasDotNetDesktopRuntime8InRegistry(HKLM32, 'x86') or
+    HasDotNetDesktopRuntime8InDirectory(ExpandConstant('{pf64}')) or
+    HasDotNetDesktopRuntime8InDirectory(ExpandConstant('{pf32}'));
 end;
 
 const
@@ -109,9 +156,36 @@ function IsAnyMySqlServiceRunning(): Boolean;
 begin
   Result :=
     IsServiceRunning('MySQL80') or
+    IsServiceRunning('MySQL84') or
+    IsServiceRunning('MySQL83') or
+    IsServiceRunning('MySQL82') or
+    IsServiceRunning('MySQL81') or
     IsServiceRunning('MySQL') or
     IsServiceRunning('MySQL57') or
     IsServiceRunning('MariaDB');
+end;
+
+function IsTcpPortListening(const Port: string): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result :=
+    Exec(
+      ExpandConstant('{sys}\cmd.exe'),
+      '/C netstat -ano -p tcp | findstr /R /C:":' + Port + ' .*LISTENING" >nul',
+      '',
+      SW_HIDE,
+      ewWaitUntilTerminated,
+      ResultCode
+    ) and (ResultCode = 0);
+end;
+
+function IsMySqlAvailable(): Boolean;
+begin
+  Result :=
+    IsAnyMySqlServiceRunning() or
+    IsTcpPortListening('3307') or
+    IsTcpPortListening('3306');
 end;
 
 function InitializeSetup(): Boolean;
@@ -126,10 +200,15 @@ begin
     end;
     Result := False; // ინსტალაცია წყდება
   end
-  else if not IsAnyMySqlServiceRunning() then
+  else if not IsMySqlAvailable() then
   begin
-    MsgBox('MySQL სერვისი არ მუშაობს ან არ არის დაინსტალირებული. გთხოვ, დააინსტალირე/გაუშვი MySQL და შემდეგ სცადე თავიდან.', mbError, MB_OK);
-    Result := False;
+    Result := MsgBox(
+      'MySQL სერვისი ვერ მოიძებნა ან არ მუშაობს.'#13#10#13#10 +
+      'ინსტალაცია შესაძლებელია გაგრძელდეს, მაგრამ პროგრამა მონაცემთა ბაზას ვერ დაუკავშირდება, სანამ MySQL არ ჩაირთვება ან კონფიგურაციაში remote ბაზა არ მიეთითება.'#13#10#13#10 +
+      'გსურთ ინსტალაციის გაგრძელება?',
+      mbConfirmation,
+      MB_YESNO
+    ) = IDYES;
   end
   else
     Result := True;

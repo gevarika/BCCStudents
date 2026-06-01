@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace BCCStudents.Domain.Entities
+﻿namespace BCCStudents.Domain.Entities
 {
     /// <summary>
     /// წარმოადგენს SyncOutbox ცხრილში არსებულ ერთ ჩანაწერს (retry queue item).
@@ -29,22 +27,31 @@ namespace BCCStudents.Domain.Entities
             }
 
             var data = DeserializePayload();
-            return new SyncChangePayload(TableName, Operation, data, RecordId);
+            var keyColumns = DeserializeKeyColumns();
+            return new SyncChangePayload(TableName, Operation, data, RecordId, keyColumns);
         }
 
         private Dictionary<string, object> DeserializePayload()
         {
             try
             {
-                var raw = string.IsNullOrWhiteSpace(PayloadJson)
-                    ? new Dictionary<string, object>()
-                    : JsonConvert.DeserializeObject<Dictionary<string, object>>(PayloadJson) ?? new Dictionary<string, object>();
-
-                return new Dictionary<string, object>(raw, StringComparer.OrdinalIgnoreCase);
+                return SyncChangePayload.DeserializeData(PayloadJson);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Payload JSON parsing failed (Id={Id}).", ex);
+            }
+        }
+
+        private Dictionary<string, object> DeserializeKeyColumns()
+        {
+            try
+            {
+                return SyncChangePayload.DeserializeKeyColumns(PayloadJson);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Payload KeyColumns parsing failed (Id={Id}).", ex);
             }
         }
     }

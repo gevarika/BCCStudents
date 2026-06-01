@@ -11,133 +11,105 @@ namespace BCCStudents.Application.Services
     public class StudentSubGroupsService : IStudentSubGroupsService
     {
         private readonly IStudentSubGroupRepository _repository;
+        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public StudentSubGroupsService(IStudentSubGroupRepository repository)
+        public StudentSubGroupsService(IStudentSubGroupRepository repository, IUpStreamChangeTracker upStreamChangeTracker)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
 
         #region INSERT - მოსწავლე-ქვეჯგუფის დამატება
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფში დამატება (სრული ობიექტით)
-        /// </summary>
         public int AddStudentSubGroup(StudentSubGroups studentSubGroup)
         {
-            return _repository.InsertStudentSubGroup(studentSubGroup);
+            var id = _repository.InsertStudentSubGroup(studentSubGroup);
+            if (id > 0)
+            {
+                TrySyncStudentSubGroup(studentSubGroup.StudentId, studentSubGroup.GroupId, studentSubGroup.SubGroupId, SyncOperationType.Insert);
+            }
+            return id;
         }
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფში დამატება (ID-ებით)
-        /// </summary>
         public int AddStudentSubGroup(int studentId, int groupId, int subGroupId)
         {
-            return _repository.InsertStudentSubGroup(studentId, groupId, subGroupId);
+            var id = _repository.InsertStudentSubGroup(studentId, groupId, subGroupId);
+            if (id > 0)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Insert);
+            }
+            return id;
         }
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფში დამატება (ფასდაკლებით)
-        /// </summary>
         public int AddStudentSubGroupWithDiscount(int studentId, int groupId, int subGroupId, double discount)
         {
-            return _repository.InsertStudentSubGroupWithDiscount(studentId, groupId, subGroupId, discount);
+            var id = _repository.InsertStudentSubGroupWithDiscount(studentId, groupId, subGroupId, discount);
+            if (id > 0)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Insert);
+            }
+            return id;
         }
 
         #endregion
 
         #region SELECT - მოსწავლე-ქვეჯგუფის მიღება
 
-        /// <summary>
-        /// მოსწავლე-ქვეჯგუფის მიღება ID-ით
-        /// </summary>
         public StudentSubGroups GetById(int id)
         {
             return _repository.GetById(id);
         }
 
-        /// <summary>
-        /// მოსწავლე-ქვეჯგუფის მიღება StudentId, GroupId და SubGroupId-ით
-        /// </summary>
         public StudentSubGroups GetByStudentGroupAndSubGroup(int studentId, int groupId, int subGroupId)
         {
             return _repository.GetByStudentGroupAndSubGroup(studentId, groupId, subGroupId);
         }
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფის მიღება ჯგუფის მიხედვით
-        /// </summary>
         public StudentSubGroups GetByStudentAndGroup(int studentId, int groupId)
         {
             return _repository.GetByStudentAndGroup(studentId, groupId);
         }
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფების მიღება
-        /// </summary>
         public List<StudentSubGroups> GetByStudentId(int studentId)
         {
             return _repository.GetByStudentId(studentId);
         }
 
-        /// <summary>
-        /// მოსწავლის აქტიური ქვეჯგუფების მიღება
-        /// </summary>
         public List<StudentSubGroups> GetActiveByStudentId(int studentId)
         {
             return _repository.GetActiveByStudentId(studentId);
         }
 
-        /// <summary>
-        /// ქვეჯგუფის მოსწავლეების მიღება
-        /// </summary>
         public List<StudentSubGroups> GetBySubGroupId(int subGroupId)
         {
             return _repository.GetBySubGroupId(subGroupId);
         }
 
-        /// <summary>
-        /// ქვეჯგუფის აქტიური მოსწავლეების მიღება
-        /// </summary>
         public List<StudentSubGroups> GetActiveBySubGroupId(int subGroupId)
         {
             return _repository.GetActiveBySubGroupId(subGroupId);
         }
 
-        /// <summary>
-        /// მოსწავლის აქტიური SubGroupId-ის მიღება ჯგუფის მიხედვით
-        /// </summary>
         public int? GetActiveSubGroupId(int studentId, int groupId)
         {
             return _repository.GetActiveSubGroupId(studentId, groupId);
         }
 
-        /// <summary>
-        /// მოსწავლის ქვეჯგუფების ID-ების მიღება
-        /// </summary>
         public List<int> GetSubGroupIdsByStudentId(int studentId)
         {
             return _repository.GetSubGroupIdsByStudentId(studentId);
         }
 
-        /// <summary>
-        /// არსებობის შემოწმება (აქტიური)
-        /// </summary>
         public bool ExistsActive(int studentId, int groupId, int subGroupId)
         {
             return _repository.ExistsActive(studentId, groupId, subGroupId);
         }
 
-        /// <summary>
-        /// არსებობის შემოწმება (ნებისმიერი)
-        /// </summary>
         public bool ExistsAny(int studentId, int groupId, int subGroupId)
         {
             return _repository.ExistsAny(studentId, groupId, subGroupId);
         }
 
-        /// <summary>
-        /// არსებობის შემოწმება ჯგუფის მიხედვით (ნებისმიერი ქვეჯგუფი)
-        /// </summary>
         public bool ExistsAnyForGroup(int studentId, int groupId)
         {
             return _repository.ExistsAnyForGroup(studentId, groupId);
@@ -147,104 +119,161 @@ namespace BCCStudents.Application.Services
 
         #region UPDATE - მოსწავლე-ქვეჯგუფის განახლება
 
-        /// <summary>
-        /// მოსწავლე-ქვეჯგუფის სრული განახლება
-        /// </summary>
         public bool Update(StudentSubGroups studentSubGroup)
         {
-            return _repository.Update(studentSubGroup);
+            var ok = _repository.Update(studentSubGroup);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentSubGroup.StudentId, studentSubGroup.GroupId, studentSubGroup.SubGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// სტატუსის განახლება (აქტივაცია/დეაქტივაცია)
-        /// </summary>
         public bool UpdateStatus(int studentId, int groupId, int subGroupId, bool status)
         {
-            return _repository.UpdateStatus(studentId, groupId, subGroupId, status);
+            var ok = _repository.UpdateStatus(studentId, groupId, subGroupId, status);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// გადახდის სტატუსის განახლება
-        /// </summary>
         public bool UpdatePaymentStatus(int studentId, int groupId, int subGroupId, string paymentStatus)
         {
-            return _repository.UpdatePaymentStatus(studentId, groupId, subGroupId, paymentStatus);
+            var ok = _repository.UpdatePaymentStatus(studentId, groupId, subGroupId, paymentStatus);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// გადახდის თარიღის განახლება
-        /// </summary>
         public bool UpdateDateOfPayment(int studentId, int groupId, int subGroupId, DateTime? dateOfPayment)
         {
-            return _repository.UpdateDateOfPayment(studentId, groupId, subGroupId, dateOfPayment);
+            var ok = _repository.UpdateDateOfPayment(studentId, groupId, subGroupId, dateOfPayment);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// გადახდის თარიღის განახლება (alias)
-        /// </summary>
         public bool UpdatePaymentDate(int studentId, int groupId, int subGroupId, DateTime newDate)
         {
-            return _repository.UpdatePaymentDate(studentId, groupId, subGroupId, newDate);
+            var ok = _repository.UpdatePaymentDate(studentId, groupId, subGroupId, newDate);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// ფასდაკლების განახლება
-        /// </summary>
         public bool UpdateDiscount(int studentId, int groupId, int subGroupId, double discount)
         {
-            return _repository.UpdateDiscount(studentId, groupId, subGroupId, discount);
+            var ok = _repository.UpdateDiscount(studentId, groupId, subGroupId, discount);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// SubGroupId-ის განახლება (ქვეჯგუფის შეცვლა)
-        /// </summary>
         public bool UpdateSubGroupId(int studentId, int groupId, int oldSubGroupId, int newSubGroupId)
         {
-            return _repository.UpdateSubGroupId(studentId, groupId, oldSubGroupId, newSubGroupId);
+            var ok = _repository.UpdateSubGroupId(studentId, groupId, oldSubGroupId, newSubGroupId);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, oldSubGroupId, SyncOperationType.Update);
+                TrySyncStudentSubGroup(studentId, groupId, newSubGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// GroupId-ის განახლება (ჯგუფის შეცვლა)
-        /// </summary>
         public bool UpdateGroupId(int studentId, int oldGroupId, int newGroupId)
         {
-            return _repository.UpdateGroupId(studentId, oldGroupId, newGroupId);
+            var ok = _repository.UpdateGroupId(studentId, oldGroupId, newGroupId);
+            if (ok)
+            {
+                var snapshots = GetByStudentId(studentId)
+                    .Where(s => s.GroupId == oldGroupId || s.GroupId == newGroupId)
+                    .ToList();
+                foreach (var snapshot in snapshots)
+                {
+                    TrySyncStudentSubGroup(snapshot.StudentId, snapshot.GroupId, snapshot.SubGroupId, SyncOperationType.Update);
+                }
+            }
+            return ok;
         }
 
         #endregion
 
         #region DELETE - მოსწავლე-ქვეჯგუფის წაშლა
 
-        /// <summary>
-        /// Soft Delete - მოსწავლის ქვეჯგუფიდან ამოღება
-        /// </summary>
         public bool SoftDelete(int studentId, int groupId, int subGroupId)
         {
-            return _repository.SoftDelete(studentId, groupId, subGroupId);
+            var ok = _repository.SoftDelete(studentId, groupId, subGroupId);
+            if (ok)
+            {
+                TrySyncStudentSubGroup(studentId, groupId, subGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// Hard Delete - სრული წაშლა
-        /// </summary>
         public bool HardDelete(int studentId, int groupId, int subGroupId)
         {
-            return _repository.HardDelete(studentId, groupId, subGroupId);
+            var snapshot = GetByStudentGroupAndSubGroup(studentId, groupId, subGroupId);
+            var ok = _repository.HardDelete(studentId, groupId, subGroupId);
+            if (ok && snapshot != null)
+            {
+                _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, SyncOperationType.Delete, snapshot);
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// მოსწავლის ჯგუფის ყველა ქვეჯგუფიდან Soft Delete
-        /// </summary>
         public bool SoftDeleteAllByStudentAndGroup(int studentId, int groupId)
         {
-            return _repository.SoftDeleteAllByStudentAndGroup(studentId, groupId);
+            var snapshots = GetByStudentId(studentId).Where(s => s.GroupId == groupId).ToList();
+            var ok = _repository.SoftDeleteAllByStudentAndGroup(studentId, groupId);
+            if (ok)
+            {
+                foreach (var snapshot in snapshots)
+                {
+                    TrySyncStudentSubGroup(snapshot.StudentId, snapshot.GroupId, snapshot.SubGroupId, SyncOperationType.Update);
+                }
+            }
+            return ok;
         }
 
-        /// <summary>
-        /// მოსწავლის ყველა ქვეჯგუფიდან Soft Delete
-        /// </summary>
         public bool SoftDeleteAllByStudentId(int studentId)
         {
-            return _repository.SoftDeleteAllByStudentId(studentId);
+            var snapshots = GetByStudentId(studentId);
+            var ok = _repository.SoftDeleteAllByStudentId(studentId);
+            if (ok)
+            {
+                foreach (var snapshot in snapshots)
+                {
+                    TrySyncStudentSubGroup(snapshot.StudentId, snapshot.GroupId, snapshot.SubGroupId, SyncOperationType.Update);
+                }
+            }
+            return ok;
+        }
+
+        #endregion
+
+        #region Sync Helpers
+
+        private void TrySyncStudentSubGroup(int studentId, int groupId, int subGroupId, SyncOperationType operation)
+        {
+            try
+            {
+                var snapshot = GetByStudentGroupAndSubGroup(studentId, groupId, subGroupId);
+                if (snapshot != null)
+                {
+                    _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, operation, snapshot);
+                }
+            }
+            catch { }
         }
 
         #endregion

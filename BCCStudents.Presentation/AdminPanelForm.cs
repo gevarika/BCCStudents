@@ -20,6 +20,7 @@ namespace BCCStudents.Presentation
         private readonly DocumentService _documentService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IGroupRepository _groupRepository;
+        private readonly IGroupService _groupService;
         private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IConnectionStatusService _connectionStatusService;
         private readonly IConfigurationService _configService;
@@ -45,6 +46,7 @@ namespace BCCStudents.Presentation
         private Button btnCheckUpdates;
         public AdminPanelForm(IDatabaseConnectionProvider databaseConnectionProvider,
             IGroupRepository groupRepository,
+            IGroupService groupService,
             IStudentService studentService,
             ICleanupService cleanupService,
             IUserService userService,
@@ -67,6 +69,7 @@ namespace BCCStudents.Presentation
             _documentService = documentService;
             _serviceProvider = serviceProvider;
             _groupRepository = groupRepository;
+            _groupService = groupService ?? throw new ArgumentNullException(nameof(groupService));
             _connectionProvider = databaseConnectionProvider;
             _connectionStatusService = connectionStatusService ?? throw new ArgumentNullException(nameof(connectionStatusService));
             _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
@@ -282,10 +285,47 @@ namespace BCCStudents.Presentation
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            _documentService.DownloadBaseFolder = txtDownloadFolder.Text;
-            _documentService.FileServerBaseUrl = txtBaseUrl.Text;
+            if (!DocumentService.IsDownloadFolderConfigured(txtDownloadFolder.Text))
+            {
+                MessageBox.Show(
+                    "გთხოვთ, მიუთითოთ დოკუმენტების შენახვის საქაღალდე (ველი „შენახვის ადგილი“).",
+                    "შენახვის ადგილი",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                txtDownloadFolder.Focus();
+                return;
+            }
 
-            // 2. შეინახე ცვლილებები ფაილშიც
+            string downloadPath = txtDownloadFolder.Text.Trim();
+            try
+            {
+                Directory.CreateDirectory(downloadPath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"საქაღალდის შექმნა ვერ მოხერხდა:\n{ex.Message}",
+                    "შენახვის ადგილი",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            string fileServerUrl = txtBaseUrl.Text?.Trim();
+            if (!DocumentService.IsFileServerConfigured(fileServerUrl))
+            {
+                MessageBox.Show(
+                    "გთხოვთ, მიუთითოთ ფაილების სერვერის საბაზო URL (მაგ. https://bccenter.ge/).",
+                    "ფაილები სერვერზე",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                txtBaseUrl.Focus();
+                return;
+            }
+
+            _documentService.DownloadBaseFolder = downloadPath;
+            _documentService.FileServerBaseUrl = fileServerUrl;
+
             var config = new DocumentConfig
             {
                 DownloadPath = _documentService.DownloadBaseFolder,
@@ -410,7 +450,7 @@ namespace BCCStudents.Presentation
                 int groupId = Convert.ToInt32(row.Cells["GroupId"].Value);
                 string templatePath = row.Cells["ContractTemplatePath"].Value?.ToString();
 
-                _groupRepository.UpdateGroupContractTemplatePath(groupId, templatePath);
+                _groupService.UpdateGroupContractTemplatePath(groupId, templatePath);
             }
 
         }

@@ -146,12 +146,7 @@ namespace BCCStudents.Presentation
 
                 Form initialForm;
 
-                if (!appStatus.IsDatabaseOnline)
-                {
-                    // პირველი გაშვება / კავშირი ვერ დამყარდა -> გავუშვათ SetupWizardForm
-                    initialForm = serviceProvider.GetRequiredService<SetupWizardForm>();
-                }
-                else if (userService.IsUserRegistered())
+                if (userService.IsUserRegistered())
                 {
                     initialForm = serviceProvider.GetRequiredService<LoginForm>();
                 }
@@ -269,7 +264,12 @@ namespace BCCStudents.Presentation
             services.AddScoped<IDownStreamDataFetcher, DownStreamDataFetcher>();
             services.AddScoped<IDownStreamConflictResolver, DownStreamConflictResolver>();
             services.AddScoped<IDownStreamSyncService, DownStreamSyncService>();
-            services.AddSingleton<IDownStreamSyncManager, DownStreamSyncManager>();
+            services.AddSingleton<IDownStreamSyncManager>(sp =>
+                new DownStreamSyncManager(
+                    sp.GetRequiredService<IDownStreamSyncService>(),
+                    sp.GetRequiredService<ISyncLogger>(),
+                    TimeSpan.FromMinutes(1)));
+            services.AddSingleton<PendingRegistrationMonitor>();
             services.AddScoped<IUpStreamSyncService, UpStreamSyncService>();
             services.AddScoped<IUpStreamPayloadBuilder, UpStreamPayloadBuilder>();
             services.AddScoped<IUpStreamChangeTracker, UpStreamChangeTracker>();
@@ -296,7 +296,8 @@ namespace BCCStudents.Presentation
                 var service = new DocumentService();
 
                 var config = DocumentConfig.Load();
-                service.DownloadBaseFolder = config.DownloadPath;
+                if (DocumentService.IsDownloadFolderConfigured(config.DownloadPath))
+                    service.DownloadBaseFolder = config.DownloadPath.Trim();
                 service.FileServerBaseUrl = config.FileUrl;
 
                 return service;
@@ -305,7 +306,7 @@ namespace BCCStudents.Presentation
 
             // --- 4. Presentation (Forms) ---
             // აქ მხოლოდ UI ელემენტები რეგისტრირდება (Transient).
-            services.AddTransient<SetupWizardForm>();
+            //services.AddTransient<SetupWizardForm>();
             services.AddTransient<LoginForm>();
             services.AddTransient<RegisterForm>();
             services.AddTransient<MainForm>();

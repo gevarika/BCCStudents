@@ -3,6 +3,7 @@ using BCCStudents.Presentation.Properties;
 using System.Configuration;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace BCCStudents.Presentation.Services
 {
@@ -263,39 +264,78 @@ namespace BCCStudents.Presentation.Services
         //Files and directories
         public void SaveAutoDetectionSettings(bool enabled, string watchPath, string pattern)
         {
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var settings = new AutoDetectionSettings
+            {
+                Enabled = enabled,
+                WatchFolderPath = watchPath ?? string.Empty,
+                FileNamePattern = string.IsNullOrWhiteSpace(pattern) ? "*.xlsx" : pattern
+            };
 
-            UpdateSetting(config, "AutoFileDetection.Enabled", enabled.ToString());
-            UpdateSetting(config, "AutoFileDetection.WatchFolderPath", watchPath);
-            UpdateSetting(config, "AutoFileDetection.FileNamePattern", pattern);
-
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
+            var configPath = GetAutoDetectionConfigPath();
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+            File.WriteAllText(configPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }));
         }
 
-        // დამხმარე მეთოდი კოდის შესამცირებლად
-        private void UpdateSetting(Configuration config, string key, string value)
+        private AutoDetectionSettings LoadAutoDetectionSettings()
         {
-            if (config.AppSettings.Settings[key] == null)
-                config.AppSettings.Settings.Add(key, value);
-            else
-                config.AppSettings.Settings[key].Value = value;
+            try
+            {
+                var configPath = GetAutoDetectionConfigPath();
+                if (File.Exists(configPath))
+                {
+                    var json = File.ReadAllText(configPath);
+                    var settings = JsonSerializer.Deserialize<AutoDetectionSettings>(json);
+                    if (settings != null)
+                    {
+                        return settings;
+                    }
+                }
+            }
+            catch
+            {
+                // Fall back to app.config defaults if the external config is unreadable.
+            }
+
+            return new AutoDetectionSettings
+            {
+                Enabled = bool.TryParse(ConfigurationManager.AppSettings["AutoFileDetection.Enabled"], out var enabled) ? enabled : true,
+                WatchFolderPath = ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"] ?? string.Empty,
+                FileNamePattern = ConfigurationManager.AppSettings["AutoFileDetection.FileNamePattern"] ?? "*.xlsx"
+            };
+        }
+
+        private string GetAutoDetectionConfigPath()
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "BCCStudents");
+
+            return Path.Combine(dir, "auto-detection.config.json");
+        }
+
+        private sealed class AutoDetectionSettings
+        {
+            public bool Enabled { get; set; } = true;
+            public string WatchFolderPath { get; set; } = string.Empty;
+            public string FileNamePattern { get; set; } = "*.xlsx";
         }
 
         public bool IsAutoDetectionEnabled()
         {
-            var value = ConfigurationManager.AppSettings["AutoFileDetection.Enabled"];
-            return bool.TryParse(value, out bool result) ? result : true; // Default არის true
+            return LoadAutoDetectionSettings().Enabled;
         }
 
         public string GetWatchFolderPath()
         {
-            return ConfigurationManager.AppSettings["AutoFileDetection.WatchFolderPath"] ?? string.Empty;
+            return LoadAutoDetectionSettings().WatchFolderPath ?? string.Empty;
         }
 
         public string GetFileNamePattern()
         {
-            return ConfigurationManager.AppSettings["AutoFileDetection.FileNamePattern"] ?? "*.xlsx";
+            return LoadAutoDetectionSettings().FileNamePattern ?? "*.xlsx";
         }
 
         /// <summary>

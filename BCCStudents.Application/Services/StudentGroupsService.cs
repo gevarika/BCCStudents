@@ -173,7 +173,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool Update(StudentGroups studentGroup)
         {
-            return _repository.Update(studentGroup);
+            var ok = _repository.Update(studentGroup);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentGroup.StudentId, studentGroup.GroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -181,7 +186,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateStatus(int studentId, int groupId, bool status)
         {
-            return _repository.UpdateStatus(studentId, groupId, status);
+            var ok = _repository.UpdateStatus(studentId, groupId, status);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -189,29 +199,19 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateStudentStatus(int studentId, int groupId, bool status)
         {
-            var ok = UpdateStatus(studentId, groupId, status);
-            if (ok)
-            {
-                StudentGroups snapshot = null;
-                try
-                {
-                    snapshot = GetByStudentAndGroup(studentId, groupId);
-                }
-                catch { }
-
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, SyncOperationType.Update, snapshot);
-                }
-            }
-            return ok;
+            return UpdateStatus(studentId, groupId, status);
         }
         /// <summary>
         /// გადახდის სტატუსის განახლება
         /// </summary>
         public bool UpdatePaymentStatus(int studentId, int groupId, string paymentStatus)
         {
-            return _repository.UpdatePaymentStatus(studentId, groupId, paymentStatus);
+            var ok = _repository.UpdatePaymentStatus(studentId, groupId, paymentStatus);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -219,7 +219,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateDateOfPayment(int studentId, int groupId, DateTime? dateOfPayment)
         {
-            return _repository.UpdateDateOfPayment(studentId, groupId, dateOfPayment);
+            var ok = _repository.UpdateDateOfPayment(studentId, groupId, dateOfPayment);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -227,7 +232,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdatePaymentDate(int studentId, int groupId, DateTime newDate)
         {
-            return _repository.UpdatePaymentDate(studentId, groupId, newDate);
+            var ok = _repository.UpdatePaymentDate(studentId, groupId, newDate);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -235,7 +245,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdatePaymentStatusAndDate(int studentId, int groupId, string paymentStatus, DateTime? dateOfPayment)
         {
-            return _repository.UpdatePaymentStatusAndDate(studentId, groupId, paymentStatus, dateOfPayment);
+            var ok = _repository.UpdatePaymentStatusAndDate(studentId, groupId, paymentStatus, dateOfPayment);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -243,7 +258,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateDiscount(int studentId, int groupId, double discount)
         {
-            return _repository.UpdateDiscount(studentId, groupId, discount);
+            var ok = _repository.UpdateDiscount(studentId, groupId, discount);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -251,7 +271,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdatePrice(int studentId, int groupId, decimal price)
         {
-            return _repository.UpdatePrice(studentId, groupId, price);
+            var ok = _repository.UpdatePrice(studentId, groupId, price);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -259,7 +284,13 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupId(int studentId, int oldGroupId, int newGroupId)
         {
-            return _repository.UpdateGroupId(studentId, oldGroupId, newGroupId);
+            var ok = _repository.UpdateGroupId(studentId, oldGroupId, newGroupId);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, oldGroupId, SyncOperationType.Update);
+                TrySyncStudentGroup(studentId, newGroupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         #endregion
@@ -271,7 +302,12 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool SoftDelete(int studentId, int groupId)
         {
-            return _repository.SoftDelete(studentId, groupId);
+            var ok = _repository.SoftDelete(studentId, groupId);
+            if (ok)
+            {
+                TrySyncStudentGroup(studentId, groupId, SyncOperationType.Update);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -279,7 +315,13 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool HardDelete(int studentId, int groupId)
         {
-            return _repository.HardDelete(studentId, groupId);
+            var snapshot = GetByStudentAndGroup(studentId, groupId);
+            var ok = _repository.HardDelete(studentId, groupId);
+            if (ok && snapshot != null)
+            {
+                _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, SyncOperationType.Delete, snapshot);
+            }
+            return ok;
         }
 
         /// <summary>
@@ -287,7 +329,16 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool SoftDeleteAllByStudentId(int studentId)
         {
-            return _repository.SoftDeleteAllByStudentId(studentId);
+            var snapshots = GetByStudentId(studentId);
+            var ok = _repository.SoftDeleteAllByStudentId(studentId);
+            if (ok)
+            {
+                foreach (var snapshot in snapshots)
+                {
+                    TrySyncStudentGroup(snapshot.StudentId, snapshot.GroupId, SyncOperationType.Update);
+                }
+            }
+            return ok;
         }
 
         #endregion
@@ -302,8 +353,38 @@ namespace BCCStudents.Application.Services
         public void ArchiveStudentFromGroup(int studentId, int groupId)
         {
             UpdateStudentStatus(studentId, groupId, false);
-            // Directly call repository to avoid circular dependency with GroupService
             _groupRepository.DecrementStudentCount(groupId);
+            TrySyncGroup(groupId);
+        }
+
+        #endregion
+
+        #region Sync Helpers
+
+        private void TrySyncStudentGroup(int studentId, int groupId, SyncOperationType operation)
+        {
+            try
+            {
+                var snapshot = GetByStudentAndGroup(studentId, groupId);
+                if (snapshot != null)
+                {
+                    _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, operation, snapshot);
+                }
+            }
+            catch { }
+        }
+
+        private void TrySyncGroup(int groupId)
+        {
+            try
+            {
+                var group = _groupRepository.GetGroupById(groupId);
+                if (group != null)
+                {
+                    _upStreamChangeTracker.TrackGroupChange(groupId, SyncOperationType.Update, group);
+                }
+            }
+            catch { }
         }
 
         #endregion

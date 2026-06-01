@@ -4,6 +4,7 @@ using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.DownStream
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public class DownStreamSyncService : IDownStreamSyncService
     {
         private static readonly string[] DefaultTables = new[]

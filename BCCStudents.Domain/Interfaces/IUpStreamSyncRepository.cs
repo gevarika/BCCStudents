@@ -8,6 +8,7 @@ namespace BCCStudents.Domain.Interfaces
         Task<IReadOnlyList<SyncOutboxItem>> GetPendingItemsAsync(int limit = 50, CancellationToken cancellationToken = default);
         Task MarkAsSuccessAsync(long outboxId, CancellationToken cancellationToken = default);
         Task MarkAsFailedAsync(long outboxId, string errorMessage, bool giveUp, CancellationToken cancellationToken = default);
+        Task<SyncOutboxStats> GetStatsAsync(CancellationToken cancellationToken = default);
     }
 }
 

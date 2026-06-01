@@ -22,7 +22,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         }
 
         /// <summary>
-        /// SyncOutbox-ში ახალი ჩანაწერის დამატება, რომელიც სინქრონიზაციისთვის მომზადებული ცხრილისთვის აღნიშნავს.
+        /// SyncOutbox-ში ახალი ჩანაწერის დამატება. იგივე TableName+RecordKey-ის pending/dead-letter ჩანაწერებს ჩაანაცვლებს.
         /// </summary>
         public Task<long> EnqueueChangeAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
         {
@@ -36,7 +36,19 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
-                    var sql = @"INSERT INTO SyncOutbox (TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, Status) 
+
+                    using (var dedupe = new MySqlCommand(
+                               @"DELETE FROM SyncOutbox
+                                 WHERE TableName = @TableName
+                                   AND RecordKey = @RecordKey
+                                   AND Status IN (0, 2);", connection))
+                    {
+                        dedupe.Parameters.AddWithValue("@TableName", payload.TableName);
+                        dedupe.Parameters.AddWithValue("@RecordKey", payload.RecordKey);
+                        dedupe.ExecuteNonQuery();
+                    }
+
+                    var sql = @"INSERT INTO SyncOutbox (TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, Status)
                                 VALUES (@TableName, @RecordId, @RecordKey, @Operation, @PayloadJson, @OccurredAt, 0, 0);
                                 SELECT LAST_INSERT_ID();";
 
@@ -64,7 +76,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         }
 
         /// <summary>
-        /// აბრუნებს Pending (Status = 0) ჩანაწერებს სინქრონიზაციისთვის დასამუშავებლად.
+        /// აბრუნებს pending (Status=0) და cooldown-გავლილ dead-letter (Status=2) ჩანაწერებს.
         /// </summary>
         public async Task<IReadOnlyList<SyncOutboxItem>> GetPendingItemsAsync(int limit = 50, CancellationToken cancellationToken = default)
         {
@@ -80,7 +92,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                     var sql = @"SELECT Id, TableName, RecordId, RecordKey, Operation, PayloadJson, OccurredAt, Attempts, LastError
                                 FROM SyncOutbox
-                                WHERE Status = 0 
+                                WHERE Status = 0
                                    OR (Status = 2 AND (LastRetryTime IS NULL OR LastRetryTime < DATE_SUB(NOW(), INTERVAL 2 MINUTE)))
                                 ORDER BY OccurredAt ASC
                                 LIMIT @Limit;";
@@ -101,8 +113,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                                     PayloadJson = reader["PayloadJson"] == DBNull.Value ? null : reader["PayloadJson"].ToString(),
                                     OccurredAt = Convert.ToDateTime(reader["OccurredAt"]),
                                     Attempts = reader["Attempts"] == DBNull.Value ? 0 : Convert.ToInt32(reader["Attempts"]),
-                                    LastError = reader["LastError"] == DBNull.Value ? null : reader["LastError"].ToString(),
-                                    //LastRetryTime = reader["LastRetryTime"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["LastRetryTime"])
+                                    LastError = reader["LastError"] == DBNull.Value ? null : reader["LastError"].ToString()
                                 });
                             }
                         }
@@ -118,9 +129,6 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             return items;
         }
 
-        /// <summary>
-        /// წარმატებით გაგზავნილი ჩანაწერის წაშლა SyncOutbox-დან.
-        /// </summary>
         public async Task MarkAsSuccessAsync(long outboxId, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -138,9 +146,6 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             }
         }
 
-        /// <summary>
-        /// წარუმატებლობის მონიშვნა. გაზრდის Attempts-ს და იმ შემთხვევაში აღნიშნავს შეცდომას.
-        /// </summary>
         public async Task MarkAsFailedAsync(long outboxId, string errorMessage, bool giveUp, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -158,13 +163,41 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@Error", (object)errorMessage ?? DBNull.Value);
-                    // თუ giveUp = true, Status = 0 დავტოვოთ (არა 2), რომ retry განაგრძოს 2 წუთიანი interval-ით
-                    command.Parameters.AddWithValue("@Status", 0); // ყოველთვის 0, რადგან Status = 2 ჩანაწერებიც retry-ს ექვემდებარება
+                    command.Parameters.AddWithValue("@Status", giveUp ? 2 : 0);
                     command.Parameters.AddWithValue("@GiveUp", giveUp ? 1 : 0);
                     command.Parameters.AddWithValue("@Id", outboxId);
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
+        }
+
+        public async Task<SyncOutboxStats> GetStatsAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            EnsureSchema();
+
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+                const string sql = @"SELECT
+                                        SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS PendingCount,
+                                        SUM(CASE WHEN Status = 2 THEN 1 ELSE 0 END) AS DeadLetterCount
+                                     FROM SyncOutbox;";
+                using (var command = new MySqlCommand(sql, connection))
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        return new SyncOutboxStats
+                        {
+                            PendingCount = reader["PendingCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PendingCount"]),
+                            DeadLetterCount = reader["DeadLetterCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["DeadLetterCount"])
+                        };
+                    }
+                }
+            }
+
+            return new SyncOutboxStats();
         }
 
         private void EnsureSchema()
@@ -193,7 +226,8 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                         LastRetryTime DATETIME NULL,
                         INDEX idx_outbox_status (Status, OccurredAt),
                         INDEX idx_outbox_table (TableName, OccurredAt),
-                        INDEX idx_outbox_retry (Status, LastRetryTime)
+                        INDEX idx_outbox_retry (Status, LastRetryTime),
+                        INDEX idx_outbox_record (TableName, RecordKey, Status)
                     );";
 
                     using (var command = new MySqlCommand(outboxSql, connection))
@@ -201,15 +235,13 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                         command.ExecuteNonQuery();
                     }
 
-                    // თუ ადრე არ არსებობდა SyncOutbox ცხრილში RecordKey-ის სვეტი – დაემატა
                     try
                     {
-                        // შემოწმება, არსებობს თუ არა RecordKey სვეტი
                         var checkColumnSql = @"
-                            SELECT COUNT(*) 
-                            FROM INFORMATION_SCHEMA.COLUMNS 
-                            WHERE TABLE_SCHEMA = DATABASE() 
-                            AND TABLE_NAME = 'SyncOutbox' 
+                            SELECT COUNT(*)
+                            FROM INFORMATION_SCHEMA.COLUMNS
+                            WHERE TABLE_SCHEMA = DATABASE()
+                            AND TABLE_NAME = 'SyncOutbox'
                             AND COLUMN_NAME = 'RecordKey';";
 
                         using (var checkCmd = new MySqlCommand(checkColumnSql, connection))
@@ -229,18 +261,16 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                     }
                     catch (Exception ex)
                     {
-                        // თუ შეცდომა მოხდა, ჩავწეროთ (სვეტი შეიძლება უკვე არსებობდეს)
                         _logger.Error("RecordKey სვეტის შექმნა/დამატება ვერ მოხდა", ex);
                     }
 
-                    // LastRetryTime სვეტის შემოწმება და დამატება
                     try
                     {
                         var checkLastRetryTimeSql = @"
-                            SELECT COUNT(*) 
-                            FROM INFORMATION_SCHEMA.COLUMNS 
-                            WHERE TABLE_SCHEMA = DATABASE() 
-                            AND TABLE_NAME = 'SyncOutbox' 
+                            SELECT COUNT(*)
+                            FROM INFORMATION_SCHEMA.COLUMNS
+                            WHERE TABLE_SCHEMA = DATABASE()
+                            AND TABLE_NAME = 'SyncOutbox'
                             AND COLUMN_NAME = 'LastRetryTime';";
 
                         using (var checkCmd = new MySqlCommand(checkLastRetryTimeSql, connection))

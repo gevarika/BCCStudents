@@ -20,7 +20,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task<bool> TrySyncImmediatelyAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
+        public Task<UpStreamSyncResult> TrySyncImmediatelyAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
         {
             if (payload == null) throw new ArgumentNullException(nameof(payload));
             cancellationToken.ThrowIfCancellationRequested();
@@ -41,12 +41,12 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 }
 
                 _logger.Info($"UpStream (Immediate) წარმატებით ატვირთული: {payload.TableName}/{payload.Operation}/{payload.RecordKey}");
-                return Task.FromResult(true);
+                return Task.FromResult(UpStreamSyncResult.Ok());
             }
             catch (Exception ex)
             {
                 _logger.Error($"UpStream (Immediate) შეცდომა ატვირთვის: {payload.TableName}/{payload.Operation}/{payload.RecordKey}", ex);
-                return Task.FromResult(false);
+                return Task.FromResult(UpStreamSyncResult.Fail(ex.Message));
             }
         }
 

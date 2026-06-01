@@ -46,22 +46,34 @@ namespace BCCStudents.Presentation.Services
 
             if (!string.IsNullOrWhiteSpace(config.LocalMySqlConnectionString))
             {
-                Settings.Default.LocalMySqlConnectionString = config.LocalMySqlConnectionString;
+                if (!IsPlaceholderConnectionString(config.LocalMySqlConnectionString))
+                {
+                    Settings.Default.LocalMySqlConnectionString = config.LocalMySqlConnectionString;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(config.LocalMySqlConnectionString_Test))
             {
-                Settings.Default.LocalMySqlConnectionString_Test = config.LocalMySqlConnectionString_Test;
+                if (!IsPlaceholderConnectionString(config.LocalMySqlConnectionString_Test))
+                {
+                    Settings.Default.LocalMySqlConnectionString_Test = config.LocalMySqlConnectionString_Test;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(config.ServerMySqlConnectionString))
             {
-                Settings.Default.ServerMySqlConnectionString = config.ServerMySqlConnectionString;
+                if (!IsPlaceholderConnectionString(config.ServerMySqlConnectionString))
+                {
+                    Settings.Default.ServerMySqlConnectionString = config.ServerMySqlConnectionString;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(config.ServerMySqlConnectionString_Test))
             {
-                Settings.Default.ServerMySqlConnectionString_Test = config.ServerMySqlConnectionString_Test;
+                if (!IsPlaceholderConnectionString(config.ServerMySqlConnectionString_Test))
+                {
+                    Settings.Default.ServerMySqlConnectionString_Test = config.ServerMySqlConnectionString_Test;
+                }
             }
         }
 
@@ -70,7 +82,7 @@ namespace BCCStudents.Presentation.Services
             var scriptPath = config?.InitScriptPath;
             if (string.IsNullOrWhiteSpace(scriptPath))
             {
-                scriptPath = "db_init.sql";
+                scriptPath = Path.Combine("Database", "db_init.sql");
             }
 
             if (Path.IsPathRooted(scriptPath))
@@ -78,7 +90,19 @@ namespace BCCStudents.Presentation.Services
                 return scriptPath;
             }
 
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, scriptPath);
+            var resolvedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, scriptPath);
+            if (File.Exists(resolvedPath))
+            {
+                return resolvedPath;
+            }
+
+            var databaseScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", "db_init.sql");
+            return databaseScriptPath;
+        }
+
+        private static bool IsPlaceholderConnectionString(string connectionString)
+        {
+            return connectionString.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase);
         }
 
         public static string GetConfigPath()

@@ -9,20 +9,80 @@ namespace BCCStudents.Application.Services
     {
         //private readonly string _baseUrl = "https://bccenter.ge/";
         //private readonly string _storageRoot;
-        public string DownloadBaseFolder { get; set; } // UI-დან მოდის
-        public string FileServerBaseUrl { get; set; } // UI-დან მოდის
+        public string DownloadBaseFolder { get; set; } // AdminPanel-იდან / document_config.json
+        public string FileServerBaseUrl { get; set; }
         private readonly WebClient _webClient = new WebClient();
+
+        public const string DownloadFolderNotConfiguredMessage =
+            "დოკუმენტების შენახვის ადგილი არ არის მითითებული.\r\n\r\n" +
+            "გახსენით ადმინ პანელი, ველში „შენახვის ადგილი“ მიუთითეთ საქაღალდის გზა და დააჭირეთ „შენახვას“, რათა პარამეტრი დაგიმახსოვრდეს.";
+
+        public const string FileServerNotConfiguredMessage =
+            "ფაილების სერვერის მისამართი არ არის მითითებული.\r\n\r\n" +
+            "გახსენით ადმინ პანელი, ველში „ფაილები სერვერზე“ მიუთითეთ საიტის საბაზო URL (მაგ. https://bccenter.ge/) და დააჭირეთ „შენახვას“.";
+
+        public static bool IsDownloadFolderConfigured(string? path) =>
+            !string.IsNullOrWhiteSpace(path);
+
+        public static bool IsFileServerConfigured(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            return Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        }
 
         public DocumentService()
         {
-            DownloadBaseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BCCStudents");
-            Directory.CreateDirectory(DownloadBaseFolder);
         }
+
         public void LoadConfig()
         {
             var config = DocumentConfig.Load();
-            DownloadBaseFolder = config.DownloadPath;
+            if (IsDownloadFolderConfigured(config.DownloadPath))
+                DownloadBaseFolder = config.DownloadPath.Trim();
             FileServerBaseUrl = config.FileUrl;
+        }
+
+        private void RefreshConfigFromDisk() => LoadConfig();
+
+        private bool EnsureDownloadFolderConfigured()
+        {
+            RefreshConfigFromDisk();
+
+            if (!IsDownloadFolderConfigured(DownloadBaseFolder))
+            {
+                MessageBox.Show(
+                    DownloadFolderNotConfiguredMessage,
+                    "შენახვის ადგილი",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return false;
+            }
+
+            DownloadBaseFolder = Path.GetFullPath(DownloadBaseFolder.Trim());
+            return true;
+        }
+
+        private bool EnsureFileServerConfigured()
+        {
+            if (IsFileServerConfigured(FileServerBaseUrl))
+                return true;
+
+            MessageBox.Show(
+                FileServerNotConfiguredMessage,
+                "ფაილები სერვერზე",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return false;
+        }
+
+        private bool TryBuildDownloadUrl(string relPath, out string fileUrl)
+        {
+            fileUrl = BuildFileUrl(relPath);
+            return Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
         public void GenerateAndPrintContract(string templatePath, Dictionary<string, string> replacementData)
         {
@@ -246,10 +306,29 @@ namespace BCCStudents.Application.Services
         public bool DownloadDocumentsForStudent(PendingStudent student, out List<string> failedFiles)
         {
             failedFiles = new List<string>();
+            if (!EnsureDownloadFolderConfigured() || !EnsureFileServerConfigured())
+                return false;
+
             string folderPath = GetStudentFolder(student);
             Directory.CreateDirectory(folderPath);
 
-            var files = new List<string> { student.IdCardPath };
+            var files = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(student.IdCardPath))
+            {
+                try
+                {
+                    var idCardDocs = JsonSerializer.Deserialize<List<string>>(student.IdCardPath);
+                    if (idCardDocs != null && idCardDocs.Any())
+                        files.AddRange(idCardDocs);
+                    else
+                        files.Add(student.IdCardPath);
+                }
+                catch
+                {
+                    files.Add(student.IdCardPath);
+                }
+            }
 
             // თუ AdditionalDocsPath არის JSON array, გავფართოვოთ ლოგიკა
             if (!string.IsNullOrWhiteSpace(student.AdditionalDocsPath))
@@ -270,17 +349,32 @@ namespace BCCStudents.Application.Services
             }
 
             bool allSuccess = true;
+            var usedNamesInBatch = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var relPath in files)
             {
                 if (string.IsNullOrWhiteSpace(relPath)) continue;
 
-                string fileUrl = BuildFileUrl(relPath);
-                string fileName = Path.GetFileName(relPath);
-                string originalFileName = Path.GetFileName(relPath);
-                string destination = GetUniqueFileName(folderPath, student.FirstName, originalFileName);
+                if (!TryBuildDownloadUrl(relPath, out string fileUrl))
+                {
+                    allSuccess = false;
+                    failedFiles.Add($"{student.FirstName} {student.LastName} - {Path.GetFileName(relPath)} (სერვერის URL არ არის კონფიგურირებული)");
+                    continue;
+                }
 
-                if (File.Exists(destination)) continue;
+                string fileName = Path.GetFileName(relPath);
+                string safeFileName = Path.GetFileName(relPath);
+                string destination = Path.Combine(folderPath, safeFileName);
+
+                if (File.Exists(destination))
+                    continue;
+
+                while (usedNamesInBatch.Contains(destination))
+                    destination = GetNextAvailableFilePath(folderPath, safeFileName, usedNamesInBatch);
+
+                destination = Path.GetFullPath(destination);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                usedNamesInBatch.Add(destination);
 
                 try
                 {
@@ -319,7 +413,8 @@ namespace BCCStudents.Application.Services
         {
             string baseUrl = (FileServerBaseUrl ?? string.Empty).Trim();
             string normalizedPath = (relPath ?? string.Empty).Trim().Replace("\\", "/");
-            if (baseUrl.Length == 0) return normalizedPath;
+            if (!IsFileServerConfigured(baseUrl))
+                return normalizedPath;
             if (normalizedPath.Length == 0) return baseUrl;
 
             bool baseEndsWithSlash = baseUrl.EndsWith("/");
@@ -335,6 +430,9 @@ namespace BCCStudents.Application.Services
 
         public void OpenStudentFolder(PendingStudent student)
         {
+            if (!EnsureDownloadFolderConfigured())
+                return;
+
             string folder = GetStudentFolder(student);
             if (Directory.Exists(folder))
             {
@@ -347,6 +445,9 @@ namespace BCCStudents.Application.Services
         }
         public void DownloadAllPendingDocuments(List<PendingStudent> students, ProgressBar progressBar = null, DataGridView gridView = null)
         {
+            if (!EnsureDownloadFolderConfigured())
+                return;
+
             int total = students.Count;
             int current = 0;
 
@@ -394,25 +495,31 @@ namespace BCCStudents.Application.Services
                 progressBar.Invoke((MethodInvoker)(() => progressBar.Value = 0));
             }
         }
-        private string GetUniqueFileName(string folderPath, string firstName, string originalFileName)
+        /// <summary>
+        /// (2), (3)... — მხოლოდ მაშინ, როცა ერთ ჩამოტვირთვაში ორ ფაილს იგივე სახელი აქვს.
+        /// </summary>
+        private static string GetNextAvailableFilePath(
+            string folderPath,
+            string safeFileName,
+            HashSet<string> usedNamesInBatch)
         {
-            string extension = Path.GetExtension(originalFileName);
-            string baseName = $"BCC_{firstName}";
-            int index = 1;
-
-            string newFileName;
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(safeFileName);
+            string extension = Path.GetExtension(safeFileName);
+            int index = 2;
+            string candidate;
             do
             {
-                newFileName = $"{baseName}_{index}{extension}";
+                candidate = Path.Combine(folderPath, $"{nameWithoutExt} ({index}){extension}");
                 index++;
             }
-            while (File.Exists(Path.Combine(folderPath, newFileName)));
+            while (File.Exists(candidate) || usedNamesInBatch.Contains(candidate));
 
-            return Path.Combine(folderPath, newFileName);
+            return candidate;
         }
         private string GetStudentFolder(PendingStudent student)
         {
-            return Path.Combine(DownloadBaseFolder, $"{student.FirstName}_{student.LastName}_{student.Id}");
+            string baseFolder = Path.GetFullPath(DownloadBaseFolder.Trim());
+            return Path.Combine(baseFolder, $"{student.FirstName}_{student.LastName}_{student.Id}");
         }
 
         private void SaveAsPdf(Word.Document doc)

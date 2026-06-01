@@ -26,7 +26,6 @@ namespace BCCStudents.Infrastructure.Repositories
                 {
                     list.Add(new PendingStudent
                     {
-                        StudentCode = reader["StudentCode"]?.ToString(),
                         Id = Convert.ToInt32(reader["Id"]),
                         FirstName = reader["FirstName"]?.ToString(),
                         LastName = reader["LastName"]?.ToString(),
@@ -88,19 +87,18 @@ namespace BCCStudents.Infrastructure.Repositories
                             return new PendingStudent
                             {
                                 Id = reader.GetInt32("Id"),
-                                FirstName = reader.GetString("FirstName"),
-                                LastName = reader.GetString("LastName"),
-                                Age = reader.GetInt32("Age"),
-                                ParentName = reader.GetString("ParentName"),
-                                PhoneNumber = reader.GetString("PhoneNumber"),
-                                Id_Numb = reader.GetInt64("Id_Numb"),
-                                Address = reader.GetString("Address"),
-                                RegistrationDate = reader.GetDateTime("CreatedAt"),
-                                //Discount = reader.IsDBNull("Discount") ? 0 : reader.GetDecimal("Discount"),
-                                IdCardPath = reader.GetString("IdCardPath"),
-                                AdditionalDocsPath = reader.GetString("AdditionalDocsPath"),
-                                //Balance = reader.IsDBNull("Balance") ? 0 : reader.GetDecimal("Balance"),
-                                UserId = reader.GetInt32("user_id")
+                                FirstName = reader["FirstName"]?.ToString(),
+                                LastName = reader["LastName"]?.ToString(),
+                                Age = reader["Age"] != DBNull.Value ? Convert.ToInt32(reader["Age"]) : 0,
+                                ParentName = reader["ParentName"]?.ToString(),
+                                PhoneNumber = reader["PhoneNumber"]?.ToString(),
+                                Id_Numb = reader["Id_Numb"] != DBNull.Value ? Convert.ToInt64(reader["Id_Numb"]) : 0,
+                                Address = reader["Address"]?.ToString(),
+                                RegistrationDate = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : DateTime.Now,
+                                CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : DateTime.Now,
+                                IdCardPath = reader["IdCardPath"]?.ToString(),
+                                AdditionalDocsPath = reader["AdditionalDocsPath"]?.ToString(),
+                                UserId = reader["user_id"] != DBNull.Value ? Convert.ToInt32(reader["user_id"]) : 0
                             };
                         }
                     }

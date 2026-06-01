@@ -78,6 +78,7 @@
 	<ItemGroup>
 		<None Include="App.config" />
 		<None Include="Config\db.config.json" />
+		<Content Include="Database\local-schema.sql" Link="Database\db_init.sql" TargetPath="Database\db_init.sql" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Globalization;
 
 namespace BCCStudents.Domain.Entities
@@ -31,7 +32,7 @@ namespace BCCStudents.Domain.Entities
                 : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             CreatedAt = DateTime.Now;
 
-            _payloadJson = new Lazy<string>(() => Serialize(Data));
+            _payloadJson = new Lazy<string>(() => Serialize(Data, KeyColumns));
         }
 
         public string TableName { get; }
@@ -60,7 +61,6 @@ namespace BCCStudents.Domain.Entities
                         .Select(k => $"{k.Key}:{(k.Value ?? "NULL")}"));
                 }
 
-                // უკანაასკნელი fallback – უნიკალური Guid
                 return Guid.NewGuid().ToString("N");
             }
         }
@@ -88,14 +88,77 @@ namespace BCCStudents.Domain.Entities
             return null;
         }
 
-        private static string Serialize(IReadOnlyDictionary<string, object> data)
+        private static string Serialize(IReadOnlyDictionary<string, object> data, IReadOnlyDictionary<string, object> keyColumns)
         {
-            var normalized = data.ToDictionary(
+            var normalizedData = data.ToDictionary(
                 pair => pair.Key,
                 pair => NormalizeValue(pair.Value),
                 StringComparer.OrdinalIgnoreCase);
 
-            return JsonConvert.SerializeObject(normalized);
+            var wrapper = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Data"] = normalizedData
+            };
+
+            if (keyColumns != null && keyColumns.Count > 0)
+            {
+                wrapper["KeyColumns"] = keyColumns.ToDictionary(
+                    pair => pair.Key,
+                    pair => NormalizeValue(pair.Value),
+                    StringComparer.OrdinalIgnoreCase);
+            }
+
+            return JsonConvert.SerializeObject(wrapper);
+        }
+
+        internal static Dictionary<string, object> DeserializeData(string payloadJson)
+        {
+            if (string.IsNullOrWhiteSpace(payloadJson))
+            {
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            var raw = JsonConvert.DeserializeObject<Dictionary<string, object>>(payloadJson)
+                      ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+            if (raw.TryGetValue("Data", out var dataToken))
+            {
+                return ConvertToDictionary(dataToken);
+            }
+
+            return new Dictionary<string, object>(raw, StringComparer.OrdinalIgnoreCase);
+        }
+
+        internal static Dictionary<string, object> DeserializeKeyColumns(string payloadJson)
+        {
+            if (string.IsNullOrWhiteSpace(payloadJson))
+            {
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            var raw = JsonConvert.DeserializeObject<Dictionary<string, object>>(payloadJson);
+            if (raw == null || !raw.TryGetValue("KeyColumns", out var keyToken))
+            {
+                return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            return ConvertToDictionary(keyToken);
+        }
+
+        private static Dictionary<string, object> ConvertToDictionary(object token)
+        {
+            if (token is Dictionary<string, object> dict)
+            {
+                return new Dictionary<string, object>(dict, StringComparer.OrdinalIgnoreCase);
+            }
+
+            if (token is JObject jObject)
+            {
+                return jObject.ToObject<Dictionary<string, object>>()
+                       ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         }
 
         private static object NormalizeValue(object value)
@@ -108,7 +171,7 @@ namespace BCCStudents.Domain.Entities
             switch (value)
             {
                 case DateTime dateTime:
-                    return dateTime.ToUniversalTime().ToString("o");
+                    return ToUtcIsoString(dateTime);
                 case DateTimeOffset dateTimeOffset:
                     return dateTimeOffset.UtcDateTime.ToString("o");
                 case bool boolean:
@@ -123,8 +186,17 @@ namespace BCCStudents.Domain.Entities
                     return value;
             }
         }
+
+        private static string ToUtcIsoString(DateTime dateTime)
+        {
+            if (dateTime.Kind == DateTimeKind.Unspecified)
+            {
+                return DateTime.SpecifyKind(dateTime, DateTimeKind.Local).ToUniversalTime().ToString("o");
+            }
+
+            return dateTime.ToUniversalTime().ToString("o");
+        }
     }
 }
-
 
 

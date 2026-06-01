@@ -17,6 +17,7 @@ namespace BCCStudents.Presentation
         private readonly IStudentGroupRepository _studentGroupRepository;
         private readonly IGroupRepository _groupRepository;
         private readonly IUserContext _userContext;
+        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
         public PaymentForm(
             IServiceProvider serviceProvider,
@@ -26,7 +27,8 @@ namespace BCCStudents.Presentation
             IStudentRepository studentRepository,
             IStudentGroupRepository studentGroupRepository,
             IGroupRepository groupRepository,
-            IUserContext userContext)
+            IUserContext userContext,
+            IUpStreamChangeTracker upStreamChangeTracker)
         {
             InitializeComponent();
             FormTitleHelper.SetTitle(this, "გადახდის ხელით დაფიქსირება");
@@ -38,6 +40,7 @@ namespace BCCStudents.Presentation
             _studentGroupRepository = studentGroupRepository;
             _groupRepository = groupRepository;
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             LoadStudents(); // მოსწავლეების ჩამოტვირთვა ComboBox-ში
             cmbStudents.SelectedIndexChanged += CmbStudents_SelectedIndexChanged;
             label1.Text = "მოსწავლე:";
@@ -126,6 +129,7 @@ namespace BCCStudents.Presentation
                     var updatedStudent = _studentRepository.GetStudentById(studentId);
                     if (updatedStudent != null)
                     {
+                        _upStreamChangeTracker.TrackStudentChange(studentId, SyncOperationType.Update, updatedStudent);
                         AddLog("═══════════════════════════════════════════════════════");
                         AddLog($"✅ ბალანსი წარმატებით განახლდა!");
                         AddLog($"ახალი ბალანსი: {updatedStudent.Balance} ₾");

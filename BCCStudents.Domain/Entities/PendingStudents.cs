@@ -15,7 +15,6 @@
         public DateTime RegistrationDate { get; set; }
         public decimal TuitionFee { get; set; }
         public int Discount { get; set; }
-        public string StudentCode { get; set; }
         //public bool Status { get; set; }
         public string IdCardPath { get; set; }
         public string AdditionalDocsPath { get; set; }

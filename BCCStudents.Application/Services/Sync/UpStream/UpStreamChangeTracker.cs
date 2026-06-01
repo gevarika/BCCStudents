@@ -251,14 +251,33 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
         #endregion
 
+        #region Generic Delete
+
+        public Task TrackDeleteAsync(string tableName, int recordId, CancellationToken cancellationToken = default)
+        {
+            var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Id"] = recordId
+            };
+            var payload = new SyncChangePayload(tableName, SyncOperationType.Delete, data, recordId);
+            return ProcessPayloadAsync(payload, cancellationToken);
+        }
+
+        public void TrackDelete(string tableName, int recordId)
+        {
+            _ = TrackDeleteAsync(tableName, recordId);
+        }
+
+        #endregion
+
         private async Task ProcessPayloadAsync(SyncChangePayload payload, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                var sent = await _syncService.TrySyncImmediatelyAsync(payload, cancellationToken).ConfigureAwait(false);
-                if (!sent)
+                var result = await _syncService.TrySyncImmediatelyAsync(payload, cancellationToken).ConfigureAwait(false);
+                if (!result.Success)
                 {
                     await _repository.EnqueueChangeAsync(payload, cancellationToken).ConfigureAwait(false);
                 }
