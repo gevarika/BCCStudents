@@ -437,6 +437,41 @@ CREATE TABLE `systemconfig` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `applicationlogs`
+--
+
+DROP TABLE IF EXISTS `applicationlogs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `applicationlogs` (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `LogGuid` char(36) NOT NULL,
+  `SourceType` varchar(32) NOT NULL,
+  `Category` varchar(64) DEFAULT NULL,
+  `Level` varchar(16) NOT NULL,
+  `Operation` varchar(128) DEFAULT NULL,
+  `Status` varchar(32) DEFAULT NULL,
+  `UserId` int DEFAULT NULL,
+  `Username` varchar(128) DEFAULT NULL,
+  `MachineName` varchar(128) DEFAULT NULL,
+  `PermissionScope` varchar(64) DEFAULT NULL,
+  `Message` text,
+  `Details` text,
+  `Exception` text,
+  `SourceContext` varchar(128) DEFAULT NULL,
+  `CreatedAt` datetime(3) NOT NULL,
+  `SyncedToServerAt` datetime(3) DEFAULT NULL,
+  `Origin` varchar(16) NOT NULL DEFAULT 'Local',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `uk_log_guid` (`LogGuid`),
+  KEY `idx_created` (`CreatedAt`),
+  KEY `idx_user_created` (`UserId`,`CreatedAt`),
+  KEY `idx_category` (`Category`,`CreatedAt`),
+  KEY `idx_unsynced` (`SyncedToServerAt`,`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `users`
 --
 

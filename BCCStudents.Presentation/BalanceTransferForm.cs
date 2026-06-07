@@ -6,7 +6,7 @@ using System.Globalization;
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public class BalanceTransferForm : Form
+    public class BalanceTransferForm : BaseForm
     {
         private readonly IStudentRepository _studentRepository;
         private readonly IBalanceRepository _balanceRepository;

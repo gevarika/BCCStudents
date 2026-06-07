@@ -1,4 +1,5 @@
 using BCCStudents.Presentation.Properties;
+using Serilog;
 using System.Text.Json;
 
 namespace BCCStudents.Presentation.Services
@@ -116,20 +117,8 @@ namespace BCCStudents.Presentation.Services
 
         private static void LogError(string message, Exception ex)
         {
-            try
-            {
-                var dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "BCCStudents",
-                    "logs");
-                Directory.CreateDirectory(dir);
-                var path = Path.Combine(dir, "external-config.txt");
-                File.AppendAllText(path, $"[{DateTime.Now}] {message} {ex}\n\n");
-            }
-            catch
-            {
-                // ignore logging errors
-            }
+            Log.ForContext("SourceContext", "ExternalConfig")
+                .Error(ex, message);
         }
     }
 }

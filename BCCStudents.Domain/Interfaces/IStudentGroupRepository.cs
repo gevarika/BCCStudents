@@ -50,6 +50,11 @@ namespace BCCStudents.Domain.Interfaces
         StudentGroups GetByStudentAndGroup(int studentId, int groupId);
 
         /// <summary>
+        /// ბოლო ჩანაწერი StudentId და GroupId-ით (ყველა სტატუსი, duplicate-ებისთვის)
+        /// </summary>
+        StudentGroups GetLatestByStudentAndGroup(int studentId, int groupId);
+
+        /// <summary>
         /// მოსწავლის ყველა ჯგუფის მიღება
         /// </summary>
         List<StudentGroups> GetByStudentId(int studentId);

@@ -1,16 +1,14 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class GroupsEdit : Form
+    public partial class GroupsEdit : BaseForm
     {
         private readonly IGroupService _groupService;
         private readonly ISubGroupService _subGroupService;
-        private readonly BackupService _backupManager;
         private readonly IUserContext _userContext;
 
         // UI Components
@@ -45,12 +43,11 @@ namespace BCCStudents.Presentation
         private Group _selectedGroup;
         private SubGroup _selectedSubGroup;
 
-        public GroupsEdit(IGroupService groupService, ISubGroupService subGroupService, BackupService backupManager, IUserContext userContext)
+        public GroupsEdit(IGroupService groupService, ISubGroupService subGroupService, IUserContext userContext)
         {
             InitializeComponent();
             _groupService = groupService;
             _subGroupService = subGroupService;
-            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
 
             // Set form properties
@@ -500,7 +497,7 @@ namespace BCCStudents.Presentation
                 {
                     MessageBox.Show("ჯგუფი წარმატებით განახლდა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadGroups();
-                    _backupManager.DbChangedSinceLastBackup = true;
+                    LoadSubGroups(_selectedGroup.Id);
                 }
                 else
                 {
@@ -552,7 +549,6 @@ namespace BCCStudents.Presentation
                     {
                         LoadSubGroups(_selectedGroup.Id);
                     }
-                    _backupManager.DbChangedSinceLastBackup = true;
                 }
                 else
                 {
@@ -595,7 +591,6 @@ namespace BCCStudents.Presentation
                         {
                             LoadSubGroups(_selectedGroup.Id);
                         }
-                        _backupManager.DbChangedSinceLastBackup = true;
                     }
                     else
                     {

@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class UserManagementForm : Form
+    public partial class UserManagementForm : BaseForm
     {
         private readonly IUserService _userService;
         private readonly IUserContext _userContext;

@@ -81,6 +81,8 @@ namespace BCCStudents.Application.Interfaces
         /// ამატებს ან განაახლებს PendingStudentSubGroups
         /// </summary>
         Task UpsertPendingStudentSubGroupsAsync(IReadOnlyList<PendingStudentSubGroup> subGroups, CancellationToken cancellationToken = default);
+
+        Task<int> UpsertApplicationLogsAsync(IReadOnlyList<ApplicationLogEntry> logs, CancellationToken cancellationToken = default);
     }
 }
 

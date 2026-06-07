@@ -1,3 +1,5 @@
+using BCCStudents.Domain.Entities;
+
 namespace BCCStudents.Application.Interfaces
 {
     /// <summary>
@@ -7,9 +9,19 @@ namespace BCCStudents.Application.Interfaces
     public interface IConnectionMonitor
     {
         /// <summary>
-        /// კავშირის მიმდინარე სტატუსი
+        /// ლოკალური ბაზასთან კავშირის მიმდინარე სტატუსი
         /// </summary>
         bool IsConnected { get; }
+
+        /// <summary>
+        /// სერვერის ბაზასთან კავშირის მიმდინარე სტატუსი
+        /// </summary>
+        bool IsServerConnected { get; }
+
+        /// <summary>
+        /// ბოლო სერვერის კავშირის შეცდომა (თუ გათიშულია).
+        /// </summary>
+        ConnectionFailureInfo? LastServerConnectionFailure { get; }
 
         /// <summary>
         /// მონიტორინგის დაწყება
@@ -22,9 +34,14 @@ namespace BCCStudents.Application.Interfaces
         void StopMonitoring();
 
         /// <summary>
-        /// ივენთი, რომელიც იძახება კავშირის სტატუსის ცვლილებისას
+        /// ივენთი, რომელიც იძახება ლოკალური ბაზასთან კავშირის სტატუსის ცვლილებისას
         /// </summary>
         event EventHandler<bool> ConnectionStatusChanged;
+
+        /// <summary>
+        /// ივენთი, რომელიც იძახება სერვერის ბაზასთან კავშირის სტატუსის ცვლილებისას
+        /// </summary>
+        event EventHandler<ServerConnectionChangedEventArgs>? ServerConnectionStatusChanged;
     }
 }
 

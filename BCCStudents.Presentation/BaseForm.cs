@@ -1,21 +1,31 @@
 ﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Presentation.Services;
 
 namespace BCCStudents.Presentation
 {
     /// <summary>
-    /// BaseForm - საერთო ბაზური ფორმა, რომელიც შეიცავს სინქრონიზაციის სტატუსის კონტროლს.
+    /// საერთო ბაზა — სინქრონიზაციის და კავშირის სტატუსის ზოლი.
     /// </summary>
     public partial class BaseForm : Form
     {
-        protected SyncStatusControl SyncStatusControl { get; private set; }
-        protected StatusStrip StatusStrip { get; private set; }
+        protected SyncStatusControl? SyncStatusControl { get; private set; }
+        protected StatusStrip? StatusStrip { get; private set; }
 
-        /// <summary>
-        /// სინქრონიზაციის სტატუსის კონტროლის ინიციალიზაცია.
-        /// </summary>
+        protected BaseForm()
+        {
+            Load += BaseForm_Load;
+        }
+
+        private void BaseForm_Load(object? sender, EventArgs e)
+        {
+            if (DesignMode)
+                return;
+
+            ConnectionStatusBarHostAccessor.Attach(this);
+        }
+
         protected void InitializeSyncStatus(IDownStreamSyncManager downStreamManager, IUpStreamSyncManager upStreamManager)
         {
-            // თუ StatusStrip ჯერ არ არის შექმნილი, ვქმნით
             if (StatusStrip == null)
             {
                 StatusStrip = new StatusStrip
@@ -23,39 +33,47 @@ namespace BCCStudents.Presentation
                     Name = "statusStrip",
                     Dock = DockStyle.Bottom
                 };
-                this.Controls.Add(StatusStrip);
+                Controls.Add(StatusStrip);
             }
 
-            // ვქმნით SyncStatusControl-ს
             SyncStatusControl = new SyncStatusControl();
-            // ვუთითებთ Control-ს, რომელსაც გამოიყენებს Invoke-სთვის
             SyncStatusControl.SetInvokeControl(StatusStrip);
             var statusItems = SyncStatusControl.GetStatusItems();
 
-            // ვამატებთ მიღებულ StatusItem-ებს StatusStrip-ში
             foreach (var item in statusItems)
             {
                 StatusStrip.Items.Add(item);
             }
 
-            // ვამაგრებთ Event handler-ებს DownStream / UpStream სინქისთვის
             if (downStreamManager != null)
             {
-                downStreamManager.SyncCompleted += (sender, args) =>
+                downStreamManager.SyncCompleted += (_, args) =>
                 {
-                    SyncStatusControl.UpdateDownStreamStatus(args);
+                    SyncStatusControl?.UpdateDownStreamStatus(args);
                 };
             }
 
             if (upStreamManager != null)
             {
-                upStreamManager.SyncCompleted += (sender, args) =>
+                upStreamManager.SyncCompleted += (_, args) =>
                 {
-                    SyncStatusControl.UpdateUpStreamStatus(args);
+                    SyncStatusControl?.UpdateUpStreamStatus(args);
                 };
             }
+
+            ConnectionStatusBarHostAccessor.Attach(this);
         }
     }
+
+    /// <summary>
+    /// DI-ში რეგისტრირებული host-ის წვდომა BaseForm-იდან.
+    /// </summary>
+    internal static class ConnectionStatusBarHostAccessor
+    {
+        public static ConnectionStatusBarHost? Instance { get; private set; }
+
+        public static void Initialize(ConnectionStatusBarHost host) => Instance = host;
+
+        public static void Attach(Form form) => Instance?.Attach(form);
+    }
 }
-
-

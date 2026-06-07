@@ -42,7 +42,6 @@ namespace BCCStudents.Presentation
             PaymentToolStripMenuItem = new ToolStripMenuItem();
             balanceTransferToolStripMenuItem = new ToolStripMenuItem();
             PaymentTestToolStripMenuItem = new ToolStripMenuItem();
-            BackupToolStripMenuItem = new ToolStripMenuItem();
             tsmAdminPanel = new ToolStripMenuItem();
             LogsToolStripMenuItem = new ToolStripMenuItem();
             userManagementToolStripMenuItem = new ToolStripMenuItem();
@@ -50,6 +49,7 @@ namespace BCCStudents.Presentation
             statusStrip1 = new StatusStrip();
             btnReconnect = new ToolStripSplitButton();
             statusLabel = new ToolStripStatusLabel();
+            serverStatusLabel = new ToolStripStatusLabel();
             tsProgressBar = new ToolStripProgressBar();
             tsPaymentStatus = new ToolStripStatusLabel();
             timer1 = new System.Windows.Forms.Timer(components);
@@ -139,7 +139,7 @@ namespace BCCStudents.Presentation
             // 
             // მთავარიToolStripMenuItem
             // 
-            მთავარიToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { StatisticToolStripMenuItem, PaymentsToolStripMenuItem, PaymentToolStripMenuItem, balanceTransferToolStripMenuItem, PaymentTestToolStripMenuItem, BackupToolStripMenuItem, tsmAdminPanel, LogsToolStripMenuItem, userManagementToolStripMenuItem });
+            მთავარიToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { StatisticToolStripMenuItem, PaymentsToolStripMenuItem, PaymentToolStripMenuItem, balanceTransferToolStripMenuItem, PaymentTestToolStripMenuItem, tsmAdminPanel, LogsToolStripMenuItem, userManagementToolStripMenuItem });
             მთავარიToolStripMenuItem.Name = "მთავარიToolStripMenuItem";
             მთავარიToolStripMenuItem.Size = new Size(71, 20);
             მთავარიToolStripMenuItem.Text = "მთავარი";
@@ -178,13 +178,6 @@ namespace BCCStudents.Presentation
             PaymentTestToolStripMenuItem.Size = new Size(214, 22);
             PaymentTestToolStripMenuItem.Text = "გადახდის ტესტირება";
             PaymentTestToolStripMenuItem.Click += PaymentTestToolStripMenuItem_Click;
-            // 
-            // BackupToolStripMenuItem
-            // 
-            BackupToolStripMenuItem.Name = "BackupToolStripMenuItem";
-            BackupToolStripMenuItem.Size = new Size(214, 22);
-            BackupToolStripMenuItem.Text = "ბექაპის მართვა";
-            BackupToolStripMenuItem.Click += BackupToolStripMenuItem_Click;
             // 
             // tsmAdminPanel
             // 
@@ -232,7 +225,7 @@ namespace BCCStudents.Presentation
             // 
             // statusStrip1
             // 
-            statusStrip1.Items.AddRange(new ToolStripItem[] { btnReconnect, statusLabel, tsProgressBar, tsPaymentStatus });
+            statusStrip1.Items.AddRange(new ToolStripItem[] { btnReconnect, statusLabel, serverStatusLabel, tsProgressBar, tsPaymentStatus });
             statusStrip1.Location = new Point(0, 737);
             statusStrip1.Name = "statusStrip1";
             statusStrip1.Padding = new Padding(1, 0, 16, 0);
@@ -250,6 +243,13 @@ namespace BCCStudents.Presentation
             statusLabel.Name = "statusLabel";
             statusLabel.Size = new Size(118, 19);
             statusLabel.Text = "toolStripStatusLabel1";
+            // 
+            // serverStatusLabel
+            // 
+            serverStatusLabel.Margin = new Padding(8, 3, 0, 2);
+            serverStatusLabel.Name = "serverStatusLabel";
+            serverStatusLabel.Size = new Size(118, 19);
+            serverStatusLabel.Text = "toolStripStatusLabel2";
             // 
             // tsProgressBar
             // 
@@ -448,6 +448,7 @@ namespace BCCStudents.Presentation
         private System.Windows.Forms.DataGridView dgvPayments;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel serverStatusLabel;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label lbStartStudyDate;
@@ -465,7 +466,6 @@ namespace BCCStudents.Presentation
         private System.Windows.Forms.ToolStripProgressBar tsProgressBar;
         private System.Windows.Forms.ToolStripStatusLabel tsPaymentStatus;
         private System.Windows.Forms.Button btnPaymentHistory;
-        private System.Windows.Forms.ToolStripMenuItem BackupToolStripMenuItem;
         private System.Windows.Forms.Button btnRefreshPaymentProcess;
         private System.Windows.Forms.ToolStripMenuItem LogsToolStripMenuItem;
         private System.Windows.Forms.Label StudentAmount;

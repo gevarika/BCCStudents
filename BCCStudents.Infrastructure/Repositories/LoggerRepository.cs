@@ -1,70 +1,111 @@
-﻿using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Application.Services.Logging;
+using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Infrastructure.Logging;
+using Serilog;
 
 namespace BCCStudents.Infrastructure.Repositories
 {
-
     public class LoggerRepository : ILoggerRepository
     {
-        private static readonly string BaseLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
+        private readonly IApplicationLogRepository _applicationLogRepository;
 
-        public LoggerRepository()
+        public LoggerRepository(IApplicationLogRepository applicationLogRepository)
         {
-            if (!Directory.Exists(BaseLogPath))
-            {
-                Directory.CreateDirectory(BaseLogPath);
-            }
+            _applicationLogRepository = applicationLogRepository ?? throw new ArgumentNullException(nameof(applicationLogRepository));
         }
-        /// <summary>
-        /// წერს ლოგ ჩანაწერს ფაილში.
-        /// </summary>
-        /// <param name="operationType">ოპერაციის ტიპი (მაგ. Insert, Delete, Update)</param>
-        /// <param name="status">ოპერაციის სტატუსი (Success, Failed)</param>
-        /// <param name="details">დეტალები (შინაარსი, რაც ჩაიწერება ლოგში)</param>
-        /// <param name="user">მომხმარებლის სახელი (სურვილისამებრ)</param>
 
         public void WriteLog(string operationType, string status, string details, string user = "System")
         {
-            WriteToFile("operation_log.txt", operationType, status, details, user);
+            WriteAudit("operation_log.txt", operationType, status, details, user);
         }
 
         public void LogStudentAction(string action, string status, string details, string user = "System")
         {
-            WriteToFile("students_log.txt", action, status, details, user);
+            WriteAudit("students_log.txt", action, status, details, user);
         }
 
         public void LogGroupAction(string action, string status, string details, string user = "System")
         {
-            WriteToFile("groups_log.txt", action, status, details, user);
+            WriteAudit("groups_log.txt", action, status, details, user);
         }
 
         public void LogPaymentAction(string action, string status, string details, string user = "System")
         {
-            WriteToFile("payments_log.txt", action, status, details, user);
+            WriteAudit("payments_log.txt", action, status, details, user);
         }
 
         public void LogSMSAction(string action, string status, string details, string user = "System")
         {
-            WriteToFile("sms_log.txt", action, status, details, user);
+            WriteAudit("sms_log.txt", action, status, details, user);
         }
+
         public void LogImportAction(string action, string status, string details, string user = "System")
         {
-            WriteToFile("Import_log.txt", action, status, details, user);
+            WriteAudit("Import_log.txt", action, status, details, user);
         }
-        private void WriteToFile(string fileName, string operationType, string status, string details, string user)
+
+        private void WriteAudit(string fileName, string operationType, string status, string details, string user)
         {
             try
             {
-                string filePath = Path.Combine(BaseLogPath, fileName);
-                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Operation: {operationType} | User: {user} | Status: {status}\nDetails:\n{details}\n\n";
-                File.AppendAllText(filePath, logEntry);
+                AuditLogFactory.GetLogger(fileName)
+                    .ForContext("Operation", operationType ?? string.Empty)
+                    .ForContext("Status", status ?? string.Empty)
+                    .ForContext("User", string.IsNullOrWhiteSpace(user) ? "System" : user)
+                    .ForContext("Details", details ?? string.Empty)
+                    .Information("Audit");
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Failed to write log: {ex.Message}");
+                // არ უნდა დაბლოკოს აპლიკაცია.
+            }
+
+            try
+            {
+                var category = ApplicationLogPermissionMapper.GetCategoryForAuditFile(fileName);
+                var level = MapAuditLevel(status);
+                var userId = ApplicationLogContext.UserId ?? (UserSession.Id > 0 ? UserSession.Id : (int?)null);
+                var username = string.IsNullOrWhiteSpace(user) ? ApplicationLogContext.Username ?? "System" : user;
+
+                var entry = new ApplicationLogEntry
+                {
+                    LogGuid = Guid.NewGuid().ToString(),
+                    SourceType = LogSourceType.Audit,
+                    Category = category,
+                    Level = level,
+                    Operation = operationType,
+                    Status = status,
+                    UserId = userId,
+                    Username = username,
+                    MachineName = Environment.MachineName,
+                    PermissionScope = ApplicationLogPermissionMapper.GetPermissionScopeForCategory(category),
+                    Message = operationType,
+                    Details = details,
+                    CreatedAt = DateTime.UtcNow,
+                    Origin = "Local"
+                };
+
+                _applicationLogRepository.InsertAsync(entry).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // DB write failure must not block business operations.
             }
         }
+
+        private static string MapAuditLevel(string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                return "Information";
+
+            var normalized = status.Trim().ToLowerInvariant();
+            if (normalized.Contains("error") || normalized.Contains("fail"))
+                return "Error";
+            if (normalized.Contains("warn"))
+                return "Warning";
+
+            return "Information";
+        }
     }
-
 }
-
-

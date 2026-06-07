@@ -17,9 +17,6 @@ namespace BCCStudents.Presentation
             this.defaultDiscount = defaultDiscount;
             this.groupDiscounts = new Dictionary<int, double>();
 
-            Console.WriteLine($"GroupDiscountForm constructor - defaultDiscount: {defaultDiscount}");
-            Console.WriteLine($"Number of groups: {groups?.Count ?? 0}");
-
             InitializeForm();
         }
 
@@ -90,8 +87,6 @@ namespace BCCStudents.Presentation
                     Width = 80,
                     Dock = DockStyle.Fill
                 };
-
-                Console.WriteLine($"Setting discount for group {group.Name}: {defaultDiscount}");
 
                 // პროცენტის ნიშანი
                 var lblPercent = new Label

@@ -1,6 +1,5 @@
 ﻿using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
-using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
 
 
@@ -16,12 +15,10 @@ namespace BCCStudents.Application.Services.Sync.DownStream
     public class DownStreamDataFetcher : IDownStreamDataFetcher
     {
         private readonly IDatabaseConnectionProvider _connectionProvider;
-        private readonly ISyncLogger _logger;
 
-        public DownStreamDataFetcher(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
+        public DownStreamDataFetcher(IDatabaseConnectionProvider connectionProvider)
         {
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public Task<List<Student>> FetchStudentsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default)
@@ -122,13 +119,12 @@ namespace BCCStudents.Application.Services.Sync.DownStream
 
         public Task<List<UserModel>> FetchUsersAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default)
         {
-            const string sql = @"SELECT Id, Username, FullName, Email, Password, Role, CreatedAt, LastLogin
+            const string sql = @"SELECT Id, Username, FullName, Email, Password, Role, CreatedAt, LastLogin, UpdatedAt
                                  FROM Users
-                                 WHERE (@LastSyncedAt IS NULL AND @LastSyncedId = 0)
-                                    OR (COALESCE(LastLogin, CreatedAt) > @LastSyncedAt)
-                                    OR (COALESCE(LastLogin, CreatedAt) = @LastSyncedAt AND Id > @LastSyncedId)
-                                    OR (Id > @LastSyncedId)
-                                 ORDER BY COALESCE(LastLogin, CreatedAt) ASC, Id ASC;";
+                                 WHERE (@LastSyncedAt IS NULL)
+                                    OR (UpdatedAt > @LastSyncedAt)
+                                    OR (UpdatedAt = @LastSyncedAt AND Id > @LastSyncedId)
+                                 ORDER BY UpdatedAt ASC, Id ASC;";
             return Task.FromResult(ExecuteReader("Users", sql, lastSyncedAt, lastSyncedId, MapUser, cancellationToken));
         }
 
@@ -177,34 +173,40 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             return Task.FromResult(ExecuteReader("PendingStudentSubGroups", sql, lastSyncedAt, lastSyncedId, MapPendingStudentSubGroup, cancellationToken));
         }
 
+        public Task<List<ApplicationLogEntry>> FetchApplicationLogsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"SELECT Id, LogGuid, SourceType, Category, Level, Operation, Status, UserId, Username,
+                                        MachineName, PermissionScope, Message, Details, Exception, SourceContext,
+                                        CreatedAt, SyncedToServerAt, Origin
+                                 FROM ApplicationLogs
+                                 WHERE (@LastSyncedAt IS NULL)
+                                    OR (CreatedAt > @LastSyncedAt)
+                                    OR (CreatedAt = @LastSyncedAt AND Id > @LastSyncedId)
+                                 ORDER BY CreatedAt ASC, Id ASC
+                                 LIMIT 500;";
+            return Task.FromResult(ExecuteReader("ApplicationLogs", sql, lastSyncedAt, lastSyncedId, MapApplicationLog, cancellationToken));
+        }
+
         private List<T> ExecuteReader<T>(string tableName, string sql, DateTime? lastSyncedAt, int lastSyncedId, Func<MySqlDataReader, T> mapper, CancellationToken cancellationToken)
         {
             var results = new List<T>();
-            try
+            using (var connection = _connectionProvider.GetServerConnection())
             {
-                using (var connection = _connectionProvider.GetServerConnection())
+                connection.Open();
+                using (var command = new MySqlCommand(sql, connection))
                 {
-                    connection.Open();
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@LastSyncedAt", (object)lastSyncedAt ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@LastSyncedId", lastSyncedId);
+                    command.Parameters.AddWithValue("@LastSyncedAt", (object)lastSyncedAt ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@LastSyncedId", lastSyncedId);
 
-                        using (var reader = command.ExecuteReader())
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                results.Add(mapper(reader));
-                            }
+                            cancellationToken.ThrowIfCancellationRequested();
+                            results.Add(mapper(reader));
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error($"DownStreamDataFetcher query failed for table {tableName}.", ex);
-                throw;
             }
 
             return results;
@@ -355,7 +357,8 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                 Role = reader["Role"] == DBNull.Value ? null : reader["Role"]?.ToString(),
                 Permissions = null,
                 CreatedAt = reader["CreatedAt"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["CreatedAt"]),
-                LastLogin = reader["LastLogin"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["LastLogin"])
+                LastLogin = reader["LastLogin"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["LastLogin"]),
+                UpdatedAt = reader["UpdatedAt"] == DBNull.Value ? DateTime.UtcNow : Convert.ToDateTime(reader["UpdatedAt"])
             };
         }
 
@@ -410,6 +413,45 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                 StudentId = reader.GetInt32("StudentId"),
                 GroupId = reader.GetInt32("GroupId"),
                 SubGroupId = reader.GetInt32("SubGroupId")
+            };
+        }
+
+        private static ApplicationLogEntry MapApplicationLog(MySqlDataReader reader)
+        {
+            // სერვერზე CHAR(36) / GUID სვეტები MySql.Data-ში ხშირად System.Guid-ად მოდის — არა string.
+            return new ApplicationLogEntry
+            {
+                Id = Convert.ToInt64(reader["Id"]),
+                LogGuid = ReadColumnString(reader, "LogGuid"),
+                SourceType = ReadColumnString(reader, "SourceType"),
+                Category = ReadColumnString(reader, "Category"),
+                Level = ReadColumnString(reader, "Level"),
+                Operation = ReadColumnString(reader, "Operation"),
+                Status = ReadColumnString(reader, "Status"),
+                UserId = reader["UserId"] == DBNull.Value ? null : Convert.ToInt32(reader["UserId"]),
+                Username = ReadColumnString(reader, "Username"),
+                MachineName = ReadColumnString(reader, "MachineName"),
+                PermissionScope = ReadColumnString(reader, "PermissionScope"),
+                Message = ReadColumnString(reader, "Message"),
+                Details = ReadColumnString(reader, "Details"),
+                Exception = ReadColumnString(reader, "Exception"),
+                SourceContext = ReadColumnString(reader, "SourceContext"),
+                CreatedAt = Convert.ToDateTime(reader["CreatedAt"]),
+                SyncedToServerAt = reader["SyncedToServerAt"] == DBNull.Value ? null : Convert.ToDateTime(reader["SyncedToServerAt"]),
+                Origin = ReadColumnString(reader, "Origin")
+            };
+        }
+
+        private static string ReadColumnString(MySqlDataReader reader, string column)
+        {
+            var value = reader[column];
+            if (value == DBNull.Value || value == null)
+                return null;
+
+            return value switch
+            {
+                Guid guid => guid.ToString("D"),
+                _ => value.ToString()
             };
         }
 

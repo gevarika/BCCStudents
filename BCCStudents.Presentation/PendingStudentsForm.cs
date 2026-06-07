@@ -8,7 +8,7 @@ using System.Windows.Forms.VisualStyles;
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class PendingStudentsForm : Form
+    public partial class PendingStudentsForm : BaseForm
     {
         private readonly IPendingStudentService _pendingService;
         private readonly PendingRegistrationMonitor _pendingRegistrationMonitor;

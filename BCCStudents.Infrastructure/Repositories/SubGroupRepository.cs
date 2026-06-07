@@ -282,6 +282,36 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
+        /// ჯგუფის ყველა ქვეჯგუფის მიღება (აქტიური და არააქტიური) — სინქრონიზაციისთვის
+        /// </summary>
+        public List<SubGroup> GetAllSubGroupsByGroupId(int groupId)
+        {
+            var subGroups = new List<SubGroup>();
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                var query = @"SELECT sg.*, g.Name AS ParentGroupName 
+                              FROM SubGroups sg
+                              LEFT JOIN `Groups` g ON sg.GroupId = g.Id
+                              WHERE sg.GroupId = @GroupId AND (sg.IsDeleted = 0 OR sg.IsDeleted IS NULL)
+                              ORDER BY sg.Name";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@GroupId", groupId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            subGroups.Add(MapSubGroupFromReader(reader));
+                        }
+                    }
+                }
+            }
+            return subGroups;
+        }
+
+        /// <summary>
         /// ქვეჯგუფების მიღება DataTable-ად
         /// </summary>
         public DataTable GetAllSubGroupsFor()
@@ -528,6 +558,27 @@ namespace BCCStudents.Infrastructure.Repositories
                 using (var cmd = new MySqlCommand(query, connection))
                 {
                     cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@GroupId", groupId);
+
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// ჯგუფის ყველა ქვეჯგუფის ფასის განახლება
+        /// </summary>
+        public bool UpdateSubGroupsTuitionFeeByGroupId(int groupId, decimal newFee)
+        {
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                var query = "UPDATE SubGroups SET TuitionFee = @TuitionFee, UpdatedAt = @UpdatedAt WHERE GroupId = @GroupId";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@TuitionFee", newFee);
                     cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
                     cmd.Parameters.AddWithValue("@GroupId", groupId);
 

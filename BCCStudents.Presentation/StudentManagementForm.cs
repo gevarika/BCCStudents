@@ -2,7 +2,6 @@ using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Services;
 using BCCStudents.Presentation.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data;
@@ -11,7 +10,7 @@ namespace BCCStudents.Presentation
 {
     public delegate SetStudyStartDateForm SetStudyStartDateFormFactory();
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class StudentManagementForm : Form
+    public partial class StudentManagementForm : BaseForm
     {
         private readonly IStudentService _studentService;
         private readonly IGroupService _groupService;
@@ -22,7 +21,6 @@ namespace BCCStudents.Presentation
         //private readonly ImportService _importService;
         private readonly IStudentCodeGenerator _studentCodeGenerator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly BackupService _backupManager;
         private readonly ISmsService _smsservice;
 
         private readonly ImportFormFactory _importFormFactory;
@@ -43,7 +41,6 @@ namespace BCCStudents.Presentation
             IPaymentDateService paymentDateService,
             ISystemConfigurationService systemConfigService,
             IStudentExportService studentExportService,
-            BackupService backupManager,
             ISmsService smsService,
             ImportFormFactory importFormFactory,
             StudentsEditFormFactory studentsEditFormFactory,
@@ -66,7 +63,6 @@ namespace BCCStudents.Presentation
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია");
             else FormTitleHelper.SetTitle(this, "ახალი მოსწავლის რეგისტრაცია - სატესტო რეჟიმი");
-            _backupManager = backupManager;
             _smsservice = smsService;
             _importFormFactory = importFormFactory;
             _studentsEditFormFactory = studentsEditFormFactory;
@@ -414,8 +410,6 @@ namespace BCCStudents.Presentation
 
                 if (success)
                 {
-                    _backupManager.DbChangedSinceLastBackup = true;
-
                     MessageBox.Show("სტუდენტი წარმატებით დაემატა!", "დადასტურება", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     //ClearFields();
                     LoadStudents();

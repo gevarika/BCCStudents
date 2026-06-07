@@ -1,22 +1,20 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Infrastructure.Services;
 
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class GroupManagementForm : Form
+    public partial class GroupManagementForm : BaseForm
     {
         private readonly IGroupService _groupService;
         private readonly ISubGroupService _subGroupService;
         private readonly IStudentService _studentService;
         private readonly IStudentGroupsService _studentGroupsService;
-        private readonly BackupService _backupManager;
         private readonly IUserContext _userContext;
         //private Button btnDeleteGroup;
         private int? _currentGroupId = null; // კლასის member
-        public GroupManagementForm(IGroupService groupService, ISubGroupService subGroupService, BackupService backupManager, IStudentService studentService, IStudentGroupsService studentGroupsService, IUserContext userContext)
+        public GroupManagementForm(IGroupService groupService, ISubGroupService subGroupService, IStudentService studentService, IStudentGroupsService studentGroupsService, IUserContext userContext)
         {
             InitializeComponent();
             if (!Properties.Settings.Default.IsTestDb)
@@ -24,7 +22,6 @@ namespace BCCStudents.Presentation
             else FormTitleHelper.SetTitle(this, "ახალი ჯგუფების და ქვეჯგუფების შექმნა - სატესტო რეჟიმი");
             _groupService = groupService;
             _subGroupService = subGroupService;
-            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _studentGroupsService = studentGroupsService ?? throw new ArgumentNullException(nameof(studentGroupsService));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             // btnDeleteGroup = new Button { Text = "წაშლა", Width = 80 };
@@ -211,8 +208,6 @@ namespace BCCStudents.Presentation
                     MessageBox.Show("ჯგუფის დამატება ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
-                _backupManager.DbChangedSinceLastBackup = true;
 
                 if (cmbSubGroupCount.SelectedIndex > 0)
                 {

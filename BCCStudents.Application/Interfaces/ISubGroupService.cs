@@ -40,6 +40,7 @@ namespace BCCStudents.Application.Interfaces
         bool UpdateSubGroup(SubGroup subGroup);
         bool DeleteSubGroup(int subGroupId);
         bool UpdateSubGroupsStatusByGroupId(int groupId, bool status);
+        bool UpdateSubGroupsTuitionFeeByGroupId(int groupId, decimal newFee);
     }
 }
 

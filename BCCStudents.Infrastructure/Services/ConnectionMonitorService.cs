@@ -1,125 +1,142 @@
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
+using Serilog;
 
 namespace BCCStudents.Infrastructure.Services
 {
     /// <summary>
     /// კავშირის მონიტორინგის სერვისი - პერიოდულად ამოწმებს MySQL კავშირს
-    /// იმპლემენტირებს IConnectionMonitor ინტერფეისს
     /// </summary>
     public class ConnectionMonitorService : IConnectionMonitor, IDisposable
     {
+        private static readonly ILogger ConnectionLog = Log.ForContext("SourceContext", "Connection");
+
         private readonly IDatabaseConnectionChecker _connectionChecker;
         private readonly System.Windows.Forms.Timer _monitorTimer;
         private bool _isConnected;
+        private bool _isServerConnected;
+        private bool _initialServerCheckCompleted;
         private bool _isDisposed;
-        private readonly SynchronizationContext _syncContext; // UI thread-ის სინქრონიზაციისთვის
-        private const int CHECK_INTERVAL = 30000; // 30 წამი (შეიძლება კონფიგურაციიდან)
+        private readonly SynchronizationContext _syncContext;
+        private const int CheckInterval = 10000;
 
-        /// <summary>
-        /// კავშირის მიმდინარე სტატუსი
-        /// </summary>
         public bool IsConnected => _isConnected;
+        public bool IsServerConnected => _isServerConnected;
+        public ConnectionFailureInfo? LastServerConnectionFailure { get; private set; }
 
-        /// <summary>
-        /// ივენთი, რომელიც იძახება კავშირის სტატუსის ცვლილებისას
-        /// </summary>
-        public event EventHandler<bool> ConnectionStatusChanged;
+        public event EventHandler<bool>? ConnectionStatusChanged;
+        public event EventHandler<ServerConnectionChangedEventArgs>? ServerConnectionStatusChanged;
 
-        /// <summary>
-        /// კონსტრუქტორი - იღებს IDatabaseConnectionChecker-ს Dependency Injection-ით
-        /// </summary>
-        /// <param name="connectionChecker">IDatabaseConnectionChecker ინსტანსი კავშირის შესამოწმებლად</param>
         public ConnectionMonitorService(IDatabaseConnectionChecker connectionChecker)
         {
             _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
-            _isConnected = false;
-            _isDisposed = false;
+            _syncContext = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
 
-            // Windows Forms-ის SynchronizationContext-ის მიღება
-            // თუ null-ია, ვქმნით WindowsFormsSynchronizationContext-ს
-            _syncContext = SynchronizationContext.Current;
-            if (_syncContext == null)
-            {
-                // თუ არ არის UI thread-ზე, ვქმნით WindowsFormsSynchronizationContext-ს
-                _syncContext = new WindowsFormsSynchronizationContext();
-            }
-
-            _monitorTimer = new System.Windows.Forms.Timer();
-            _monitorTimer.Interval = CHECK_INTERVAL;
+            _monitorTimer = new System.Windows.Forms.Timer { Interval = CheckInterval };
             _monitorTimer.Tick += MonitorTimer_Tick;
         }
 
-        /// <summary>
-        /// მონიტორინგის დაწყება
-        /// </summary>
         public void StartMonitoring()
         {
             if (_isDisposed)
                 return;
 
-            // საწყისი შემოწმება
+            _monitorTimer.Stop();
             CheckConnection();
-
             _monitorTimer.Start();
         }
 
+        public void StopMonitoring() => _monitorTimer?.Stop();
+
         /// <summary>
-        /// მონიტორინგის გაჩერება
+        /// WinForms Timer (UI message loop) — არა System.Threading.Timer, რომელს იყენებენ სინქის მენეჯერები.
         /// </summary>
-        public void StopMonitoring()
+        private void MonitorTimer_Tick(object? sender, EventArgs e)
         {
-            _monitorTimer?.Stop();
+            if (!_isDisposed)
+                CheckConnection();
         }
 
-        /// <summary>
-        /// ტაიმერის Tick ივენთის handler
-        /// </summary>
-        private void MonitorTimer_Tick(object sender, EventArgs e)
-        {
-            if (_isDisposed)
-                return;
-
-            CheckConnection();
-        }
-
-        /// <summary>
-        /// კავშირის შემოწმება და ივენთის გამოძახება ცვლილებისას
-        /// </summary>
         private void CheckConnection()
         {
-            try
-            {
-                bool currentStatus = _connectionChecker.CanConnectToMySQL();
+            var localResult = _connectionChecker.CheckLocalConnection();
+            var serverResult = _connectionChecker.CheckServerConnection();
 
-                if (currentStatus != _isConnected)
-                {
-                    bool previousStatus = _isConnected;
-                    _isConnected = currentStatus;
-
-                    // ივენთის გამოძახება UI thread-ზე
-                    _syncContext.Post(state =>
-                    {
-                        ConnectionStatusChanged?.Invoke(this, _isConnected);
-                    }, null);
-                }
-            }
-            catch
+            if (localResult.IsConnected != _isConnected)
             {
-                // შეცდომის შემთხვევაში კავშირი გათიშულია
-                if (_isConnected)
-                {
-                    _isConnected = false;
-                    _syncContext.Post(state =>
-                    {
-                        ConnectionStatusChanged?.Invoke(this, false);
-                    }, null);
-                }
+                _isConnected = localResult.IsConnected;
+                _syncContext.Post(_ => ConnectionStatusChanged?.Invoke(this, _isConnected), null);
             }
+
+            if (!_initialServerCheckCompleted)
+            {
+                _initialServerCheckCompleted = true;
+                _isServerConnected = serverResult.IsConnected;
+                LastServerConnectionFailure = serverResult.Failure;
+
+                if (!serverResult.IsConnected)
+                    LogServerFailedAtStartup(serverResult.Failure);
+
+                RaiseServerConnectionChanged();
+                return;
+            }
+
+            if (serverResult.IsConnected == _isServerConnected)
+                return;
+
+            _isServerConnected = serverResult.IsConnected;
+            LastServerConnectionFailure = serverResult.Failure;
+
+            if (_isServerConnected)
+            {
+                ConnectionLog.Information("სერვერთან კავშირი აღდგა");
+                LastServerConnectionFailure = null;
+            }
+            else
+            {
+                LogServerDisconnected(serverResult.Failure);
+            }
+
+            RaiseServerConnectionChanged();
         }
 
-        /// <summary>
-        /// რესურსების გათავისუფლება
-        /// </summary>
+        private void RaiseServerConnectionChanged()
+        {
+            var args = new ServerConnectionChangedEventArgs
+            {
+                IsConnected = _isServerConnected,
+                Failure = LastServerConnectionFailure
+            };
+
+            _syncContext.Post(_ => ServerConnectionStatusChanged?.Invoke(this, args), null);
+        }
+
+        private static void LogServerFailedAtStartup(ConnectionFailureInfo? failure)
+        {
+            if (failure != null)
+            {
+                ConnectionLog.Warning(
+                    "სერვერთან კავშირი ვერ დამყარდა. {LogDetail}",
+                    failure.LogDetail);
+                return;
+            }
+
+            ConnectionLog.Warning("სერვერთან კავშირი ვერ დამყარდა");
+        }
+
+        private static void LogServerDisconnected(ConnectionFailureInfo? failure)
+        {
+            if (failure != null)
+            {
+                ConnectionLog.Warning(
+                    "სერვერთან კავშირი გაწყდა. {LogDetail}",
+                    failure.LogDetail);
+                return;
+            }
+
+            ConnectionLog.Warning("სერვერთან კავშირი გაწყდა");
+        }
+
         public void Dispose()
         {
             if (_isDisposed)
@@ -131,4 +148,3 @@ namespace BCCStudents.Infrastructure.Services
         }
     }
 }
-

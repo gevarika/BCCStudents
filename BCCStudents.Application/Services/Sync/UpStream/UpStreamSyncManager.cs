@@ -1,4 +1,5 @@
 ﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 
@@ -11,6 +12,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
     {
         private readonly IUpStreamSyncRepository _repository;
         private readonly IUpStreamSyncService _syncService;
+        private readonly IDatabaseConnectionChecker _connectionChecker;
         private readonly ISyncLogger _logger;
         private readonly TimeSpan _interval;
         private readonly int _maxAttempts;
@@ -27,12 +29,14 @@ namespace BCCStudents.Application.Services.Sync.UpStream
         public UpStreamSyncManager(
             IUpStreamSyncRepository repository,
             IUpStreamSyncService syncService,
+            IDatabaseConnectionChecker connectionChecker,
             ISyncLogger logger,
             TimeSpan? interval = null,
             int maxAttempts = 5)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
+            _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _interval = interval ?? TimeSpan.FromSeconds(30); // დეფოლტად 30 წმ.
             _maxAttempts = Math.Max(1, maxAttempts);
@@ -46,7 +50,9 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             if (_disposed) throw new ObjectDisposedException(nameof(UpStreamSyncManager));
             if (_timer != null) return;
 
-            _timer = new System.Threading.Timer(async _ => await ProcessPendingAsync().ConfigureAwait(false),
+            // System.Threading.Timer — არა ConnectionMonitor-ის WinForms Timer (იხ. SyncPeriodicTimerRunner).
+            _timer = new System.Threading.Timer(
+                SyncPeriodicTimerRunner.CreateCallback(ProcessPendingAsync, _logger, "UpStream"),
                 null,
                 TimeSpan.Zero,
                 _interval);
@@ -86,6 +92,18 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                     return;
                 }
 
+                var serverCheck = _connectionChecker.CheckServerConnection();
+                if (!serverCheck.IsConnected)
+                {
+                    var logDetail = serverCheck.Failure?.LogDetail
+                        ?? serverCheck.Failure?.UserMessage
+                        ?? "სერვერთან კავშირი ვერ დამყარდა.";
+                    SyncLogThrottle.TryWarn(_logger, "upstream-server-offline",
+                        $"UpStream sync გამოტოვებულია. {logDetail}",
+                        SyncLogThrottle.DefaultInterval);
+                    return;
+                }
+
                 foreach (var item in items)
                 {
                     try
@@ -102,7 +120,15 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             }
             catch (Exception ex)
             {
-                _logger.Error("UpStreamSyncManager unhandled error.", ex);
+                if (SyncConnectionHelper.IsLikelyConnectionError(ex))
+                {
+                    SyncLogThrottle.TryError(_logger, "upstream-connection", "UpStreamSyncManager unhandled error.", ex, SyncLogThrottle.DefaultInterval);
+                }
+                else
+                {
+                    _logger.Error("UpStreamSyncManager unhandled error.", ex);
+                }
+
                 errors.Add(ex.Message);
             }
             finally
@@ -114,12 +140,15 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                     var stats = await _repository.GetStatsAsync().ConfigureAwait(false);
                     if (stats.PendingCount > 0 || stats.DeadLetterCount > 0)
                     {
-                        _logger.Warn($"SyncOutbox queue: pending={stats.PendingCount}, dead-letter={stats.DeadLetterCount}");
+                        SyncLogThrottle.TryWarn(_logger, "upstream-outbox-stats",
+                            $"SyncOutbox queue: pending={stats.PendingCount}, dead-letter={stats.DeadLetterCount}",
+                            SyncLogThrottle.DefaultInterval);
                     }
                 }
                 catch (Exception statsEx)
                 {
-                    _logger.Error("SyncOutbox stats query failed.", statsEx);
+                    if (!SyncConnectionHelper.IsLikelyConnectionError(statsEx))
+                        _logger.Error("SyncOutbox stats query failed.", statsEx);
                 }
 
                 // Event-ის გამოძახება
@@ -156,7 +185,15 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             {
                 var giveUp = item.Attempts + 1 >= _maxAttempts;
                 await _repository.MarkAsFailedAsync(item.Id, ex.Message, giveUp).ConfigureAwait(false);
-                _logger.Error($"Retry failed for SyncOutbox Id={item.Id}.", ex);
+                if (SyncConnectionHelper.IsLikelyConnectionError(ex))
+                {
+                    SyncLogThrottle.TryError(_logger, "upstream-retry-connection",
+                        "UpStream retry failed (server connection).", ex, SyncLogThrottle.DefaultInterval);
+                }
+                else
+                {
+                    _logger.Error($"Retry failed for SyncOutbox Id={item.Id}.", ex);
+                }
             }
         }
 

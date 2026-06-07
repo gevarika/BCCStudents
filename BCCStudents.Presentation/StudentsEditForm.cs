@@ -2,29 +2,26 @@ using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 //using BCCStudents.Infrastructure.DataBase;
-using BCCStudents.Infrastructure.Services;
 using System.Data;
 using System.Text;
 
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class StudentsEditForm : Form
+    public partial class StudentsEditForm : BaseForm
     {
         private readonly IStudentService _studentService;
         private readonly IGroupService _groupService;
         private readonly ISubGroupService _subGroupService;
         private readonly IStudentGroupsService _studentGroupsService;
-        private readonly BackupService _backupManager;
         private readonly IUserContext _userContext;
-        public StudentsEditForm(IStudentService studentService, IGroupService groupService, ISubGroupService subGroupService, IStudentGroupsService studentGroupsService, BackupService backupManager, IUserContext userContext)
+        public StudentsEditForm(IStudentService studentService, IGroupService groupService, ISubGroupService subGroupService, IStudentGroupsService studentGroupsService, IUserContext userContext)
         {
             InitializeComponent();
             _studentService = studentService;
             _groupService = groupService;
             _subGroupService = subGroupService;
             _studentGroupsService = studentGroupsService;
-            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             if (!Properties.Settings.Default.IsTestDb)
                 FormTitleHelper.SetTitle(this, "მოსწავლის ინფორმაციის რედაქტირება");
@@ -760,8 +757,6 @@ namespace BCCStudents.Presentation
 
                 // 6. წარმატების შეტყობინება
                 MessageBox.Show("ცვლილებები წარმატებით შეინახა.", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                _backupManager.DbChangedSinceLastBackup = true;
-
                 // 7. მონაცემების და UI-ს სრული განახლება
                 RefreshAfterSave();
             }
@@ -871,22 +866,17 @@ namespace BCCStudents.Presentation
         /// </summary>
         private void AddStudentToGroup(int studId, int grpId)
         {
-            // ჯგუფის ფასის მიღება
             var group = _groupService.GetGroupById(grpId);
             if (group == null) return;
 
-            // StudentGroups-ში დამატება
-            _studentService.AddStudentToGroup(studId, grpId, true, null, "Pending", group.Price, 0);
+            _studentService.AddStudentToGroup(studId, grpId, true);
 
-            // პირველი ქვეჯგუფის მიღება და StudentSubGroups-ში დამატება
             var subGroups = _subGroupService.GetSubGroupsByGroupId(grpId);
             if (subGroups != null && subGroups.Any())
             {
                 var firstSubGroup = subGroups.First();
                 _studentService.AddStudentToSubGroup(studId, grpId, firstSubGroup.Id, "Pending", null, firstSubGroup.TuitionFee, 0, true);
             }
-
-            // Groups.StudentCount გაზრდა (AddStudentToGroup მეთოდში უკვე ხდება)
         }
 
         /// <summary>
@@ -1451,7 +1441,6 @@ namespace BCCStudents.Presentation
             if (_studentService.UpdateStudentStatus(studentId, groupId, true))
             {
                 SetFieldsReadOnly(false);
-                _backupManager.DbChangedSinceLastBackup = true;
             }
         }
 

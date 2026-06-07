@@ -378,17 +378,21 @@ namespace BCCStudents.Application.Services
         {
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. AddStudentToGroup operation is blocked.");
-            // ჯგუფის ფასის მიღება
+            if (IsStudentInGroup(studentId, groupId))
+                return;
+
             var groupPrice = _groupRepository.GetGroupPrice(groupId);
+            var discountPercent = ResolveStudentDiscountPercent(studentId, groupId);
+            var finalPrice = ApplyDiscountToPrice(groupPrice, discountPercent);
 
             var studentGroup = new StudentGroups
             {
                 StudentId = studentId,
                 GroupId = groupId,
                 PaymentStatus = "Pending",
-                DateOfPayment = DateTime.Today.AddMonths(1), // გადახდის თარიღი: დღეს + 1 თვე
-                Price = groupPrice,
-                Discount = 0, // default ფასდაკლება = 0
+                DateOfPayment = DateTime.Today.AddMonths(1),
+                Price = finalPrice,
+                Discount = discountPercent,
                 Status = status
             };
             _studentGroupsService.AddStudentGroup(studentGroup, externalConnection, externalTransaction);
@@ -402,14 +406,21 @@ namespace BCCStudents.Application.Services
         {
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. AddStudentToGroup operation is blocked.");
+            if (IsStudentInGroup(studentId, groupId))
+                return;
+
+            var groupPrice = _groupRepository.GetGroupPrice(groupId);
+            var discountPercent = discount > 0 ? discount : ResolveStudentDiscountPercent(studentId, groupId);
+            var finalPrice = ApplyDiscountToPrice(groupPrice, discountPercent);
+
             var studentGroup = new StudentGroups
             {
                 StudentId = studentId,
                 GroupId = groupId,
                 PaymentStatus = paymentStatus,
-                DateOfPayment = dateOfPayment ?? DateTime.Today.AddMonths(1), // თუ null-ია, default = დღეს + 1 თვე
-                Price = price,
-                Discount = discount,
+                DateOfPayment = dateOfPayment ?? DateTime.Today.AddMonths(1),
+                Price = finalPrice,
+                Discount = discountPercent,
                 Status = status
             };
             _studentGroupsService.AddStudentGroup(studentGroup);
@@ -422,15 +433,19 @@ namespace BCCStudents.Application.Services
         {
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. AddStudentToSubGroup operation is blocked.");
+
+            var discountPercent = discount > 0 ? discount : ResolveStudentDiscountPercent(studentId, groupId);
+            var finalPrice = ApplyDiscountToPrice(price, discountPercent);
+
             var studentSubGroup = new StudentSubGroups
             {
                 StudentId = studentId,
                 GroupId = groupId,
                 SubGroupId = subGroupId,
                 PaymentStatus = paymentStatus,
-                DateOfPayment = dateOfPayment ?? DateTime.Today.AddMonths(1), // თუ null-ია, default = დღეს + 1 თვე
-                Price = price,
-                Discount = discount,
+                DateOfPayment = dateOfPayment ?? DateTime.Today.AddMonths(1),
+                Price = finalPrice,
+                Discount = discountPercent,
                 Status = status
             };
             int result = _studentSubGroupRepository.InsertStudentSubGroup(studentSubGroup);
@@ -740,6 +755,43 @@ namespace BCCStudents.Application.Services
                 SaveStudentsToJson(students);
             }
         }
+
+        #region Discount resolution
+
+        /// <summary>
+        /// ფასდაკლების პროცენტის გამოთვლა აქტიური ჯგუფებიდან ან ისტორიიდან (ჯგუფის ცვლილებისას).
+        /// </summary>
+        private double ResolveStudentDiscountPercent(int studentId, int groupId)
+        {
+            var activeGroups = _studentGroupsService.GetActiveByStudentId(studentId);
+            var activeMax = activeGroups
+                .Where(g => g.Discount > 0)
+                .Select(g => g.Discount)
+                .DefaultIfEmpty(0)
+                .Max();
+            if (activeMax > 0)
+                return activeMax;
+
+            var latestForGroup = _studentGroupsService.GetLatestByStudentAndGroup(studentId, groupId);
+            if (latestForGroup != null && latestForGroup.Discount > 0)
+                return latestForGroup.Discount;
+
+            var allGroups = _studentGroupsService.GetByStudentId(studentId);
+            return allGroups
+                .Where(g => g.Discount > 0)
+                .Select(g => g.Discount)
+                .DefaultIfEmpty(0)
+                .Max();
+        }
+
+        private static decimal ApplyDiscountToPrice(decimal basePrice, double discountPercent)
+        {
+            if (discountPercent <= 0)
+                return basePrice;
+            return new DiscountCalculator(basePrice, (decimal)discountPercent).GetFinalAmount();
+        }
+
+        #endregion
 
         #region Sync Helpers
 

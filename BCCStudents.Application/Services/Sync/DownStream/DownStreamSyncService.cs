@@ -1,4 +1,5 @@
 ﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 
@@ -21,29 +22,44 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             "SystemConfig",
             "PendingStudents",
             "PendingStudentGroups",
-            "PendingStudentSubGroups"
+            "PendingStudentSubGroups",
+            "ApplicationLogs"
         };
 
         private readonly IDownStreamSyncRepository _repository;
         private readonly IDownStreamDataFetcher _dataFetcher;
         private readonly IDownStreamConflictResolver _conflictResolver;
+        private readonly IDatabaseConnectionChecker _connectionChecker;
         private readonly ISyncLogger _logger;
 
         public DownStreamSyncService(
             IDownStreamSyncRepository repository,
             IDownStreamDataFetcher dataFetcher,
             IDownStreamConflictResolver conflictResolver,
+            IDatabaseConnectionChecker connectionChecker,
             ISyncLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _dataFetcher = dataFetcher ?? throw new ArgumentNullException(nameof(dataFetcher));
             _conflictResolver = conflictResolver ?? throw new ArgumentNullException(nameof(conflictResolver));
+            _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<SyncResult> SyncFromServerAsync(CancellationToken cancellationToken = default)
         {
             var result = new SyncResult();
+
+            var serverCheck = _connectionChecker.CheckServerConnection();
+            if (!serverCheck.IsConnected)
+            {
+                var userMessage = serverCheck.Failure?.UserMessage ?? "სერვერთან კავშირი ვერ დამყარდა.";
+                var logDetail = serverCheck.Failure?.LogDetail ?? userMessage;
+                SyncLogThrottle.TryWarn(_logger, "downstream-server-offline",
+                    $"DownStream sync გამოტოვებულია. {logDetail}", SyncLogThrottle.DefaultInterval);
+                result.AddError(userMessage);
+                return result;
+            }
 
             try
             {
@@ -61,11 +77,81 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("DownStream sync failed.", ex);
+                LogDownStreamFailure("DownStream sync failed.", ex);
                 result.AddError(ex.Message);
             }
 
+            LogSyncResult(result);
             return result;
+        }
+
+        private void LogSyncResult(SyncResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            foreach (var table in result.Tables.Where(t => t.Success && t.RecordsSynced > 0))
+            {
+                _logger.Info($"DownStream (Pull) წარმატებით ჩამოტვირთული: {table.TableName}/{table.RecordsSynced}");
+            }
+
+            if (!result.Success)
+            {
+                LogDownStreamResultErrors(result);
+                return;
+            }
+
+            var totalRecords = result.Tables.Sum(t => t.RecordsSynced);
+            if (totalRecords == 0)
+                return;
+
+            var changedTableCount = result.Tables.Count(t => t.RecordsSynced > 0);
+            _logger.Info($"DownStream sync დასრულდა: სულ {totalRecords} ჩანაწერი ({changedTableCount} ცხრილი)");
+        }
+
+        private void LogDownStreamResultErrors(SyncResult result)
+        {
+            var failedTables = result.Tables.Where(t => !t.Success).ToList();
+            var connectionFailures = failedTables
+                .Where(t => SyncConnectionHelper.IsLikelyConnectionErrorMessage(t.Error))
+                .ToList();
+
+            if (connectionFailures.Count > 0)
+            {
+                var sample = connectionFailures[0].Error ?? string.Empty;
+                var detail = SyncConnectionHelper.IsLikelyConnectionErrorMessage(sample)
+                    ? sample
+                    : $"{connectionFailures.Count} ცხრილი";
+                SyncLogThrottle.TryWarn(_logger, "downstream-connection",
+                    $"DownStream sync: სერვერთან კავშირი ვერ დამყარდა ({connectionFailures.Count} ცხრილი). Sample: {detail}",
+                    SyncLogThrottle.DefaultInterval);
+            }
+
+            foreach (var table in failedTables.Except(connectionFailures))
+            {
+                _logger.Error($"DownStream (Pull) შეცდომა: {table.TableName} — {table.Error}");
+            }
+
+            if (connectionFailures.Count == 0)
+            {
+                var errorSummary = result.Errors.Count > 0
+                    ? string.Join("; ", result.Errors)
+                    : "უცნობი შეცდომა";
+                _logger.Warn($"DownStream sync დასრულდა შეცდომებით: {errorSummary}");
+            }
+        }
+
+        private void LogDownStreamFailure(string message, Exception ex)
+        {
+            if (SyncConnectionHelper.IsLikelyConnectionError(ex))
+            {
+                SyncLogThrottle.TryError(_logger, "downstream-connection", message, ex, SyncLogThrottle.DefaultInterval);
+                return;
+            }
+
+            _logger.Error(message, ex);
         }
 
         public async Task<TableSyncResult> SyncTableAsync(string tableName, CancellationToken cancellationToken = default)
@@ -98,6 +184,8 @@ namespace BCCStudents.Application.Services.Sync.DownStream
                     return await SyncPendingStudentGroupsAsync(cancellationToken).ConfigureAwait(false);
                 case "PENDINGSTUDENTSUBGROUPS":
                     return await SyncPendingStudentSubGroupsAsync(cancellationToken).ConfigureAwait(false);
+                case "APPLICATIONLOGS":
+                    return await SyncApplicationLogsAsync(cancellationToken).ConfigureAwait(false);
                 default:
                     return TableSyncResult.Failed(tableName ?? "<unknown>", "ცხრილი არ მოიძებნა");
             }
@@ -140,7 +228,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("Students downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -177,7 +264,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("Groups downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -214,7 +300,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("SubGroups downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -251,7 +336,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("StudentGroups downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -288,7 +372,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("StudentSubGroups downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -327,7 +410,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("Payments downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -366,7 +448,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("FailedPayments downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -405,7 +486,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("ImportedPaymentsLog downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -430,9 +510,9 @@ namespace BCCStudents.Application.Services.Sync.DownStream
 
                 await _repository.UpsertUsersAsync(serverData, cancellationToken).ConfigureAwait(false);
 
-                var maxSyncedAt = serverData.Max(u => u.LastLogin ?? u.CreatedAt ?? DateTime.UtcNow);
-                var maxId = serverData.Where(u => (u.LastLogin ?? u.CreatedAt ?? DateTime.UtcNow) == maxSyncedAt).Max(u => u.Id);
-                await _repository.UpdateSyncStateAsync(tableName, maxSyncedAt, maxId, cancellationToken).ConfigureAwait(false);
+                var maxUpdatedAt = serverData.Max(u => u.UpdatedAt);
+                var maxId = serverData.Where(u => u.UpdatedAt == maxUpdatedAt).Max(u => u.Id);
+                await _repository.UpdateSyncStateAsync(tableName, maxUpdatedAt, maxId, cancellationToken).ConfigureAwait(false);
 
                 return new TableSyncResult
                 {
@@ -444,7 +524,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("Users downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -483,7 +562,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("SystemConfig downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -522,7 +600,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("PendingStudents downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -560,7 +637,6 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("PendingStudentGroups downstream sync failed.", ex);
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }
@@ -598,7 +674,43 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("PendingStudentSubGroups downstream sync failed.", ex);
+                return TableSyncResult.Failed(tableName, ex.Message);
+            }
+        }
+
+        private async Task<TableSyncResult> SyncApplicationLogsAsync(CancellationToken cancellationToken)
+        {
+            const string tableName = "ApplicationLogs";
+            try
+            {
+                var state = await _repository.GetSyncStateAsync(tableName, cancellationToken).ConfigureAwait(false);
+                var serverData = await _dataFetcher.FetchApplicationLogsAsync(state?.LastSyncedAt, state?.LastSyncedId ?? 0, cancellationToken).ConfigureAwait(false);
+                if (serverData == null || serverData.Count == 0)
+                {
+                    return TableSyncResult.NoChanges(tableName);
+                }
+
+                var insertedCount = await _repository.UpsertApplicationLogsAsync(serverData, cancellationToken).ConfigureAwait(false);
+
+                var maxCreatedAt = serverData.Max(l => l.CreatedAt);
+                var maxId = (int)Math.Min(int.MaxValue, serverData.Where(l => l.CreatedAt == maxCreatedAt).Max(l => l.Id));
+                await _repository.UpdateSyncStateAsync(tableName, maxCreatedAt, maxId, cancellationToken).ConfigureAwait(false);
+
+                if (insertedCount == 0)
+                {
+                    return TableSyncResult.NoChanges(tableName);
+                }
+
+                return new TableSyncResult
+                {
+                    TableName = tableName,
+                    Success = true,
+                    RecordsSynced = insertedCount,
+                    ConflictsResolved = 0
+                };
+            }
+            catch (Exception ex)
+            {
                 return TableSyncResult.Failed(tableName, ex.Message);
             }
         }

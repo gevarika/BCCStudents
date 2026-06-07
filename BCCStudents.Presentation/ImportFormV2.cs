@@ -10,7 +10,7 @@ namespace BCCStudents.Presentation
     /// </summary>
     /// 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class ImportFormV2 : Form
+    public partial class ImportFormV2 : BaseForm
     {
         #region Fields
 

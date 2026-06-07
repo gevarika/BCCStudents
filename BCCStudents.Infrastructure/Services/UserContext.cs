@@ -1,6 +1,7 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using BCCStudents.Infrastructure.Logging;
 using Newtonsoft.Json;
 
 namespace BCCStudents.Infrastructure.Services
@@ -121,12 +122,14 @@ namespace BCCStudents.Infrastructure.Services
             if (userId > 0)
             {
                 _currentUser = _userRepository.GetUserById(userId);
-                _permissionsCache = null; // ვასუფთავებთ cache-ს
+                _permissionsCache = null;
+                ApplicationLogContext.Set(userId, _currentUser?.UserName);
             }
             else
             {
                 _currentUser = null;
                 _permissionsCache = null;
+                ApplicationLogContext.Clear();
             }
         }
 

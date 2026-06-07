@@ -11,6 +11,7 @@ namespace BCCStudents.Domain.Entities
         public string Permissions { get; set; } // JSON string: {"CanImport": true, "CanDelete": false, ...}
         public DateTime? CreatedAt { get; set; }
         public DateTime? LastLogin { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
 }

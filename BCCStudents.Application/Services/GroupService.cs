@@ -197,7 +197,11 @@ namespace BCCStudents.Application.Services
         public bool UpdateGroupPrice(int groupId, decimal newPrice)
         {
             var result = _groupRepository.UpdateGroupPrice(groupId, newPrice);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
+            if (result)
+            {
+                _subGroupService.UpdateSubGroupsTuitionFeeByGroupId(groupId, newPrice);
+                SyncGroupSnapshot(groupId, SyncOperationType.Update);
+            }
             return result;
         }
 
@@ -256,9 +260,10 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                // შევამოწმოთ სტატუსი შეიცვალა თუ არა
+                // შევამოწმოთ სტატუსი და ფასი შეიცვალა თუ არა
                 var currentGroup = _groupRepository.GetGroupById(group.Id);
                 bool statusChanged = currentGroup != null && currentGroup.Status != group.Status;
+                bool priceChanged = currentGroup != null && currentGroup.Price != group.Price;
 
                 // განვაახლოთ ჯგუფი
                 var result = _groupRepository.UpdateGroup(group);
@@ -267,6 +272,12 @@ namespace BCCStudents.Application.Services
                 if (statusChanged)
                 {
                     _subGroupService.UpdateSubGroupsStatusByGroupId(group.Id, group.Status);
+                }
+
+                // თუ ფასი შეიცვალა, განვაახლოთ ქვეჯგუფების ფასებიც და სინქრონდეს სერვერზე
+                if (priceChanged)
+                {
+                    _subGroupService.UpdateSubGroupsTuitionFeeByGroupId(group.Id, group.Price);
                 }
 
                 SyncGroupSnapshot(group.Id, SyncOperationType.Update);

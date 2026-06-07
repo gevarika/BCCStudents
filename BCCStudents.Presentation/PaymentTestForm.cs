@@ -4,7 +4,7 @@ using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Presentation
 {
-    public partial class PaymentTestForm : Form
+    public partial class PaymentTestForm : BaseForm
     {
         private readonly IStudentRepository _studentRepository;
         private readonly IStudentGroupRepository _studentGroupRepository;

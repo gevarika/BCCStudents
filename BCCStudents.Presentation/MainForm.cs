@@ -2,9 +2,9 @@ using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
-using BCCStudents.Presentation.Data.Configuration;
 using BCCStudents.Presentation.Properties;
 using BCCStudents.Presentation.Services;
+using Serilog;
 using System.Configuration;
 
 namespace BCCStudents.Presentation
@@ -23,13 +23,15 @@ namespace BCCStudents.Presentation
         private readonly IDownStreamSyncService _downStreamSyncService;
         private readonly IDownStreamSyncManager _downStreamSyncManager;
         private readonly IUpStreamSyncManager _upStreamSyncManager;
+        private readonly IApplicationLogSyncManager _applicationLogSyncManager;
+        private readonly IApplicationLogRetentionService _applicationLogRetentionService;
         private readonly IConnectionMonitor _connectionMonitor;
-        private readonly IBackupService _backupService;
         private readonly IConnectionStatusService _connectionStatusService;
         private readonly IApplicationStatus _appStatus;
         private bool _previousConnectionStatus; // წინა კავშირის სტატუსი MessageBox-ებისთვის
         private readonly IConfigurationService _configurationService;
         private readonly IUserContext _userContext;
+        private readonly ConnectionStatusBarHost _connectionStatusBarHost;
 
         // სვეტების ხილულობის კონფიგურაცია (სვეტის სახელი -> Visible)
         private Dictionary<string, bool> columnVisibility;
@@ -44,7 +46,6 @@ namespace BCCStudents.Presentation
         private readonly SetStudyStartDateFormFactory _setStudyStartDateFormFactory;
         private readonly FinanceFormFactory _financeFormFactory;
         private readonly PaymentFormFactory _paymentFormFactory;
-        private readonly BackupManagementFormFactory _backupManagementFormFactory;
         private readonly LogViewerFormFactory _logViewerFormFactory;
         private readonly PaymentTestFormFactory _paymentTestFormFactory;
         private SyncStatusControl _syncStatusControl;
@@ -63,8 +64,9 @@ namespace BCCStudents.Presentation
             IDownStreamSyncService downStreamSyncService,
             IDownStreamSyncManager downStreamSyncManager,
             IUpStreamSyncManager upStreamSyncManager,
+            IApplicationLogSyncManager applicationLogSyncManager,
+            IApplicationLogRetentionService applicationLogRetentionService,
             IConnectionMonitor connectionMonitor,
-            IBackupService backupService,
             IPaymentDescriptionAnalyzer paymentDescriptionAnalyzer,
             IConnectionStatusService connectionstatusservice,
             IConfigurationService configService,
@@ -76,7 +78,6 @@ namespace BCCStudents.Presentation
             FinanceFormFactory financeFormFactory,
             PaymentFormFactory paymentFormFactory,
             AdminPanelFormFactory adminPanelFormFactory,
-            BackupManagementFormFactory backupManagementFormFactory,
             LogViewerFormFactory logViewerFormFactory,
             PaymentTestFormFactory paymentTestFormFactory,
             BalanceTransferFormFactory balanceTransferFormFactory,
@@ -85,10 +86,13 @@ namespace BCCStudents.Presentation
             IApplicationStatus appStatus,
             ISystemConfigurationService systemConfigService,
             IPaymentDateService paymentDateService,
-            IUserContext userContext
+            IUserContext userContext,
+            ConnectionStatusBarHost connectionStatusBarHost
             )
         {
             InitializeComponent();
+            _connectionStatusBarHost = connectionStatusBarHost ?? throw new ArgumentNullException(nameof(connectionStatusBarHost));
+            ConnectionStatusBarHostAccessor.Initialize(_connectionStatusBarHost);
 
             //_connectionService = connectionService;
             _loggerRepository = loggerRepository;
@@ -100,15 +104,15 @@ namespace BCCStudents.Presentation
             _downStreamSyncService = downStreamSyncService ?? throw new ArgumentNullException(nameof(downStreamSyncService));
             _downStreamSyncManager = downStreamSyncManager ?? throw new ArgumentNullException(nameof(downStreamSyncManager));
             _upStreamSyncManager = upStreamSyncManager ?? throw new ArgumentNullException(nameof(upStreamSyncManager));
+            _applicationLogSyncManager = applicationLogSyncManager ?? throw new ArgumentNullException(nameof(applicationLogSyncManager));
+            _applicationLogRetentionService = applicationLogRetentionService ?? throw new ArgumentNullException(nameof(applicationLogRetentionService));
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
-            _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
             _connectionStatusService = connectionstatusservice ?? throw new ArgumentNullException(nameof(connectionstatusservice));
             _previousConnectionStatus = _connectionStatusService?.IsConnected ?? false; // საწყისი სტატუსი
             _setStudyStartDateFormFactory = studyStartDateFormFactory ?? throw new ArgumentNullException(nameof(studyStartDateFormFactory));
             _studentFormFactory = studentFormFactory; // ინიციალიზაცია
             _statisticsFormFactory = statisticsFormFactory;
             _adminPanelFormFactory = adminPanelFormFactory;
-            _backupManagementFormFactory = backupManagementFormFactory;
             _logViewerFormFactory = logViewerFormFactory;
             _paymentTestFormFactory = paymentTestFormFactory;
             _paymentFormFactory = paymentFormFactory;
@@ -128,12 +132,6 @@ namespace BCCStudents.Presentation
                 FormTitleHelper.SetTitle(this, "სტუდენტების მართვა - საცდელი ბაზა");
             else
                 FormTitleHelper.SetTitle(this, "სტუდენტების მართვა");
-
-            // გამოვიწეროთ სტატუსის ცვლილება
-            _connectionMonitor.ConnectionStatusChanged += (s, isConnected) =>
-            {
-                UpdateConnectionUI(isConnected);
-            };
 
             // სვეტების კონფიგურაციის ჩატვირთვა SettingsHelper-იდან
             LoadColumnSettings();
@@ -155,7 +153,6 @@ namespace BCCStudents.Presentation
         public delegate FinanceManagementForm FinanceFormFactory();
         public delegate PaymentForm PaymentFormFactory();
         public delegate AdminPanelForm AdminPanelFormFactory();
-        public delegate BackupManagementForm BackupManagementFormFactory();
         public delegate LogViewerForm LogViewerFormFactory();
         public delegate PaymentTestForm PaymentTestFormFactory();
         public delegate UserManagementForm UserManagementFormFactory();
@@ -288,12 +285,6 @@ namespace BCCStudents.Presentation
                 PaymentTestToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
             }
 
-            if (BackupToolStripMenuItem != null)
-            {
-                BackupToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanEditSettings);
-                BackupToolStripMenuItem.Tag = $"Permission_{Permission.CanEditSettings}";
-            }
-
             if (tsmAdminPanel != null)
             {
                 tsmAdminPanel.Enabled = _userContext.IsAdmin;
@@ -374,6 +365,7 @@ namespace BCCStudents.Presentation
             var newForm = formFactory();
             _openSingletonForms[formType] = newForm;
             newForm.FormClosed += (_, __) => _openSingletonForms.Remove(formType);
+            _connectionStatusBarHost.Attach(newForm);
             newForm.Show();
             newForm.BringToFront();
             newForm.Activate();
@@ -396,25 +388,13 @@ namespace BCCStudents.Presentation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"შეცდომა ავტომატური ფაილების აღმოჩენისას: {ex.Message}");
+                Log.Warning(ex, "შეცდომა ავტომატური ფაილების აღმოჩენისას");
             }
 
-            // პერიოდული ბექაპის ინიციალიზაცია
-            try
-            {
-                // სისტემური პარამეტრების განახლება
-                BackupConfig.UpdateBackupManagerSettings();
-
-                _backupService.InitializePeriodicBackup();
-                Console.WriteLine("პერიოდული ბექაპი წარმატებით ინიციალიზებულია");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"შეცდომა პერიოდული ბექაპის ინიციალიზაციისას: {ex.Message}");
-            }
             StartDownStreamSync();
-            // UpStream სინქრონიზაციის გაშვება (SyncOutbox-დან ჩანაწერების გაგზავნა სერვერზე)
             StartUpStreamSync();
+            _applicationLogSyncManager.Start();
+            _applicationLogRetentionService.Start();
             // ბაზასთან კავშირის მონიტორინგის გაშვება
             StartConnectionMonitoring();
 
@@ -545,21 +525,17 @@ namespace BCCStudents.Presentation
         /// </summary>
         private void StartConnectionMonitoring()
         {
-            // ConnectionStatusService-ის ივენთის გამოწერა
-            if (_connectionStatusService != null)
-            {
-                _connectionStatusService.ConnectionStatusChanged += ConnectionStatusService_ConnectionStatusChanged;
-            }
+            _connectionStatusBarHost.BindMainForm(this, statusLabel, serverStatusLabel);
 
-            // მონიტორინგის გაშვება
-            _connectionMonitor.StopMonitoring();
+            _connectionMonitor.ConnectionStatusChanged -= ConnectionMonitorService_ConnectionStatusChanged;
+            _connectionMonitor.ConnectionStatusChanged += ConnectionMonitorService_ConnectionStatusChanged;
 
-            // საწყისი კავშირის შემოწმება
-            UpdateConnectionStatus();
+            _connectionMonitor.StartMonitoring();
+            _connectionStatusBarHost.RefreshAllLabels();
         }
 
         /// <summary>
-        /// ბაზასთან კავშირის სტატუსის განახლება UI-ში
+        /// ლოკალურ ბაზასთან კავშირის სტატუსის განახლება UI-ში
         /// </summary>
         private void UpdateConnectionStatus()
         {
@@ -567,25 +543,25 @@ namespace BCCStudents.Presentation
                 return;
 
             bool isConnected = _connectionStatusService.IsConnected;
-            UpdateUIBasedOnConnectionStatus(isConnected);
+            UpdateLocalConnectionStatus(isConnected);
         }
 
         /// <summary>
-        /// UI-ის განახლება კავშირის სტატუსის მიხედვით
+        /// UI-ის განახლება ლოკალური ბაზის კავშირის სტატუსის მიხედვით
         /// </summary>
         /// <param name="isConnected">კავშირის სტატუსი</param>
-        private void UpdateUIBasedOnConnectionStatus(bool isConnected)
+        private void UpdateLocalConnectionStatus(bool isConnected)
         {
             if (statusLabel != null)
             {
                 if (isConnected)
                 {
-                    statusLabel.Text = "✅ ბაზა დაკავშირებულია";
+                    statusLabel.Text = "✅ ლოკალური ბაზა დაკავშირებულია";
                     statusLabel.ForeColor = Color.Green;
                 }
                 else
                 {
-                    statusLabel.Text = "❌ ბაზა გათიშულია";
+                    statusLabel.Text = "❌ ლოკალური ბაზა გათიშულია";
                     statusLabel.ForeColor = Color.Red;
                 }
             }
@@ -594,48 +570,29 @@ namespace BCCStudents.Presentation
             // მაგალითად: ToolStripMenuItem-ების Enabled სტატუსი
             // TODO: დაამატე სხვა UI ელემენტები, რომლებიც დამოკიდებულია კავშირზე
         }
-        private void UpdateConnectionUI(bool isConnected)
-        {
-            // თუ მეთოდი გამოძახებულია ფონური Thread-იდან, გადავიყვანოთ UI Thread-ზე
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action(() => UpdateConnectionUI(isConnected)));
-                return;
-            }
 
-            // მაგალითად, თუ გაქვთ StatusLabel სახელად lblStatus
+        /// <summary>
+        /// UI-ის განახლება სერვერის ბაზის კავშირის სტატუსის მიხედვით (მოკლე ტექსტი).
+        /// </summary>
+        private void UpdateServerConnectionStatus(bool isConnected, ConnectionFailureInfo? failure = null)
+        {
+            if (serverStatusLabel == null)
+                return;
+
             if (isConnected)
             {
-                statusLabel.Text = "დაკავშირებულია";
-                statusLabel.ForeColor = Color.Green;
-                // თუ გაქვთ რაიმე პატარა წითელი/მწვანე წრე (Icon)
-                //imgStatusIndicator.Image = Properties.Resources.green_circle;
+                serverStatusLabel.Text = "✅ სერვერი დაკავშირებულია";
+                serverStatusLabel.ForeColor = Color.Green;
             }
             else
             {
-                statusLabel.Text = "კავშირი გაწყდა!";
-                statusLabel.ForeColor = Color.Red;
-                //imgStatusIndicator.Image = Properties.Resources.red_circle;
+                var shortReason = failure?.UserMessage ?? "სერვერი გათიშულია";
+                serverStatusLabel.Text = $"❌ {shortReason}";
+                serverStatusLabel.ForeColor = Color.Red;
             }
         }
         /// <summary>
-        /// ConnectionStatusService-ის ConnectionStatusChanged ივენთის handler
-        /// </summary>
-        private void ConnectionStatusService_ConnectionStatusChanged(object sender, EventArgs e)
-        {
-            // UI thread-ზე განახლება
-            if (this.InvokeRequired)
-            {
-                this.Invoke((Action)(() => ConnectionStatusService_ConnectionStatusChanged(sender, e)));
-                return;
-            }
-
-            bool isConnected = _connectionStatusService.IsConnected;
-            UpdateUIBasedOnConnectionStatus(isConnected);
-        }
-
-        /// <summary>
-        /// ბაზასთან კავშირის სტატუსის შეცვლის event handler
+        /// ლოკალურ ბაზასთან კავშირის სტატუსის შეცვლის event handler
         /// </summary>
         private void ConnectionMonitorService_ConnectionStatusChanged(object sender, bool isConnected)
         {
@@ -651,15 +608,11 @@ namespace BCCStudents.Presentation
 
             if (isConnected)
             {
-                // ბაზა აღდგენილია
-                UpdateUIBasedOnConnectionStatus(true);
-
-                // აღდგენის შეტყობინება გამოჩენა
                 if (!previousStatus)
                 {
                     MessageBox.Show(
-                        "✅ ბაზა აღდგენილია!",
-                        "ბაზა აღდგენილია",
+                        "✅ ლოკალური ბაზა აღდგენილია!",
+                        "ლოკალური ბაზა აღდგენილია",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information
                     );
@@ -667,17 +620,13 @@ namespace BCCStudents.Presentation
             }
             else
             {
-                // ბაზა გათიშულია
-                UpdateUIBasedOnConnectionStatus(false);
-
-                // მხოლოდ პირველად გათიშვისას გამოჩენა MessageBox
                 if (previousStatus)
                 {
                     MessageBox.Show(
-                        "⚠️ ბაზა გათიშულია!\n\n" +
-                        "გთხოვთ, შეამოწმოთ და აღადგინოთ ბაზასთან კავშირი.\n\n" +
-                        "სისტემა ავტომატურად შეეცდება ბაზასთან დაკავშირებას 30 წუთში.",
-                        "ბაზა გათიშულია",
+                        "⚠️ ლოკალური ბაზა გათიშულია!\n\n" +
+                        "გთხოვთ, შეამოწმოთ და აღადგინოთ ლოკალურ ბაზასთან კავშირი.\n\n" +
+                        "სისტემა ავტომატურად შეეცდება ბაზასთან დაკავშირებას 30 წამში.",
+                        "ლოკალური ბაზა გათიშულია",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning
                     );
@@ -734,9 +683,6 @@ namespace BCCStudents.Presentation
         // 📅 დაწყების თარიღის განსაზღვრა
         private void SetStudyStartDate()
         {
-            _connectionMonitor.StartMonitoring();
-            _connectionMonitor.ConnectionStatusChanged += ConnectionMonitorService_ConnectionStatusChanged;
-
             // ვამოწმებთ თარიღების არსებობას
             bool hasStudyStartDate = _systemConfigService.GetStudyStartDate().HasValue;
             bool hasPaymentDate = _systemConfigService.GetDefaultPaymentDate().HasValue;
@@ -929,6 +875,9 @@ namespace BCCStudents.Presentation
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             _downStreamSyncManager.Stop();
+            _upStreamSyncManager.Stop();
+            _applicationLogSyncManager.Stop();
+            _applicationLogRetentionService.Stop();
 
             // ბაზასთან კავშირის მონიტორინგის გაჩერება
             if (_connectionMonitor != null)
@@ -938,62 +887,22 @@ namespace BCCStudents.Presentation
             }
 
             // ConnectionStatusService-ის ივენთის გამოწერა
-            if (_connectionStatusService != null)
-            {
-                _connectionStatusService.ConnectionStatusChanged -= ConnectionStatusService_ConnectionStatusChanged;
-            }
-
             if (_allowClose)
             {
                 return;
             }
 
-            string connStr = ConfigurationManager.ConnectionStrings["MySQLConnection"]?.ConnectionString;
             try
             {
-                _loggerRepository.WriteLog("Program Exit", "Success", "The application has been closed.", Environment.UserName);
-                if (_backupService.DbChangedSinceLastBackup)
-                {
-                    var userBackupDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "Backups");
-                    Directory.CreateDirectory(userBackupDir);
-                    _backupService.CreateBackup(userBackupDir);
-                }
+                var exitUser = !string.IsNullOrWhiteSpace(UserSession.UserName)
+                    ? UserSession.UserName
+                    : Environment.UserName;
+                _loggerRepository.WriteLog("Program Exit", "Success", "The application has been closed.", exitUser);
             }
             catch (Exception ex)
             {
-                // ლოგების შეცდომა შეიძლება, Program Files-ში ლიმიტირებულია წვდომა
-                Console.WriteLine($"Exit log/backup error: {ex.Message}");
+                Log.Warning(ex, "Exit audit log failed");
             }
-
-            try
-            {
-                var userBackupDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BCCStudents", "Backups");
-                Directory.CreateDirectory(userBackupDir);
-                string backupFilePath = Path.Combine(userBackupDir, $"backup_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.sql");
-                bool backupSuccess = _backupService.CreateMySQLBackup(backupFilePath);
-                if (!backupSuccess)
-                {
-                    Console.WriteLine("ბექაპის შექმნა ვერ მოხერხდა, რადგან მიმდინარე მონაცემები არ არსებობს ან შექმნა გაუქმებულია დროებით");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ბექაპის შექმნისას მოხდა შეცდომა: {ex.Message}");
-            }
-
-            // პერიოდული ბექაპის გაჩერება
-            try
-            {
-                BackupConfig.SaveBackupManagerSettings();
-
-                _backupService.StopPeriodicBackup();
-                Console.WriteLine("პერიოდული ბექაპი გაჩერებულია");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"შეცდომა პერიოდული ბექაპის გაჩერებისას: {ex.Message}");
-            }
-
 
             // ტაიმერის გაჩერება
             if (timer1 != null)
@@ -1001,6 +910,7 @@ namespace BCCStudents.Presentation
                 timer1.Stop();
                 timer1.Dispose();
             }
+
         }
 
         /// <summary>
@@ -1211,18 +1121,6 @@ namespace BCCStudents.Presentation
             }
 
             OpenOrActivateForm(_adminPanelFormFactory.Invoke);
-        }
-
-        private void BackupToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanEditSettings))
-            {
-                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            OpenOrActivateForm(_backupManagementFormFactory.Invoke);
         }
 
         private async void btnRefreshPaymentProcess_Click(object sender, EventArgs e)

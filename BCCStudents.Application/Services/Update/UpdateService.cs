@@ -1,5 +1,6 @@
 ﻿using BCCStudents.Application.Interfaces;
 using Newtonsoft.Json;
+using Serilog;
 using System.Reflection;
 using System.Text;
 
@@ -7,21 +8,15 @@ namespace BCCStudents.Application.Services.Update
 {
     public class UpdateService : IUpdateService
     {
+        private static readonly ILogger UpdateLog = Serilog.Log.ForContext("SourceContext", "Update");
+
         private readonly HttpClient _httpClient;
         private readonly string _manifestUrl;
-        private readonly string _logPath;
 
         public UpdateService()
         {
             _httpClient = new HttpClient();
             _manifestUrl = System.Configuration.ConfigurationManager.AppSettings["UpdateManifestUrl"];
-            try
-            {
-                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
-                Directory.CreateDirectory(logDir);
-                _logPath = Path.Combine(logDir, "Update.txt");
-            }
-            catch { }
         }
 
         public Version GetCurrentVersion()
@@ -496,15 +491,7 @@ namespace BCCStudents.Application.Services.Update
             try { System.Diagnostics.Process.GetCurrentProcess().Kill(); } catch { }
         }
 
-        private void Log(string message)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(_logPath)) return;
-                File.AppendAllText(_logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\r\n");
-            }
-            catch { }
-        }
+        private void Log(string message) => UpdateLog.Information(message);
     }
 
     public class UpdateManifest

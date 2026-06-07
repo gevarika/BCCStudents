@@ -7,7 +7,7 @@ using System.Text;
 
 namespace BCCStudents.Presentation
 {
-    public partial class PaymentForm : Form
+    public partial class PaymentForm : BaseForm
     {
         private readonly IPaymentService _paymentService;
         private readonly IStudentService _studentService;

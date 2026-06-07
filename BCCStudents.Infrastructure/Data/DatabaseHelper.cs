@@ -1,4 +1,6 @@
-﻿using BCCStudents.Domain.Interfaces;
+﻿using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Interfaces;
+using BCCStudents.Infrastructure.Services;
 using MySql.Data.MySqlClient;
 
 namespace BCCStudents.Infrastructure.Data
@@ -72,6 +74,7 @@ namespace BCCStudents.Infrastructure.Data
             var serverConn = isTest ? (string.IsNullOrWhiteSpace(serverConnTest) ? serverConnProd : serverConnTest) : serverConnProd;
             if (string.IsNullOrWhiteSpace(serverConn))
                 throw new Exception("ServerMySqlConnectionString is not configured in Settings.");
+
             return new MySqlConnection(serverConn);
         }
 
@@ -91,28 +94,60 @@ namespace BCCStudents.Infrastructure.Data
             }
         }
 
-        public bool CanConnectToMySQL()
+        public bool CanConnectToMySQL() => CheckLocalConnection().IsConnected;
+
+        public bool CanConnectToServer() => CheckServerConnection().IsConnected;
+
+        public ConnectionCheckResult CheckLocalConnection() =>
+            TryOpenConnectionWithDetails(GetLocalConnection, "local");
+
+        public ConnectionCheckResult CheckServerConnection() =>
+            TryProbeConnection(GetServerConnection, "server");
+
+        private static ConnectionCheckResult TryOpenConnectionWithDetails(
+            Func<MySqlConnection> getConnection,
+            string target)
         {
             try
             {
-                using (var conn = GetLocalConnection())
-                {
-                    conn.Open();
-                    return true;
-                }
-
+                using var conn = getConnection();
+                conn.Open();
+                return ConnectionCheckResult.Ok();
             }
             catch (Exception ex)
             {
-                try
+                return ConnectionCheckResult.Failed(ConnectionFailureParser.Parse(ex, target));
+            }
+        }
+
+        /// <summary>
+        /// სერვერის ჯანმრთელობის შემოწმება — მოკლე timeout, pooling გარეშე (ინტერნეტის გათიშვა სწრაფად იჭერება).
+        /// იძახება ConnectionMonitor-იდან (~10 წმ) და სინქიდან (CheckServerConnection).
+        /// შენიშვნა: MySql.Data SSL-ის შიდა timeout ზოგჯერ ცალკე thread-ზე ისროლებს exception-ს — იხ. SyncPeriodicTimerRunner / Program.UnhandledException.
+        /// </summary>
+        private static ConnectionCheckResult TryProbeConnection(
+            Func<MySqlConnection> getConnection,
+            string target)
+        {
+            try
+            {
+                using var baseConn = getConnection();
+                var probeBuilder = new MySqlConnectionStringBuilder(baseConn.ConnectionString)
                 {
-                    var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
-                    Directory.CreateDirectory(dir);
-                    var path = Path.Combine(dir, "mysql-connection-errors.txt");
-                    File.AppendAllText(path, $"[{DateTime.Now}] Connection error: {ex}\n\n");
-                }
-                catch { }
-                return false;
+                    ConnectionTimeout = 5,
+                    Pooling = false,
+                    DefaultCommandTimeout = 3
+                };
+
+                using var conn = new MySqlConnection(probeBuilder.ConnectionString);
+                conn.Open();
+                using var cmd = new MySqlCommand("SELECT 1", conn) { CommandTimeout = 3 };
+                cmd.ExecuteScalar();
+                return ConnectionCheckResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                return ConnectionCheckResult.Failed(ConnectionFailureParser.Parse(ex, target));
             }
         }
     }

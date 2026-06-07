@@ -25,7 +25,7 @@ namespace BCCStudents.Presentation
         /// </summary>
         Failed
     }
-    public partial class PaymentsImportForm : Form
+    public partial class PaymentsImportForm : BaseForm
     {
         private readonly IExcelPaymentImportService _paymentImportService;
         private string _selectedFilePath;

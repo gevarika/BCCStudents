@@ -1,5 +1,6 @@
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
+using Serilog;
 
 namespace BCCStudents.Infrastructure.Data
 {
@@ -23,7 +24,8 @@ namespace BCCStudents.Infrastructure.Data
             "ImportedFilesLog",
             "ImportedPaymentsLog",
             "FailedPayments",
-            "FailedStudentImports"
+            "FailedStudentImports",
+            "ApplicationLogs"
         };
 
         public static bool TryEnsureLocalDatabase(IConfigurationService config, string initScriptPath, out string errorMessage)
@@ -157,20 +159,8 @@ namespace BCCStudents.Infrastructure.Data
 
         private static void LogError(string message, Exception ex)
         {
-            try
-            {
-                var dir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "BCCStudents",
-                    "logs");
-                Directory.CreateDirectory(dir);
-                var path = Path.Combine(dir, "db-init.txt");
-                File.AppendAllText(path, $"[{DateTime.Now}] {message} {ex}\n\n");
-            }
-            catch
-            {
-                // ignore logging errors
-            }
+            Log.ForContext("SourceContext", "DatabaseInit")
+                .Error(ex, message);
         }
     }
 }

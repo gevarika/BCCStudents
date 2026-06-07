@@ -51,6 +51,11 @@ namespace BCCStudents.Domain.Interfaces
         StudentSubGroups GetByStudentGroupAndSubGroup(int studentId, int groupId, int subGroupId);
 
         /// <summary>
+        /// ბოლო ჩანაწერი StudentId, GroupId და SubGroupId-ით (ყველა სტატუსი)
+        /// </summary>
+        StudentSubGroups GetLatestByStudentGroupAndSubGroup(int studentId, int groupId, int subGroupId);
+
+        /// <summary>
         /// მოსწავლის ჩანაწერის მიღება ჯგუფისთვის
         /// </summary>
         StudentSubGroups GetByStudentAndGroup(int studentId, int groupId);

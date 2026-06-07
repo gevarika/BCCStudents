@@ -330,6 +330,40 @@ CREATE TABLE `SystemConfig` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ApplicationLogs`
+--
+
+DROP TABLE IF EXISTS `ApplicationLogs`;
+CREATE TABLE `ApplicationLogs` (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `LogGuid` char(36) NOT NULL,
+  `SourceType` varchar(32) NOT NULL,
+  `Category` varchar(64) DEFAULT NULL,
+  `Level` varchar(16) NOT NULL,
+  `Operation` varchar(128) DEFAULT NULL,
+  `Status` varchar(32) DEFAULT NULL,
+  `UserId` int DEFAULT NULL,
+  `Username` varchar(128) DEFAULT NULL,
+  `MachineName` varchar(128) DEFAULT NULL,
+  `PermissionScope` varchar(64) DEFAULT NULL,
+  `Message` text,
+  `Details` text,
+  `Exception` text,
+  `SourceContext` varchar(128) DEFAULT NULL,
+  `CreatedAt` datetime(3) NOT NULL,
+  `SyncedToServerAt` datetime(3) DEFAULT NULL,
+  `Origin` varchar(16) NOT NULL DEFAULT 'Local',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `uk_log_guid` (`LogGuid`),
+  KEY `idx_created` (`CreatedAt`),
+  KEY `idx_user_created` (`UserId`,`CreatedAt`),
+  KEY `idx_category` (`Category`,`CreatedAt`),
+  KEY `idx_unsynced` (`SyncedToServerAt`,`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `Users`
 --
 
@@ -343,6 +377,7 @@ CREATE TABLE `Users` (
   `Role` varchar(50) DEFAULT NULL,
   `CreatedAt` datetime DEFAULT NULL,
   `LastLogin` datetime DEFAULT NULL,
+  `UpdatedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `Permissions` text COMMENT 'JSON: {"CanImport": true, "CanDelete": false, ...}'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

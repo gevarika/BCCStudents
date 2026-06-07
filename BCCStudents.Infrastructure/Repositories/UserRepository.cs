@@ -18,8 +18,9 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = @"INSERT INTO Users (Username, FullName, Email, Password, Role, Permissions, CreatedAt, LastLogin) 
-                         VALUES (@Username, @FullName, @Email, @Password, @Role, @Permissions, @CreatedAt, @LastLogin);
+                var now = user.CreatedAt == default ? DateTime.Now : user.CreatedAt;
+                string query = @"INSERT INTO Users (Username, FullName, Email, Password, Role, Permissions, CreatedAt, LastLogin, UpdatedAt) 
+                         VALUES (@Username, @FullName, @Email, @Password, @Role, @Permissions, @CreatedAt, @LastLogin, @UpdatedAt);
                          SELECT LAST_INSERT_ID();";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
@@ -30,7 +31,8 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@LastLogin", DBNull.Value);
                     cmd.Parameters.AddWithValue("@Role", user.Role);
                     cmd.Parameters.AddWithValue("@Permissions", (object)user.Permissions ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@CreatedAt", user.CreatedAt);
+                    cmd.Parameters.AddWithValue("@CreatedAt", now);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", now);
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 }
             }
@@ -71,7 +73,8 @@ namespace BCCStudents.Infrastructure.Repositories
                                 Email = reader["Email"]?.ToString(),
                                 Role = reader["Role"]?.ToString(),
                                 Permissions = reader["Permissions"]?.ToString(),
-                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : DateTime.MinValue
+                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : DateTime.MinValue,
+                                UpdatedAt = ReadUpdatedAt(reader)
                             };
                         }
                     }
@@ -85,10 +88,11 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = "UPDATE Users SET LastLogin = @LastLogin WHERE Id = @Id";
+                string query = "UPDATE Users SET LastLogin = @LastLogin, UpdatedAt = @UpdatedAt WHERE Id = @Id";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@LastLogin", lastLogin);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", lastLogin);
                     cmd.Parameters.AddWithValue("@Id", userId);
                     cmd.ExecuteNonQuery();
                 }
@@ -119,7 +123,8 @@ namespace BCCStudents.Infrastructure.Repositories
                                 Role = reader["Role"]?.ToString(),
                                 Permissions = reader["Permissions"]?.ToString(),
                                 CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
-                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null
+                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null,
+                                UpdatedAt = ReadUpdatedAt(reader)
                             };
                         }
                     }
@@ -175,7 +180,8 @@ namespace BCCStudents.Infrastructure.Repositories
                                 Role = reader["Role"]?.ToString(),
                                 Permissions = reader["Permissions"]?.ToString(),
                                 CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
-                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null
+                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null,
+                                UpdatedAt = ReadUpdatedAt(reader)
                             });
                         }
                     }
@@ -191,10 +197,11 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = "UPDATE Users SET Permissions = @Permissions WHERE Id = @Id";
+                string query = "UPDATE Users SET Permissions = @Permissions, UpdatedAt = @UpdatedAt WHERE Id = @Id";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Permissions", (object)permissionsJson ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
                     cmd.Parameters.AddWithValue("@Id", userId);
                     cmd.ExecuteNonQuery();
                 }
@@ -206,10 +213,11 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = "UPDATE Users SET Password = @Password WHERE Id = @Id";
+                string query = "UPDATE Users SET Password = @Password, UpdatedAt = @UpdatedAt WHERE Id = @Id";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Password", passwordHash);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
                     cmd.Parameters.AddWithValue("@Id", userId);
                     cmd.ExecuteNonQuery();
                 }
@@ -225,7 +233,8 @@ namespace BCCStudents.Infrastructure.Repositories
                                 SET FullName = @FullName, 
                                     Email = @Email, 
                                     Role = @Role, 
-                                    Permissions = @Permissions 
+                                    Permissions = @Permissions,
+                                    UpdatedAt = @UpdatedAt
                                 WHERE Id = @Id";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
@@ -233,10 +242,26 @@ namespace BCCStudents.Infrastructure.Repositories
                     cmd.Parameters.AddWithValue("@Email", email ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Role", role);
                     cmd.Parameters.AddWithValue("@Permissions", (object)permissionsJson ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
                     cmd.Parameters.AddWithValue("@Id", userId);
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+
+        private static DateTime ReadUpdatedAt(MySqlDataReader reader)
+        {
+            if (reader["UpdatedAt"] != DBNull.Value)
+            {
+                return Convert.ToDateTime(reader["UpdatedAt"]);
+            }
+
+            if (reader["CreatedAt"] != DBNull.Value)
+            {
+                return Convert.ToDateTime(reader["CreatedAt"]);
+            }
+
+            return DateTime.UtcNow;
         }
     }
 }

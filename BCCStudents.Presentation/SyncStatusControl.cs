@@ -77,8 +77,7 @@ namespace BCCStudents.Presentation
             }
             else
             {
-                var errorText = args.Errors.Count > 0 ? args.Errors[0] : "შეცდომა";
-                _downStreamLabel.Text = $"↓ სინქრონიზაცია: ERR {errorText} ({args.Timestamp:HH:mm:ss})";
+                _downStreamLabel.Text = $"↓ ჩამოტვირთვის შეცდომა ({args.Timestamp:HH:mm:ss})";
                 _downStreamLabel.ForeColor = Color.Red;
             }
         }
@@ -101,8 +100,7 @@ namespace BCCStudents.Presentation
             }
             else
             {
-                var errorText = args.Errors.Count > 0 ? args.Errors[0] : "შეცდომა";
-                _upStreamLabel.Text = $"↑ სინქრონიზაცია: ERR {errorText} ({args.Timestamp:HH:mm:ss})";
+                _upStreamLabel.Text = $"↑ ატვირთვის შეცდომა ({args.Timestamp:HH:mm:ss})";
                 _upStreamLabel.ForeColor = Color.Red;
             }
         }

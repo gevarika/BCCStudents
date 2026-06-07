@@ -210,7 +210,28 @@ namespace BCCStudents.Application.Services
             {
                 // 1) Update locally (all subgroups under the group)
                 _subGroupRepository.UpdateSubGroupsStatusByGroupId(groupId, status);
-                var updatedSubGroups = _subGroupRepository.GetSubGroupsByGroupId(groupId);
+                var updatedSubGroups = _subGroupRepository.GetAllSubGroupsByGroupId(groupId);
+                foreach (var subGroup in updatedSubGroups)
+                {
+                    _upStreamChangeTracker.TrackSubGroupChange(subGroup.Id, SyncOperationType.Update, subGroup);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Update tuition fee of all subgroups for a given group and sync to server
+        /// </summary>
+        public bool UpdateSubGroupsTuitionFeeByGroupId(int groupId, decimal newFee)
+        {
+            try
+            {
+                _subGroupRepository.UpdateSubGroupsTuitionFeeByGroupId(groupId, newFee);
+                var updatedSubGroups = _subGroupRepository.GetAllSubGroupsByGroupId(groupId);
                 foreach (var subGroup in updatedSubGroups)
                 {
                     _upStreamChangeTracker.TrackSubGroupChange(subGroup.Id, SyncOperationType.Update, subGroup);

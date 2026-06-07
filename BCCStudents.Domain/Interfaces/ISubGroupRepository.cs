@@ -67,6 +67,11 @@ namespace BCCStudents.Domain.Interfaces
         List<SubGroup> GetSubGroupsByGroupId(int groupId);
 
         /// <summary>
+        /// ჯგუფის ყველა ქვეჯგუფის მიღება (აქტიური და არააქტიური) — სინქრონიზაციისთვის
+        /// </summary>
+        List<SubGroup> GetAllSubGroupsByGroupId(int groupId);
+
+        /// <summary>
         /// ქვეჯგუფების მიღება DataTable-ად
         /// </summary>
         DataTable GetAllSubGroupsFor();
@@ -128,6 +133,11 @@ namespace BCCStudents.Domain.Interfaces
         /// ჯგუფის ყველა ქვეჯგუფის სტატუსის განახლება
         /// </summary>
         bool UpdateSubGroupsStatusByGroupId(int groupId, bool status);
+
+        /// <summary>
+        /// ჯგუფის ყველა ქვეჯგუფის ფასის განახლება
+        /// </summary>
+        bool UpdateSubGroupsTuitionFeeByGroupId(int groupId, decimal newFee);
 
         #endregion
 

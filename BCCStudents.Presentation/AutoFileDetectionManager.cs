@@ -2,6 +2,7 @@
 using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using Serilog;
 
 namespace BCCStudents.Presentation
 {
@@ -52,7 +53,7 @@ namespace BCCStudents.Presentation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"შეცდომა ავტომატური შემოწმებისას: {ex.Message}");
+                Log.Warning(ex, "შეცდომა ავტომატური შემოწმებისას");
             }
         }
 

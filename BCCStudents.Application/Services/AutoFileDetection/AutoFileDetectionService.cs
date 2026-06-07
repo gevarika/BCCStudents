@@ -1,5 +1,6 @@
 ﻿using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using Serilog;
 using System.Security.Cryptography;
 
 namespace BCCStudents.Application.Services.AutoFileDetection
@@ -10,6 +11,8 @@ namespace BCCStudents.Application.Services.AutoFileDetection
     /// </summary>
     public class AutoFileDetectionService
     {
+        private static readonly ILogger Log = Serilog.Log.ForContext("SourceContext", "AutoFileDetection");
+
         private readonly IFileTrackingRepository _fileTrackingRepository;
         private readonly AutoFileDetectionConfig _config;
 
@@ -77,13 +80,13 @@ namespace BCCStudents.Application.Services.AutoFileDetection
                     catch (Exception ex)
                     {
                         // ლოგირება შეცდომისას
-                        Console.WriteLine($"შეცდომა ფაილის შემოწმებისას {filePath}: {ex.Message}");
+                        Log.Warning(ex, "შეცდომა ფაილის შემოწმებისას {FilePath}", filePath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"შეცდომა საქაღალდის შემოწმებისას {_config.WatchFolderPath}: {ex.Message}");
+                Log.Warning(ex, "შეცდომა საქაღალდის შემოწმებისას {WatchFolder}", _config.WatchFolderPath);
             }
 
             return newFiles;
@@ -132,7 +135,7 @@ namespace BCCStudents.Application.Services.AutoFileDetection
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"შეცდომა ფაილის ლოგირებისას {filePath}: {ex.Message}");
+                Log.Warning(ex, "შეცდომა ფაილის ლოგირებისას {FilePath}", filePath);
             }
         }
 
@@ -150,7 +153,7 @@ namespace BCCStudents.Application.Services.AutoFileDetection
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"შეცდომა ფაილის შემოწმებისას {filePath}: {ex.Message}");
+                Log.Warning(ex, "შეცდომა ფაილის შემოწმებისას {FilePath}", filePath);
                 return false;
             }
         }

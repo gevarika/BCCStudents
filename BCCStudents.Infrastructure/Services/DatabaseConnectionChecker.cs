@@ -1,4 +1,5 @@
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Entities;
 using BCCStudents.Infrastructure.Data;
 
 namespace BCCStudents.Infrastructure.Services
@@ -29,6 +30,14 @@ namespace BCCStudents.Infrastructure.Services
         {
             return _databaseHelper.CanConnectToMySQL();
         }
+
+        public bool CanConnectToServer() => CheckServerConnection().IsConnected;
+
+        public ConnectionCheckResult CheckServerConnection() =>
+            _databaseHelper.CheckServerConnection();
+
+        public ConnectionCheckResult CheckLocalConnection() =>
+            _databaseHelper.CheckLocalConnection();
     }
 }
 

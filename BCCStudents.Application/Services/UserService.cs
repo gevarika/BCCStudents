@@ -34,6 +34,7 @@ namespace BCCStudents.Application.Services
             if (VerifyPassword(password, user.Password))
             {
                 userId = user.Id;
+                var loginTime = DateTime.Now;
 
                 // სესიის გაწერა პირდაპირ აქ
                 UserSession.Id = user.Id;
@@ -41,9 +42,10 @@ namespace BCCStudents.Application.Services
                 UserSession.FullName = user.FullName;
                 UserSession.Email = user.Email;
                 UserSession.Role = user.Role;
-                UserSession.LastLogin = user.LastLogin;
+                UserSession.LastLogin = loginTime;
 
-                _userRepository.UpdateLastLogin(userId, DateTime.Now);
+                _userRepository.UpdateLastLogin(userId, loginTime);
+                SyncUserAfterLogin(userId);
 
                 return true;
             }
@@ -53,7 +55,19 @@ namespace BCCStudents.Application.Services
         public void UpdateLastLogin(int userId, DateTime lastLogin)
         {
             _userRepository.UpdateLastLogin(userId, lastLogin);
+            SyncUserAfterLogin(userId);
+        }
 
+        private void SyncUserAfterLogin(int userId)
+        {
+            if (_upStreamChangeTracker == null)
+                return;
+
+            var updatedUser = _userRepository.GetUserById(userId);
+            if (updatedUser != null)
+            {
+                _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
+            }
         }
         private bool VerifyPassword(string password, string storedHash)
         {

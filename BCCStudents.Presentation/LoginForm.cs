@@ -16,6 +16,7 @@ namespace BCCStudents.Presentation
         private readonly mainFormFactory _mainFormFactory;
         private readonly IApplicationStatus _appStatus;
         private readonly IConfigurationService _configService;
+        private readonly ILoggerRepository _loggerRepository;
         private bool _updateRunning;
         //private readonly UserSession userSession;
         //UserSession UserSession = new UserSession();
@@ -28,7 +29,8 @@ namespace BCCStudents.Presentation
             IUserService userService,
             mainFormFactory mainFormFactory,
             IApplicationStatus appStatus,
-            IConfigurationService configService
+            IConfigurationService configService,
+            ILoggerRepository loggerRepository
             )
         {
             InitializeComponent();
@@ -38,6 +40,7 @@ namespace BCCStudents.Presentation
             _mainFormFactory = mainFormFactory;
             _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+            _loggerRepository = loggerRepository ?? throw new ArgumentNullException(nameof(loggerRepository));
             this.Shown += LoginForm_Shown;
             this.Load += LoginForm_Load;
 
@@ -279,6 +282,12 @@ namespace BCCStudents.Presentation
                 UserSession.FullName = _userService.GetFullName(userId);
                 //MessageBox.Show($"მოგესალმებით, {UserSession.FullName}!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 _appStatus.IsAuthenticated = true;
+
+                try
+                {
+                    _loggerRepository.WriteLog("Authorization", "Success", $"წარმატებული ავტორიზაცია: {username}", username);
+                }
+                catch { }
 
                 // ანახლებს UserContext-ს მომხმარებლის ინფორმაციით
                 try

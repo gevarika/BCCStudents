@@ -1,4 +1,5 @@
 ﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
@@ -45,7 +46,16 @@ namespace BCCStudents.Application.Services.Sync.UpStream
             }
             catch (Exception ex)
             {
-                _logger.Error($"UpStream (Immediate) შეცდომა ატვირთვის: {payload.TableName}/{payload.Operation}/{payload.RecordKey}", ex);
+                var message = $"UpStream (Immediate) შეცდომა ატვირთვის: {payload.TableName}/{payload.Operation}/{payload.RecordKey}";
+                if (SyncConnectionHelper.IsLikelyConnectionError(ex))
+                {
+                    SyncLogThrottle.TryError(_logger, "upstream-immediate-connection", message, ex, SyncLogThrottle.DefaultInterval);
+                }
+                else
+                {
+                    _logger.Error(message, ex);
+                }
+
                 return Task.FromResult(UpStreamSyncResult.Fail(ex.Message));
             }
         }

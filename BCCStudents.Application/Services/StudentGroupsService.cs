@@ -69,6 +69,14 @@ namespace BCCStudents.Application.Services
         }
 
         /// <summary>
+        /// ბოლო ჩანაწერი StudentId და GroupId-ით (ყველა სტატუსი)
+        /// </summary>
+        public StudentGroups GetLatestByStudentAndGroup(int studentId, int groupId)
+        {
+            return _repository.GetLatestByStudentAndGroup(studentId, groupId);
+        }
+
+        /// <summary>
         /// მოსწავლის ჯგუფების მიღება
         /// </summary>
         public List<StudentGroups> GetByStudentId(int studentId)

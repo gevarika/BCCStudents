@@ -9,13 +9,23 @@ namespace BCCStudents.Infrastructure.Repositories
     {
         private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly ISyncLogger _logger;
+        private readonly IApplicationLogRepository _applicationLogRepository;
         private readonly object _schemaLock = new object();
         private bool _schemaEnsured;
 
-        public DownStreamSyncRepository(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
+        public DownStreamSyncRepository(
+            IDatabaseConnectionProvider connectionProvider,
+            ISyncLogger logger,
+            IApplicationLogRepository applicationLogRepository)
         {
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _applicationLogRepository = applicationLogRepository ?? throw new ArgumentNullException(nameof(applicationLogRepository));
+        }
+
+        public Task<int> UpsertApplicationLogsAsync(IReadOnlyList<ApplicationLogEntry> logs, CancellationToken cancellationToken = default)
+        {
+            return _applicationLogRepository.InsertFromServerAsync(logs, cancellationToken);
         }
 
         public Task<SyncStateRecord> GetSyncStateAsync(string tableName, CancellationToken cancellationToken = default)
@@ -66,7 +76,7 @@ namespace BCCStudents.Infrastructure.Repositories
                 using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@TableName", tableName);
-                    command.Parameters.AddWithValue("@LastSyncedAt", lastSyncedAt);
+                    command.Parameters.Add("@LastSyncedAt", MySqlDbType.DateTime).Value = lastSyncedAt;
                     command.Parameters.AddWithValue("@LastSyncedId", lastSyncedId);
                     command.ExecuteNonQuery();
                 }
@@ -455,9 +465,9 @@ namespace BCCStudents.Infrastructure.Repositories
             cancellationToken.ThrowIfCancellationRequested();
 
             const string sql = @"INSERT INTO Users
-                                (Id, Username, FullName, Email, Password, Role, CreatedAt, LastLogin)
+                                (Id, Username, FullName, Email, Password, Role, CreatedAt, LastLogin, UpdatedAt)
                                 VALUES
-                                (@Id, @Username, @FullName, @Email, @Password, @Role, @CreatedAt, @LastLogin)
+                                (@Id, @Username, @FullName, @Email, @Password, @Role, @CreatedAt, @LastLogin, @UpdatedAt)
                                 ON DUPLICATE KEY UPDATE
                                  Username = VALUES(Username),
                                  FullName = VALUES(FullName),
@@ -465,7 +475,8 @@ namespace BCCStudents.Infrastructure.Repositories
                                  Password = VALUES(Password),
                                  Role = VALUES(Role),
                                  CreatedAt = VALUES(CreatedAt),
-                                 LastLogin = VALUES(LastLogin);";
+                                 LastLogin = VALUES(LastLogin),
+                                 UpdatedAt = VALUES(UpdatedAt);";
 
             using (var connection = _connectionProvider.GetLocalConnection())
             {
@@ -814,6 +825,7 @@ namespace BCCStudents.Infrastructure.Repositories
             command.Parameters.Add("@Role", MySqlDbType.VarChar);
             command.Parameters.Add("@CreatedAt", MySqlDbType.DateTime);
             command.Parameters.Add("@LastLogin", MySqlDbType.DateTime);
+            command.Parameters.Add("@UpdatedAt", MySqlDbType.DateTime);
         }
 
         private static void FillUserParameters(MySqlCommand command, UserModel user)
@@ -826,6 +838,7 @@ namespace BCCStudents.Infrastructure.Repositories
             command.Parameters["@Role"].Value = user.Role ?? (object)DBNull.Value;
             command.Parameters["@CreatedAt"].Value = user.CreatedAt ?? (object)DBNull.Value;
             command.Parameters["@LastLogin"].Value = user.LastLogin ?? (object)DBNull.Value;
+            command.Parameters["@UpdatedAt"].Value = user.UpdatedAt;
         }
 
         private static void PrepareSystemConfigParameters(MySqlCommand command)
@@ -1001,14 +1014,21 @@ namespace BCCStudents.Infrastructure.Repositories
                 using (var connection = _connectionProvider.GetLocalConnection())
                 {
                     connection.Open();
-                    const string sql = @"CREATE TABLE IF NOT EXISTS SyncState (
-                                            TableName VARCHAR(64) PRIMARY KEY,
-                                            LastSyncedAt DATETIME NULL,
-                                            LastSyncedId INT NULL
-                                         );";
-                    using (var command = new MySqlCommand(sql, connection))
+                    const string createSql = @"CREATE TABLE IF NOT EXISTS SyncState (
+                                                   TableName VARCHAR(64) PRIMARY KEY,
+                                                   LastSyncedAt DATETIME(3) NULL,
+                                                   LastSyncedId INT NULL
+                                                );";
+                    using (var command = new MySqlCommand(createSql, connection))
                     {
                         command.ExecuteNonQuery();
+                    }
+
+                    const string migrateSql = @"ALTER TABLE SyncState
+                                                MODIFY COLUMN LastSyncedAt DATETIME(3) NULL;";
+                    using (var migrate = new MySqlCommand(migrateSql, connection))
+                    {
+                        migrate.ExecuteNonQuery();
                     }
                 }
 

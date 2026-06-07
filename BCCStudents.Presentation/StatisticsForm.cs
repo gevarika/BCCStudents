@@ -5,7 +5,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 
 namespace BCCStudents.Presentation
 {
-    public partial class StatisticsForm : Form
+    public partial class StatisticsForm : BaseForm
     {
         private readonly IStatisticsService _statisticsService;
         private readonly IGroupRepository _groupRepository;

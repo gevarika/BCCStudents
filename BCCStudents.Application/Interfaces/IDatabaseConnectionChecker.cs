@@ -1,3 +1,5 @@
+using BCCStudents.Domain.Entities;
+
 namespace BCCStudents.Application.Interfaces
 {
     /// <summary>
@@ -7,10 +9,26 @@ namespace BCCStudents.Application.Interfaces
     public interface IDatabaseConnectionChecker
     {
         /// <summary>
-        /// ამოწმებს კავშირს MySQL მონაცემთა ბაზასთან
+        /// ამოწმებს კავშირს ლოკალურ MySQL მონაცემთა ბაზასთან
         /// </summary>
         /// <returns>true თუ კავშირი დამყარებულია, false თუ არა</returns>
         bool CanConnectToMySQL();
+
+        /// <summary>
+        /// ამოწმებს კავშირს სერვერის MySQL მონაცემთა ბაზასთან
+        /// </summary>
+        /// <returns>true თუ კავშირი დამყარებულია, false თუ არა</returns>
+        bool CanConnectToServer();
+
+        /// <summary>
+        /// სერვერთან კავშირის შემოწმება დეტალური შეცდომით (ლოგისთვის).
+        /// </summary>
+        ConnectionCheckResult CheckServerConnection();
+
+        /// <summary>
+        /// ლოკალურ ბაზასთან კავშირის შემოწმება დეტალური შეცდომით.
+        /// </summary>
+        ConnectionCheckResult CheckLocalConnection();
     }
 }
 

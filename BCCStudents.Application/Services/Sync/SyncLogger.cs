@@ -1,63 +1,40 @@
 ﻿using BCCStudents.Domain.Interfaces;
-using System.Text;
+using Serilog;
 
 namespace BCCStudents.Application.Services.Sync
 {
+    /// <summary>
+    /// Sync logging via Serilog (SourceContext=Sync). Requires SerilogBootstrap.Initialize() before first use.
+    /// </summary>
     public class SyncLogger : ISyncLogger
     {
-        private readonly string _logFilePath;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        private readonly ILogger _logger = Log.ForContext("SourceContext", "Sync");
 
-        public SyncLogger()
-        {
-            var logDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "BCCStudents",
-                "logs");
-
-            Directory.CreateDirectory(logDir);
-            _logFilePath = Path.Combine(logDir, "sync_log.txt");
-        }
-
-        public void Info(string message) => Write("INFO", message);
-
-        public void Warn(string message) => Write("WARN", message);
-
-        public void Error(string message, Exception exception = null)
-        {
-            var fullMessage = exception == null
-                ? message
-                : $"{message}{Environment.NewLine}{exception}";
-            Write("ERROR", fullMessage);
-        }
-
-        private void Write(string level, string message)
+        public void Info(string message)
         {
             if (string.IsNullOrWhiteSpace(message))
-            {
                 return;
-            }
 
-            var logLine = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}{Environment.NewLine}";
+            _logger.Information(message);
+        }
 
-            try
-            {
-                _lock.EnterWriteLock();
-                File.AppendAllText(_logFilePath, logLine, Encoding.UTF8);
-            }
-            catch
-            {
-                // არაფერს ვაკეთებთ – არ უნდა დაბლოკოს აპლიკაცია.
-            }
-            finally
-            {
-                if (_lock.IsWriteLockHeld)
-                {
-                    _lock.ExitWriteLock();
-                }
-            }
+        public void Warn(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            _logger.Warning(message);
+        }
+
+        public void Error(string message, Exception? exception = null)
+        {
+            if (string.IsNullOrWhiteSpace(message) && exception == null)
+                return;
+
+            if (exception == null)
+                _logger.Error(message);
+            else
+                _logger.Error(exception, message);
         }
     }
 }
-
-

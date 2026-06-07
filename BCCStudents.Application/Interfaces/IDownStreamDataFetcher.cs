@@ -71,6 +71,8 @@ namespace BCCStudents.Application.Interfaces
         /// იღებს PendingStudentSubGroups სერვერიდან
         /// </summary>
         Task<List<PendingStudentSubGroup>> FetchPendingStudentSubGroupsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
+
+        Task<List<ApplicationLogEntry>> FetchApplicationLogsAsync(DateTime? lastSyncedAt, int lastSyncedId, CancellationToken cancellationToken = default);
     }
 }
 

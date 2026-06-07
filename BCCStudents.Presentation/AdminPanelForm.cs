@@ -12,7 +12,7 @@ using static BCCStudents.Presentation.MainForm;
 namespace BCCStudents.Presentation
 {
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public partial class AdminPanelForm : Form
+    public partial class AdminPanelForm : BaseForm
     {
         private readonly IStudentService _studentService;
         private readonly ICleanupService _cleanupService;
@@ -25,10 +25,10 @@ namespace BCCStudents.Presentation
         private readonly IConnectionStatusService _connectionStatusService;
         private readonly IConfigurationService _configService;
         private readonly ISystemConfigurationService _systemConfigService;
-        private readonly BackupService _backupManager;
         private readonly AdminCodeManager _adminCodeManager;
         private readonly IApplicationStatus _appStatus;
         private readonly UserManagementFormFactory _userManagementFormFactory;
+        private readonly LogViewerFormFactory _logViewerFormFactory;
         private DocumentConfig _config;
         private MainForm _mainForm;
         private TextBox txtAdminCode;
@@ -54,12 +54,12 @@ namespace BCCStudents.Presentation
             IServiceProvider serviceProvider,
             IConnectionStatusService connectionStatusService,
             IConfigurationService configurationService,
-            BackupService backupManager,
             AdminCodeManager adminCodeManager,
             IApplicationStatus appStatus,
             ISystemConfigurationService systemConfigurationService,
             SetStudyStartDateFormFactory setStudyStartDateFormFactory,
-            UserManagementFormFactory userManagementFormFactory
+            UserManagementFormFactory userManagementFormFactory,
+            LogViewerFormFactory logViewerFormFactory
             )
         {
             InitializeComponent();
@@ -72,13 +72,15 @@ namespace BCCStudents.Presentation
             _groupService = groupService ?? throw new ArgumentNullException(nameof(groupService));
             _connectionProvider = databaseConnectionProvider;
             _connectionStatusService = connectionStatusService ?? throw new ArgumentNullException(nameof(connectionStatusService));
-            _backupManager = backupManager ?? throw new ArgumentNullException(nameof(backupManager));
             _adminCodeManager = adminCodeManager ?? throw new ArgumentNullException(nameof(adminCodeManager));
+            btnBackup.Visible = false;
+            btnRestore.Visible = false;
             _configService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
             _systemConfigService = systemConfigurationService;
             _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
             _setStudyStartDateFormFactory = setStudyStartDateFormFactory ?? throw new ArgumentNullException(nameof(setStudyStartDateFormFactory));
             _userManagementFormFactory = userManagementFormFactory ?? throw new ArgumentNullException(nameof(userManagementFormFactory));
+            _logViewerFormFactory = logViewerFormFactory ?? throw new ArgumentNullException(nameof(logViewerFormFactory));
             if (_configService.IsTestDb)
                 FormTitleHelper.SetTitle(this, "პროგრამის პარამეტრები - სატესტო რეჟიმი");
             else
@@ -753,12 +755,14 @@ namespace BCCStudents.Presentation
 
         private void btnBackup_Click(object sender, EventArgs e)
         {
-            _backupManager.ManualBackup("SchoolManagement.db");
+            MessageBox.Show("ბექაპის ფუნქცია დროებით გამორთულია.", "ინფორმაცია",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-            _backupManager.ManualRestore("SchoolManagement.db");
+            MessageBox.Show("ბექაპის ფუნქცია დროებით გამორთულია.", "ინფორმაცია",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnRegisterUser_Click(object sender, EventArgs e)
@@ -787,7 +791,7 @@ namespace BCCStudents.Presentation
         {
             tabLogs = new TabPage("ლოგები");
             panelLogs = new Panel { Dock = DockStyle.Fill };
-            logViewerForm = new LogViewerForm();
+            logViewerForm = _logViewerFormFactory();
             logViewerForm.TopLevel = false;
             logViewerForm.FormBorderStyle = FormBorderStyle.None;
             logViewerForm.Dock = DockStyle.Fill;

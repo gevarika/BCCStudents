@@ -204,6 +204,37 @@ namespace BCCStudents.Infrastructure.Repositories
         }
 
         /// <summary>
+        /// ბოლო ჩანაწერი StudentId, GroupId და SubGroupId-ით (ყველა სტატუსი)
+        /// </summary>
+        public StudentSubGroups GetLatestByStudentGroupAndSubGroup(int studentId, int groupId, int subGroupId)
+        {
+            using (var connection = _connectionProvider.GetLocalConnection())
+            {
+                connection.Open();
+                var query = @"SELECT Id, StudentId, GroupId, SubGroupId, PaymentStatus, Price, Discount, Status, IsDeleted, DateOfPayment, UpdatedAt
+                              FROM StudentSubGroups
+                              WHERE StudentId = @StudentId AND GroupId = @GroupId AND SubGroupId = @SubGroupId
+                              ORDER BY UpdatedAt DESC, Id DESC
+                              LIMIT 1";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@StudentId", studentId);
+                    cmd.Parameters.AddWithValue("@GroupId", groupId);
+                    cmd.Parameters.AddWithValue("@SubGroupId", subGroupId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return MapFromReader(reader);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// მოსწავლის ჩანაწერის მიღება ჯგუფისთვის
         /// </summary>
         public StudentSubGroups GetByStudentAndGroup(int studentId, int groupId)

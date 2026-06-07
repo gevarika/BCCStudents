@@ -3,15 +3,19 @@ using BCCStudents.Application.Services;
 using BCCStudents.Application.Services.AutoFileDetection;
 using BCCStudents.Application.Services.Sync;
 using BCCStudents.Application.Services.Sync.DownStream;
+using BCCStudents.Application.Services.Logging;
 using BCCStudents.Application.Services.Sync.UpStream;
 using BCCStudents.Application.Services.Update;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Infrastructure.Data;
+using BCCStudents.Infrastructure.Logging;
 using BCCStudents.Infrastructure.Repositories;
 using BCCStudents.Infrastructure.Services; // ConnectionStatusService-სთვის
+using BCCStudents.Presentation.Logging;
 using BCCStudents.Presentation.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using static BCCStudents.Presentation.LoginForm;
 using static BCCStudents.Presentation.MainForm;
 using static BCCStudents.Presentation.StudentManagementForm;
@@ -27,6 +31,9 @@ namespace BCCStudents.Presentation
         [STAThread]
         static void Main()
         {
+            SerilogBootstrap.Initialize();
+            WindowsToastBootstrap.Initialize();
+
             // Settings Migration - ძველი ვერსიის პარამეტრების აღდგენა
             try
             {
@@ -39,29 +46,11 @@ namespace BCCStudents.Presentation
             }
             catch (Exception ex)
             {
-                // თუ migration ვერ მოხერხდა, გავაგრძელოთ default settings-ებით
-                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
-                Directory.CreateDirectory(logDir);
-                File.AppendAllText(Path.Combine(logDir, "settings-migration.txt"),
-                    $"[{DateTime.Now}] Settings migration failed: {ex.Message}\n\n");
+                Log.Warning(ex, "Settings migration failed; continuing with defaults");
             }
 
             var externalConfig = ExternalConfigLoader.Load();
             ExternalConfigLoader.ApplyOverrides(externalConfig);
-
-            AppDomain.CurrentDomain.FirstChanceException += (sender, e) =>
-            {
-                try
-                {
-                    var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
-                    Directory.CreateDirectory(dir);
-                    var path = Path.Combine(dir, "exception-log.txt");
-                    var log = $"[{DateTime.Now}] {e.Exception.GetType()}: {e.Exception.Message}\n{e.Exception.StackTrace}\n\n";
-                    File.AppendAllText(path, log);
-                }
-                catch { }
-            };
-
 
             // DI-ს კონფიგურაცია
             var services = new ServiceCollection();
@@ -77,17 +66,19 @@ namespace BCCStudents.Presentation
                 System.Windows.Forms.Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
                 AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
-                TaskScheduler.UnobservedTaskException += (sender, args) =>
+                TaskScheduler.UnobservedTaskException += (_, args) =>
                 {
-                    try
+                    // სინქის Timer-ის fire-and-forget Task ან MySql SSL timeout — არა კრიტიკული UI შეცდომა.
+                    if (SyncConnectionHelper.IsLikelyConnectionError(args.Exception))
                     {
-                        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BCCStudents", "logs");
-                        Directory.CreateDirectory(dir);
-                        var path = Path.Combine(dir, "task-errors.txt");
-                        File.AppendAllText(path, $"[{DateTime.Now}] Unobserved Task Exception: {args.Exception}\n\n");
+                        Log.Warning(args.Exception, "Unobserved task exception (connection/SSL, observed)");
                     }
-                    catch { }
-                    args.SetObserved(); // საჭირო რომ პროცესმა არ "ჩაიფერფლოს"
+                    else
+                    {
+                        Log.Error(args.Exception, "Unobserved task exception");
+                    }
+
+                    args.SetObserved();
                 };
 
                 // --- Emergency Setup Mode: პირველ რიგში შევამოწმოთ MySQL კავშირი ---
@@ -133,15 +124,33 @@ namespace BCCStudents.Presentation
                     appStatus.IsDatabaseOnline = true;
                 }
 
+                if (canConnect)
+                {
+                    ApplicationLogRepository.EnsureTable(serviceProvider.GetRequiredService<IDatabaseConnectionProvider>());
+                    SerilogBootstrap.AddDatabaseSink(serviceProvider.GetRequiredService<IServiceScopeFactory>());
+
+                    var loggerRepository = serviceProvider.GetRequiredService<ILoggerRepository>();
+                    loggerRepository.WriteLog(
+                        "Program Start",
+                        "Success",
+                        "პროგრამა გაეშვა",
+                        Environment.UserName);
+                }
+
                 var userService = serviceProvider.GetRequiredService<IUserService>();
                 var upStreamManager = serviceProvider.GetRequiredService<IUpStreamSyncManager>();
                 var downStreamManager = serviceProvider.GetRequiredService<IDownStreamSyncManager>();
+                var applicationLogSyncManager = serviceProvider.GetRequiredService<IApplicationLogSyncManager>();
+                var applicationLogRetention = serviceProvider.GetRequiredService<IApplicationLogRetentionService>();
 
-                // UpStreamSyncManager აღარ იწყება აქ - იწყება MainForm_Load-ში ავტორიზაციის შემდეგ
-                System.Windows.Forms.Application.ApplicationExit += (sender, args) =>
+                System.Windows.Forms.Application.ApplicationExit += (_, _) =>
                 {
                     upStreamManager.Stop();
                     downStreamManager.Stop();
+                    applicationLogSyncManager.Stop();
+                    applicationLogRetention.Stop();
+                    AuditLogFactory.CloseAndFlush();
+                    SerilogBootstrap.Shutdown();
                 };
 
                 Form initialForm;
@@ -161,16 +170,31 @@ namespace BCCStudents.Presentation
 
 
         }
-        private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        private static void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
         {
-            //LoggerRepository.WriteLog("Exception", "Failed", e.ToString());
+            Log.Error(e.Exception, "UI thread exception");
             MessageBox.Show($"⚠️ შეცდომა: {e.Exception.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Exception ex = (Exception)e.ExceptionObject;
-            MessageBox.Show($"გაუმართავი შეცდომა: {ex.Message + " " + sender}", "კრიტიკული შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // MySql.Data-ის შიდა SSL/timeout timer ზოგჯერ აქ მოდის (ConnectionMonitor-ის გარდა, სინქის Open-ებიდან).
+            // უკვე ლოგდება sync-ში/Connection-ში — მომხმარებელს არ ვაჩვენებთ კრიტიკულ MessageBox-ს.
+            if (e.ExceptionObject is Exception ex && SyncConnectionHelper.IsLikelyConnectionError(ex))
+            {
+                Log.Warning(ex, "Background connection error at AppDomain boundary (terminating={IsTerminating})", e.IsTerminating);
+                return;
+            }
+
+            if (e.ExceptionObject is Exception fatalEx)
+                Log.Fatal(fatalEx, "Unhandled domain exception (terminating={IsTerminating})", e.IsTerminating);
+            else
+                Log.Fatal("Unhandled domain exception: {ExceptionObject} (terminating={IsTerminating})", e.ExceptionObject, e.IsTerminating);
+
+            var message = e.ExceptionObject is Exception unhandled
+                ? unhandled.Message
+                : e.ExceptionObject?.ToString() ?? "Unknown error";
+            MessageBox.Show($"გაუმართავი შეცდომა: {message}", "კრიტიკული შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private static void ConfigureServices(IServiceCollection services)
@@ -202,9 +226,7 @@ namespace BCCStudents.Presentation
 
             // Connection Monitor Service (Singleton) - Clean Architecture-ის დაცვით
             services.AddSingleton<BCCStudents.Application.Interfaces.IConnectionMonitor, BCCStudents.Infrastructure.Services.ConnectionMonitorService>();
-
-            // Backup Manager (Singleton)
-            services.AddSingleton<BCCStudents.Infrastructure.Services.BackupService>();
+            services.AddSingleton<ConnectionStatusBarHost>();
 
             // Admin Code Manager (Singleton)
             services.AddSingleton<BCCStudents.Infrastructure.Services.AdminCodeManager>();
@@ -219,6 +241,12 @@ namespace BCCStudents.Presentation
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IBalanceRepository, BalanceRepository>();
             services.AddScoped<ILoggerRepository, LoggerRepository>();
+            services.AddScoped<IApplicationLogRepository, ApplicationLogRepository>();
+            services.AddScoped<IApplicationLogQueryService, ApplicationLogQueryService>();
+            services.AddScoped<IApplicationLogDeleteService, ApplicationLogDeleteService>();
+            services.AddScoped<IApplicationLogSyncService, ApplicationLogSyncService>();
+            services.AddSingleton<IApplicationLogSyncManager, ApplicationLogSyncManager>();
+            services.AddSingleton<IApplicationLogRetentionService, ApplicationLogRetentionService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ISubGroupRepository, SubGroupRepository>();
             services.AddScoped<ICleanupRepository, CleanupRepository>();
@@ -256,10 +284,8 @@ namespace BCCStudents.Presentation
             services.AddScoped<IStudentExportService, StudentExportService>();
             services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
             services.AddSingleton<IUpdateService, UpdateService>();
-            services.AddScoped<IBackupService, BackupService>();
-
             // Sync Services
-            services.AddSingleton<ISyncLogger, SyncLogger>(); // SyncLogger არის Infrastructure-ში და გამოიყენება Application/Sync-ში
+            services.AddSingleton<ISyncLogger, SyncLogger>();
             services.AddScoped<IDownStreamSyncRepository, BCCStudents.Infrastructure.Repositories.DownStreamSyncRepository>();
             services.AddScoped<IDownStreamDataFetcher, DownStreamDataFetcher>();
             services.AddScoped<IDownStreamConflictResolver, DownStreamConflictResolver>();
@@ -343,13 +369,6 @@ namespace BCCStudents.Presentation
             services.AddTransient<AdminPanelFormFactory>(servicepProvider =>
             {
                 return () => servicepProvider.GetRequiredService<AdminPanelForm>();
-            });
-            services.AddTransient<BackupManagementForm>();
-            services.AddTransient<BackupManagementFormFactory>(serviceProvider =>
-            {
-                // ეს ლამბდა ფუნქცია (Factory) იყენებს serviceProvider-ს (რომელიც აქ არის დასაშვები)
-                // რათა შექმნას BackupManagementForm და გადასცეს მას ყველა დამოკიდებულება.
-                return () => serviceProvider.GetRequiredService<BackupManagementForm>();
             });
             services.AddTransient<GroupManagementForm>();
             services.AddTransient<GroupManFormFactory>(serviceProvider =>

@@ -14,6 +14,7 @@ namespace BCCStudents.Domain.Entities
         public const string CanManagePayments = "CanManagePayments";
         public const string CanExportData = "CanExportData";
         public const string CanViewReports = "CanViewReports";
+        public const string CanViewSystemLogs = "CanViewSystemLogs";
         public const string CanAddStudents = "CanAddStudents";
         public const string CanEditStudents = "CanEditStudents";
         public const string CanDeleteStudents = "CanDeleteStudents";
@@ -75,7 +76,8 @@ namespace BCCStudents.Domain.Entities
                 CanManageStudents,
                 CanManagePayments,
                 CanExportData,
-                CanViewReports
+                CanViewReports,
+                CanViewSystemLogs
             };
         }
     }

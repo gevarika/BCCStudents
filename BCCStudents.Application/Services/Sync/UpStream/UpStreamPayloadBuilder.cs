@@ -203,7 +203,8 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 ["Role"] = user.Role,
                 ["Permissions"] = user.Permissions ?? (object)DBNull.Value,
                 ["CreatedAt"] = EnsureDate(user.CreatedAt ?? DateTime.Now),
-                ["LastLogin"] = user.LastLogin.HasValue && user.LastLogin.Value != DateTime.MinValue ? EnsureDate(user.LastLogin.Value) : (object)DBNull.Value
+                ["LastLogin"] = user.LastLogin.HasValue && user.LastLogin.Value != DateTime.MinValue ? EnsureDate(user.LastLogin.Value) : (object)DBNull.Value,
+                ["UpdatedAt"] = EnsureUpdatedAt(user.UpdatedAt)
             };
 
             return new SyncChangePayload("Users", operation, data, userId);

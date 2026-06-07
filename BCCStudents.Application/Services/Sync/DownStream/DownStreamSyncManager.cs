@@ -1,4 +1,5 @@
 ﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services.Sync.DownStream
@@ -32,7 +33,9 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             if (_disposed) throw new ObjectDisposedException(nameof(DownStreamSyncManager));
             if (_timer != null) return;
 
-            _timer = new System.Threading.Timer(async _ => await ExecuteAsync().ConfigureAwait(false),
+            // System.Threading.Timer — უსაფრთხო async wrapper (იხ. SyncPeriodicTimerRunner).
+            _timer = new System.Threading.Timer(
+                SyncPeriodicTimerRunner.CreateCallback(ExecuteAsync, _logger, "DownStream"),
                 null,
                 TimeSpan.Zero,
                 _interval);
@@ -64,7 +67,16 @@ namespace BCCStudents.Application.Services.Sync.DownStream
             }
             catch (Exception ex)
             {
-                _logger.Error("DownStream periodic sync failed.", ex);
+                if (SyncConnectionHelper.IsLikelyConnectionError(ex))
+                {
+                    SyncLogThrottle.TryError(_logger, "downstream-periodic-connection",
+                        "DownStream periodic sync failed.", ex, SyncLogThrottle.DefaultInterval);
+                }
+                else
+                {
+                    _logger.Error("DownStream periodic sync failed.", ex);
+                }
+
                 result = new BCCStudents.Domain.Entities.SyncResult();
                 result.AddError(ex.Message);
             }

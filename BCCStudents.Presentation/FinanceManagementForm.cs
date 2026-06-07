@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BCCStudents.Presentation
 {
-    public partial class FinanceManagementForm : Form
+    public partial class FinanceManagementForm : BaseForm
     {
         private readonly IPaymentService _paymentService;
         private readonly ISystemConfigurationService _systemConfigService;
