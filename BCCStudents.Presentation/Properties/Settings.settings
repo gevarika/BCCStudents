@@ -18,10 +18,10 @@
       <Value Profile="(Default)">გადახდის ვადა გადავიდა ⚠️</Value>
     </Setting>
     <Setting Name="SmsEnabled" Type="System.boolean" Scope="User">
-      <Value Profile="(Default)">true</Value>
+      <Value Profile="(Default)">false</Value>
     </Setting>
     <Setting Name="IsTestDb" Type="System.boolean" Scope="User">
-      <Value Profile="(Default)">true</Value>
+      <Value Profile="(Default)">false</Value>
     </Setting>
     <Setting Name="BackupDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)" />

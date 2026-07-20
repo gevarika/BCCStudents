@@ -1,4 +1,5 @@
 using BCCStudents.Application.Interfaces;
+using BCCStudents.Domain.Enums;
 using BCCStudents.Domain.Interfaces;
 
 namespace BCCStudents.Application.Services
@@ -61,6 +62,16 @@ namespace BCCStudents.Application.Services
         {
             var vacationPeriods = GetVacationPeriods();
             return vacationPeriods.Any(period => date.Date >= period.StartDate.Date && date.Date <= period.EndDate.Date);
+        }
+
+        public LogStorageTarget GetLogStorageTarget()
+        {
+            return _repository.GetLogStorageTarget();
+        }
+
+        public void SetLogStorageTarget(LogStorageTarget target)
+        {
+            _repository.SetLogStorageTarget(target);
         }
     }
 }

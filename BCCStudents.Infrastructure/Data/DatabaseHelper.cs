@@ -121,8 +121,8 @@ namespace BCCStudents.Infrastructure.Data
         }
 
         /// <summary>
-        /// სერვერის ჯანმრთელობის შემოწმება — მოკლე timeout, pooling გარეშე (ინტერნეტის გათიშვა სწრაფად იჭერება).
-        /// იძახება ConnectionMonitor-იდან (~10 წმ) და სინქიდან (CheckServerConnection).
+        /// სერვერის ჯანმრთელობის შემოწმება — pooling გარეშე; timeout ცული/არასტაბილური ინტერნეტისთვის (15+10 წმ).
+        /// იძახება ConnectionMonitor-იდან (~30 წმ) და სინქიდან (CheckServerConnection).
         /// შენიშვნა: MySql.Data SSL-ის შიდა timeout ზოგჯერ ცალკე thread-ზე ისროლებს exception-ს — იხ. SyncPeriodicTimerRunner / Program.UnhandledException.
         /// </summary>
         private static ConnectionCheckResult TryProbeConnection(
@@ -134,14 +134,14 @@ namespace BCCStudents.Infrastructure.Data
                 using var baseConn = getConnection();
                 var probeBuilder = new MySqlConnectionStringBuilder(baseConn.ConnectionString)
                 {
-                    ConnectionTimeout = 5,
+                    ConnectionTimeout = 15,
                     Pooling = false,
-                    DefaultCommandTimeout = 3
+                    DefaultCommandTimeout = 10
                 };
 
                 using var conn = new MySqlConnection(probeBuilder.ConnectionString);
                 conn.Open();
-                using var cmd = new MySqlCommand("SELECT 1", conn) { CommandTimeout = 3 };
+                using var cmd = new MySqlCommand("SELECT 1", conn) { CommandTimeout = 10 };
                 cmd.ExecuteScalar();
                 return ConnectionCheckResult.Ok();
             }

@@ -1,5 +1,6 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Enums;
 using BCCStudents.Domain.Interfaces;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
@@ -13,6 +14,7 @@ namespace BCCStudents.Infrastructure.Repositories
         private const string STUDY_START_DATE_KEY = "StudyStartDate";
         private const string DEFAULT_PAYMENT_DATE_KEY = "DefaultPaymentDate";
         private const string VACATION_PREFIX = "Vacation_";
+        private const string LOG_STORAGE_TARGET_KEY = "LogStorageTarget";
 
         public SystemConfigurationRepository(IDatabaseConnectionProvider connectionProvider)
         {
@@ -224,6 +226,29 @@ namespace BCCStudents.Infrastructure.Repositories
         {
             var key = $"{VACATION_PREFIX}{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}";
             Delete(key);
+        }
+
+        public LogStorageTarget GetLogStorageTarget()
+        {
+            var config = GetByKey(LOG_STORAGE_TARGET_KEY);
+            if (config == null || !Enum.TryParse<LogStorageTarget>(config.Value, out var target))
+                return LogStorageTarget.Local;
+
+            return target;
+        }
+
+        public void SetLogStorageTarget(LogStorageTarget target)
+        {
+            var config = new SystemConfiguration
+            {
+                Key = LOG_STORAGE_TARGET_KEY,
+                Value = ((int)target).ToString(),
+                Type = "Enum",
+                Description = "ლოგების შენახვის რეჟიმი (0=Local, 1=Server)",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            Upsert(config);
         }
 
         private SystemConfiguration MapToConfiguration(IDataRecord reader)

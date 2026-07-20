@@ -4,8 +4,7 @@ namespace BCCStudents.Application.Services.Sync.DownStream
 {
     /// <summary>
     /// DownStream კონფლიქტის პოლიტიკა:
-    /// - Students/Groups/SubGroups/StudentGroups/StudentSubGroups: upsert SQL-ში local UpdatedAt ≥ server → local wins.
-    /// - Payments/Users/Pending*/Logs: upsert ყოველთვის server-ის მნიშვნებით overwrite-ს აკეთებს.
+    /// - Students/Groups/SubGroups/StudentGroups/StudentSubGroups/Payments/Users: upsert SQL-ში უფრო ახალი UpdatedAt (ან CreatedAt) იგებს.
     /// DetectConflictsAsync ამ ეтапზე არ ამოწმებს local pending upstream ცვლილებებს.
     /// </summary>
     public class DownStreamConflictResolver : IDownStreamConflictResolver

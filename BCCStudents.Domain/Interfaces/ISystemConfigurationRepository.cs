@@ -1,4 +1,5 @@
 using BCCStudents.Domain.Entities;
+using BCCStudents.Domain.Enums;
 
 namespace BCCStudents.Domain.Interfaces
 {
@@ -66,5 +67,9 @@ namespace BCCStudents.Domain.Interfaces
         /// დასვენების პერიოდის წაშლა
         /// </summary>
         void DeleteVacationPeriod(DateTime startDate, DateTime endDate);
+
+        LogStorageTarget GetLogStorageTarget();
+
+        void SetLogStorageTarget(LogStorageTarget target);
     }
 }

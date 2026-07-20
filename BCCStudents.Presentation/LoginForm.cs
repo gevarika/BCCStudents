@@ -225,17 +225,34 @@ namespace BCCStudents.Presentation
                         {
                             dlg.Show(this);
                             string zip = null;
+                            string downloadError = null;
                             try
                             {
                                 var progress = new Progress<(long current, long total)>(p => dlg.Report(p.current, p.total));
                                 zip = await updater.DownloadAsync(manifest, progress, System.Threading.CancellationToken.None);
                             }
+                            catch (Exception downloadEx)
+                            {
+                                // ჩამოტვირთვის შეცდომას ვიჭერთ ცალკე, რომ ფანჯრის ჩუმად დახურვის ნაცვლად
+                                // მომხმარებელს გასაგები შეტყობინება მივცეთ.
+                                downloadError = downloadEx.Message;
+                            }
                             finally { dlg.Close(); }
+
                             if (!string.IsNullOrWhiteSpace(zip))
                             {
                                 await updater.ScheduleApplyAndRestartAsync(zip, this);
                                 return; // აპი დაიხურება და რესტარტი მოხდება
                             }
+
+                            // აქ ვხვდებით თუ ჩამოტვირთვა ჩავარდა (zip == null) — ვაჩვენებთ შეცდომას
+                            MessageBox.Show(
+                                "განახლების ფაილი ვერ ჩამოიტვირთა." +
+                                (string.IsNullOrWhiteSpace(downloadError) ? string.Empty : $"\n\nდეტალები: {downloadError}") +
+                                "\n\nგთხოვთ სცადოთ მოგვიანებით ან მიმართოთ ადმინისტრატორს.",
+                                "ჩამოტვირთვის შეცდომა",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
                         }
                     }
                     else

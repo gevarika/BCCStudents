@@ -332,16 +332,16 @@ namespace BCCStudents.Infrastructure.Repositories
                                 VALUES
                                 (@Id, @StudentId, @GroupId, @Amount, @PaymentDate, @PaymentStatus, @Description, @PayerName, @PersonalId, @UpdatedAt, @IsDeleted)
                                 ON DUPLICATE KEY UPDATE
-                                 StudentId = VALUES(StudentId),
-                                 GroupId = VALUES(GroupId),
-                                 Amount = VALUES(Amount),
-                                 PaymentDate = VALUES(PaymentDate),
-                                 PaymentStatus = VALUES(PaymentStatus),
-                                 Description = VALUES(Description),
-                                 PayerName = VALUES(PayerName),
-                                 PersonalId = VALUES(PersonalId),
-                                 UpdatedAt = VALUES(UpdatedAt),
-                                 IsDeleted = VALUES(IsDeleted);";
+                                 StudentId = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(StudentId), StudentId),
+                                 GroupId = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(GroupId), GroupId),
+                                 Amount = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(Amount), Amount),
+                                 PaymentDate = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(PaymentDate), PaymentDate),
+                                 PaymentStatus = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(PaymentStatus), PaymentStatus),
+                                 Description = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(Description), Description),
+                                 PayerName = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(PayerName), PayerName),
+                                 PersonalId = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(PersonalId), PersonalId),
+                                 UpdatedAt = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(UpdatedAt), UpdatedAt),
+                                 IsDeleted = IF(COALESCE(VALUES(UpdatedAt), VALUES(PaymentDate)) > COALESCE(UpdatedAt, PaymentDate), VALUES(IsDeleted), IsDeleted);";
 
             using (var connection = _connectionProvider.GetLocalConnection())
             {
@@ -469,14 +469,14 @@ namespace BCCStudents.Infrastructure.Repositories
                                 VALUES
                                 (@Id, @Username, @FullName, @Email, @Password, @Role, @CreatedAt, @LastLogin, @UpdatedAt)
                                 ON DUPLICATE KEY UPDATE
-                                 Username = VALUES(Username),
-                                 FullName = VALUES(FullName),
-                                 Email = VALUES(Email),
-                                 Password = VALUES(Password),
-                                 Role = VALUES(Role),
-                                 CreatedAt = VALUES(CreatedAt),
-                                 LastLogin = VALUES(LastLogin),
-                                 UpdatedAt = VALUES(UpdatedAt);";
+                                 Username = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(Username), Username),
+                                 FullName = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(FullName), FullName),
+                                 Email = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(Email), Email),
+                                 Password = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(Password), Password),
+                                 Role = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(Role), Role),
+                                 CreatedAt = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(CreatedAt), CreatedAt),
+                                 LastLogin = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(LastLogin), LastLogin),
+                                 UpdatedAt = IF(VALUES(UpdatedAt) > UpdatedAt OR UpdatedAt IS NULL, VALUES(UpdatedAt), UpdatedAt);";
 
             using (var connection = _connectionProvider.GetLocalConnection())
             {

@@ -22,6 +22,22 @@ namespace BCCStudents.Domain.Interfaces
             IReadOnlyList<string> allowedCategories,
             int limit,
             CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ApplicationLogEntry>> GetFilteredFromServerAsync(
+            DateTime? from,
+            DateTime? to,
+            string sourceType,
+            string category,
+            string level,
+            string username,
+            string operation,
+            string searchText,
+            bool isAdmin,
+            bool canViewSystemLogs,
+            int currentUserId,
+            IReadOnlyList<string> allowedPermissionScopes,
+            IReadOnlyList<string> allowedCategories,
+            int limit,
+            CancellationToken cancellationToken = default);
         Task<IReadOnlyList<ApplicationLogEntry>> GetUnsyncedBatchAsync(int limit, CancellationToken cancellationToken = default);
         Task MarkSyncedAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken = default);
         Task<int> DeleteOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default);

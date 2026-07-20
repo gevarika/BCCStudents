@@ -1,5 +1,4 @@
-﻿using BCCStudents.Application.Services;
-using BCCStudents.Domain.Entities;
+﻿using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +9,7 @@ namespace BCCStudents.Presentation
         private readonly IUserService _userService;
         private readonly IServiceProvider _serviceProvider;
 
-        public RegisterForm(IServiceProvider serviceProvider, UserService userService)
+        public RegisterForm(IServiceProvider serviceProvider, IUserService userService)
         {
             InitializeComponent();
             FormTitleHelper.SetTitle(this, "მომხმარებლის რეგისტრაცია");

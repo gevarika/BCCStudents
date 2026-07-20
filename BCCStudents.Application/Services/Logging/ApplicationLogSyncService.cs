@@ -31,6 +31,27 @@ namespace BCCStudents.Application.Services.Logging
             if (batch.Count == 0)
                 return 0;
 
+            await InsertBatchToServerAsync(batch, cancellationToken).ConfigureAwait(false);
+            await _repository.MarkSyncedAsync(batch.Select(b => b.Id).ToList(), cancellationToken).ConfigureAwait(false);
+            return batch.Count;
+        }
+
+        public async Task InsertToServerAsync(ApplicationLogEntry entry, CancellationToken cancellationToken = default)
+        {
+            if (entry == null)
+                return;
+
+            await InsertBatchToServerAsync(new[] { entry }, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task InsertBatchToServerAsync(IReadOnlyList<ApplicationLogEntry> entries, CancellationToken cancellationToken = default)
+        {
+            if (entries == null || entries.Count == 0)
+                return;
+
+            if (!_connectionChecker.CanConnectToServer())
+                return;
+
             using var connection = _connectionProvider.GetServerConnection();
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
@@ -45,15 +66,14 @@ namespace BCCStudents.Application.Services.Logging
             using var command = new MySqlCommand(sql, connection);
             AddParameters(command);
 
-            foreach (var entry in batch)
+            foreach (var entry in entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (string.IsNullOrWhiteSpace(entry.Origin))
+                    entry.Origin = "Local";
                 FillParameters(command, entry);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
-
-            await _repository.MarkSyncedAsync(batch.Select(b => b.Id).ToList(), cancellationToken).ConfigureAwait(false);
-            return batch.Count;
         }
 
         public async Task<int> DeleteByLogGuidsOnServerAsync(IReadOnlyList<string> logGuids, CancellationToken cancellationToken = default)
@@ -97,6 +117,107 @@ namespace BCCStudents.Application.Services.Logging
             const string sql = "DELETE FROM ApplicationLogs;";
             using var command = new MySqlCommand(sql, connection);
             return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<int> DeleteByIdsOnServerAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken = default)
+        {
+            if (ids == null || ids.Count == 0)
+                return 0;
+
+            if (!_connectionChecker.CanConnectToServer())
+                throw new InvalidOperationException("სერვერთან კავშირი არ არის.");
+
+            using var connection = _connectionProvider.GetServerConnection();
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+            var sql = $"DELETE FROM ApplicationLogs WHERE Id IN ({string.Join(",", ids.Distinct())});";
+            using var command = new MySqlCommand(sql, connection);
+            return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<int> DeleteFilteredOnServerAsync(
+            DateTime? from,
+            DateTime? to,
+            string sourceType,
+            string category,
+            string level,
+            string username,
+            string operation,
+            string searchText,
+            CancellationToken cancellationToken = default)
+        {
+            if (!_connectionChecker.CanConnectToServer())
+                throw new InvalidOperationException("სერვერთან კავშირი არ არის.");
+
+            using var connection = _connectionProvider.GetServerConnection();
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+            var sql = new System.Text.StringBuilder("DELETE FROM ApplicationLogs WHERE 1=1");
+            using var command = new MySqlCommand(string.Empty, connection);
+            AppendDeleteFilter(sql, command, from, to, sourceType, category, level, username, operation, searchText);
+            command.CommandText = sql.ToString();
+            return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        private static void AppendDeleteFilter(
+            System.Text.StringBuilder sql,
+            MySqlCommand command,
+            DateTime? from,
+            DateTime? to,
+            string sourceType,
+            string category,
+            string level,
+            string username,
+            string operation,
+            string searchText)
+        {
+            if (from.HasValue)
+            {
+                sql.Append(" AND CreatedAt >= @From");
+                command.Parameters.AddWithValue("@From", from.Value);
+            }
+
+            if (to.HasValue)
+            {
+                sql.Append(" AND CreatedAt < @To");
+                command.Parameters.AddWithValue("@To", to.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sourceType))
+            {
+                sql.Append(" AND SourceType = @SourceType");
+                command.Parameters.AddWithValue("@SourceType", sourceType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                sql.Append(" AND Category = @Category");
+                command.Parameters.AddWithValue("@Category", category);
+            }
+
+            if (!string.IsNullOrWhiteSpace(level))
+            {
+                sql.Append(" AND Level = @Level");
+                command.Parameters.AddWithValue("@Level", level);
+            }
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                sql.Append(" AND Username = @Username");
+                command.Parameters.AddWithValue("@Username", username);
+            }
+
+            if (!string.IsNullOrWhiteSpace(operation))
+            {
+                sql.Append(" AND Operation = @Operation");
+                command.Parameters.AddWithValue("@Operation", operation);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                sql.Append(" AND (Message LIKE @Search OR Details LIKE @Search OR Exception LIKE @Search)");
+                command.Parameters.AddWithValue("@Search", $"%{searchText}%");
+            }
         }
 
         private static void AddParameters(MySqlCommand command)

@@ -9,25 +9,32 @@ namespace BCCStudents.Application.Services.Logging
         private readonly IApplicationLogSyncService _syncService;
         private readonly IDatabaseConnectionChecker _connectionChecker;
         private readonly IUserContext _userContext;
+        private readonly ILogStorageSettings _logStorageSettings;
 
         public ApplicationLogDeleteService(
             IApplicationLogRepository repository,
             IApplicationLogSyncService syncService,
             IDatabaseConnectionChecker connectionChecker,
-            IUserContext userContext)
+            IUserContext userContext,
+            ILogStorageSettings logStorageSettings)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
             _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
         }
 
         public async Task<int> DeleteAllAsync(CancellationToken cancellationToken = default)
         {
             EnsureAdmin();
-            EnsureServerConnection();
 
-            await _syncService.DeleteAllOnServerAsync(cancellationToken).ConfigureAwait(false);
+            if (_logStorageSettings.IsServer)
+            {
+                EnsureServerConnection();
+                return await _syncService.DeleteAllOnServerAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             return await _repository.DeleteAllAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -37,10 +44,12 @@ namespace BCCStudents.Application.Services.Logging
             if (ids == null || ids.Count == 0)
                 return 0;
 
-            EnsureServerConnection();
+            if (_logStorageSettings.IsServer)
+            {
+                EnsureServerConnection();
+                return await _syncService.DeleteByIdsOnServerAsync(ids, cancellationToken).ConfigureAwait(false);
+            }
 
-            var logGuids = await _repository.GetLogGuidsByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
-            await _syncService.DeleteByLogGuidsOnServerAsync(logGuids, cancellationToken).ConfigureAwait(false);
             return await _repository.DeleteByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
         }
 
@@ -48,20 +57,21 @@ namespace BCCStudents.Application.Services.Logging
         {
             EnsureAdmin();
             filter ??= new ApplicationLogFilter();
-            EnsureServerConnection();
 
-            var logGuids = await _repository.GetLogGuidsFilteredAsync(
-                filter.From,
-                filter.To,
-                filter.SourceType,
-                filter.Category,
-                filter.Level,
-                filter.Username,
-                filter.Operation,
-                filter.SearchText,
-                cancellationToken).ConfigureAwait(false);
-
-            await _syncService.DeleteByLogGuidsOnServerAsync(logGuids, cancellationToken).ConfigureAwait(false);
+            if (_logStorageSettings.IsServer)
+            {
+                EnsureServerConnection();
+                return await _syncService.DeleteFilteredOnServerAsync(
+                    filter.From,
+                    filter.To,
+                    filter.SourceType,
+                    filter.Category,
+                    filter.Level,
+                    filter.Username,
+                    filter.Operation,
+                    filter.SearchText,
+                    cancellationToken).ConfigureAwait(false);
+            }
 
             return await _repository.DeleteFilteredAsync(
                 filter.From,

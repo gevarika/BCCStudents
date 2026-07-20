@@ -2,6 +2,7 @@ using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
+using BCCStudents.Presentation.Logging;
 using BCCStudents.Presentation.Properties;
 using BCCStudents.Presentation.Services;
 using Serilog;
@@ -25,6 +26,7 @@ namespace BCCStudents.Presentation
         private readonly IUpStreamSyncManager _upStreamSyncManager;
         private readonly IApplicationLogSyncManager _applicationLogSyncManager;
         private readonly IApplicationLogRetentionService _applicationLogRetentionService;
+        private readonly ILogStorageSettings _logStorageSettings;
         private readonly IConnectionMonitor _connectionMonitor;
         private readonly IConnectionStatusService _connectionStatusService;
         private readonly IApplicationStatus _appStatus;
@@ -66,6 +68,7 @@ namespace BCCStudents.Presentation
             IUpStreamSyncManager upStreamSyncManager,
             IApplicationLogSyncManager applicationLogSyncManager,
             IApplicationLogRetentionService applicationLogRetentionService,
+            ILogStorageSettings logStorageSettings,
             IConnectionMonitor connectionMonitor,
             IPaymentDescriptionAnalyzer paymentDescriptionAnalyzer,
             IConnectionStatusService connectionstatusservice,
@@ -106,6 +109,8 @@ namespace BCCStudents.Presentation
             _upStreamSyncManager = upStreamSyncManager ?? throw new ArgumentNullException(nameof(upStreamSyncManager));
             _applicationLogSyncManager = applicationLogSyncManager ?? throw new ArgumentNullException(nameof(applicationLogSyncManager));
             _applicationLogRetentionService = applicationLogRetentionService ?? throw new ArgumentNullException(nameof(applicationLogRetentionService));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
+            _logStorageSettings.TargetChanged += OnLogStorageTargetChanged;
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             _connectionStatusService = connectionstatusservice ?? throw new ArgumentNullException(nameof(connectionstatusservice));
             _previousConnectionStatus = _connectionStatusService?.IsConnected ?? false; // საწყისი სტატუსი
@@ -393,13 +398,19 @@ namespace BCCStudents.Presentation
 
             StartDownStreamSync();
             StartUpStreamSync();
-            _applicationLogSyncManager.Start();
+            _applicationLogSyncManager.Stop();
             _applicationLogRetentionService.Start();
             // ბაზასთან კავშირის მონიტორინგის გაშვება
             StartConnectionMonitoring();
 
             // გადახდების სიის ჩატვირთვა
             LoadUpcomingPayments();
+        }
+
+        private void OnLogStorageTargetChanged(object sender, EventArgs e)
+        {
+            _applicationLogSyncManager.Stop();
+            SerilogBootstrap.RebuildLogger();
         }
 
         /// <summary>

@@ -8,14 +8,19 @@ namespace BCCStudents.Application.Services.Logging
         private static readonly TimeSpan RetentionPeriod = TimeSpan.FromDays(90);
         private readonly IApplicationLogRepository _repository;
         private readonly ISyncLogger _logger;
+        private readonly ILogStorageSettings _logStorageSettings;
         private System.Threading.Timer _timer;
         private int _isProcessing;
         private bool _disposed;
 
-        public ApplicationLogRetentionService(IApplicationLogRepository repository, ISyncLogger logger)
+        public ApplicationLogRetentionService(
+            IApplicationLogRepository repository,
+            ISyncLogger logger,
+            ILogStorageSettings logStorageSettings)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
         }
 
         public void Start()
@@ -35,6 +40,9 @@ namespace BCCStudents.Application.Services.Logging
 
         public async Task<int> RunCleanupAsync(CancellationToken cancellationToken = default)
         {
+            if (!_logStorageSettings.IsLocal)
+                return 0;
+
             if (Interlocked.Exchange(ref _isProcessing, 1) == 1)
                 return 0;
 

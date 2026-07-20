@@ -146,7 +146,10 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                 ["Amount"] = payment.Amount,
                 ["PaymentDate"] = EnsureDate(payment.PaymentDate),
                 ["PaymentStatus"] = payment.PaymentStatus,
-                ["Description"] = payment.Description ?? (object)DBNull.Value
+                ["Description"] = payment.Description ?? (object)DBNull.Value,
+                ["UpdatedAt"] = payment.UpdatedAt.HasValue
+                    ? EnsureDate(payment.UpdatedAt.Value)
+                    : EnsureDate(payment.PaymentDate)
             };
 
             return new SyncChangePayload("Payments", operation, data, paymentId);

@@ -10,12 +10,15 @@
 		<AssemblyName>BCCStudents.Presentation</AssemblyName>
 		<RootNamespace>BCCStudents.Presentation</RootNamespace>
 		<StartupObject>BCCStudents.Presentation.Program</StartupObject>
+		<!-- exe-ში ჩაშენებული ხატულა. ამით დესკტოპის/Start მენიუს მალსახმობი, taskbar და
+		     აპლიკაციის ფანჯრები ავტომატურად იღებენ ლოგოს (Inno Setup-ის მალსახმობი exe-ს ხატულას იყენებს). -->
+		<ApplicationIcon>AppIcon.ico</ApplicationIcon>
 		<Platforms>AnyCPU;x64</Platforms>
 		<RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<Version>1.0.2.4</Version>
-		<AssemblyVersion>1.0.2.4</AssemblyVersion>
-		<FileVersion>1.0.2.4</FileVersion>
+		<Version>1.0.2.6</Version>
+		<AssemblyVersion>1.0.2.6</AssemblyVersion>
+		<FileVersion>1.0.2.6</FileVersion>
 		<Company>ბოლნისის კულტურის ცენტრი</Company>
 		<Product>Student Management</Product>
 		<Copyright>Copyright ©  2025</Copyright>
@@ -63,6 +66,9 @@
     </Compile>
   </ItemGroup>
 	<ItemGroup>
+		<Content Include="AppIcon.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 		<Content Include="libmysql.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

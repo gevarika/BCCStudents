@@ -18,7 +18,7 @@ namespace BCCStudents.Infrastructure.Services
         private bool _initialServerCheckCompleted;
         private bool _isDisposed;
         private readonly SynchronizationContext _syncContext;
-        private const int CheckInterval = 10000;
+        private const int CheckInterval = 30000;
 
         public bool IsConnected => _isConnected;
         public bool IsServerConnected => _isServerConnected;

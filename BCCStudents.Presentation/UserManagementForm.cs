@@ -14,6 +14,7 @@ namespace BCCStudents.Presentation
         private Button btnAddUser;
         private Button btnEditUser;
         private Button btnChangePassword;
+        private Button btnDeleteUser;
         private Button btnRefresh;
         private int? _selectedUserId = null;
 
@@ -84,6 +85,16 @@ namespace BCCStudents.Presentation
             };
             btnChangePassword.Click += BtnChangePassword_Click;
 
+            btnDeleteUser = new Button
+            {
+                Text = "წაშლა",
+                Location = new Point(430, 10),
+                Size = new Size(100, 30),
+                Enabled = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom
+            };
+            btnDeleteUser.Click += BtnDeleteUser_Click;
+
             btnRefresh = new Button
             {
                 Text = "განახლება",
@@ -93,7 +104,7 @@ namespace BCCStudents.Presentation
             };
             btnRefresh.Click += BtnRefresh_Click;
 
-            panelButtons.Controls.AddRange(new Control[] { btnAddUser, btnEditUser, btnChangePassword, btnRefresh });
+            panelButtons.Controls.AddRange(new Control[] { btnAddUser, btnEditUser, btnChangePassword, btnDeleteUser, btnRefresh });
 
             var panelMain = new Panel { Dock = DockStyle.Fill };
             panelMain.Controls.Add(dgvUsers);
@@ -178,11 +189,14 @@ namespace BCCStudents.Presentation
                 {
                     btnEditUser.Enabled = false;
                     btnChangePassword.Enabled = false;
+                    btnDeleteUser.Enabled = false;
                 }
                 else
                 {
                     btnEditUser.Enabled = true;
                     btnChangePassword.Enabled = true;
+                    // ადმინს ნებისმიერის წაშლა შეუძლია, ჩვეულებრივ მომხმარებელს - მხოლოდ საკუთარი თავის
+                    btnDeleteUser.Enabled = _userContext.IsAdmin || _selectedUserId.Value == _userContext.UserId;
                 }
             }
             else
@@ -190,6 +204,7 @@ namespace BCCStudents.Presentation
                 _selectedUserId = null;
                 btnEditUser.Enabled = false;
                 btnChangePassword.Enabled = false;
+                btnDeleteUser.Enabled = false;
             }
         }
 
@@ -271,6 +286,57 @@ namespace BCCStudents.Presentation
                 {
                     LoadUsers();
                 }
+            }
+        }
+
+        private void BtnDeleteUser_Click(object sender, EventArgs e)
+        {
+            if (!_selectedUserId.HasValue) return;
+
+            int targetUserId = _selectedUserId.Value;
+            bool isSelf = targetUserId == _userContext.UserId;
+
+            // ადმინს ნებისმიერის წაშლა შეუძლია, ჩვეულებრივ მომხმარებელს - მხოლოდ საკუთარი თავის
+            if (!_userContext.IsAdmin && !isSelf)
+            {
+                MessageBox.Show("თქვენ შეგიძლიათ მხოლოდ საკუთარი ანგარიშის წაშლა!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var user = _userService.GetUserById(targetUserId);
+            if (user == null)
+            {
+                MessageBox.Show("მომხმარებელი ვერ მოიძებნა!", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string confirmMessage = isSelf
+                ? "ნამდვილად გსურთ საკუთარი ანგარიშის წაშლა? ამ მოქმედების შემდეგ სისტემიდან გამოხვალთ."
+                : $"ნამდვილად გსურთ მომხმარებლის '{user.UserName}' წაშლა?";
+
+            var confirm = MessageBox.Show(confirmMessage, "წაშლის დადასტურება", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (confirm != DialogResult.Yes)
+                return;
+
+            try
+            {
+                _userService.DeleteUser(targetUserId);
+
+                if (isSelf)
+                {
+                    MessageBox.Show("თქვენი ანგარიში წაიშალა. აპლიკაცია გადაიტვირთება.", "წაშლილია", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UserSession.Clear();
+                    _userContext.Refresh();
+                    System.Windows.Forms.Application.Restart();
+                    return;
+                }
+
+                MessageBox.Show("მომხმარებელი წარმატებით წაიშალა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadUsers();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"შეცდომა: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

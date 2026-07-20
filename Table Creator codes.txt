@@ -1,4 +1,5 @@
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE `applicationlogs`;
 TRUNCATE TABLE `failedpayments`;
 TRUNCATE TABLE `failedstudentimports`;
 TRUNCATE TABLE `importedfileslog`;
@@ -19,8 +20,9 @@ TRUNCATE TABLE `systemConfig`;
 SET FOREIGN_KEY_CHECKS = 1;
 
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE `ApplicationLogs`;
 TRUNCATE TABLE `FailedPayments`;
-TRUNCATE TABLE 	`FailedStudentImports`;
+TRUNCATE TABLE `FailedStudentImports`;
 TRUNCATE TABLE `ImportedFilesLog`;
 TRUNCATE TABLE `ImportedPaymentsLog`;
 TRUNCATE TABLE `Payments`;

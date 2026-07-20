@@ -85,7 +85,7 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
+        [global::System.Configuration.DefaultSettingValueAttribute("false")]
         public bool SmsEnabled {
             get {
                 return ((bool)(this["SmsEnabled"]));
@@ -97,7 +97,7 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("true")]
+        [global::System.Configuration.DefaultSettingValueAttribute("false")]
         public bool IsTestDb {
             get {
                 return ((bool)(this["IsTestDb"]));

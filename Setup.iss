@@ -1,16 +1,20 @@
 ; --- პროექტის ძირითადი პარამეტრები ---
 #define MyAppName "სტუდენტების მართვის სისტემა"
-#define MyAppVersion "1.0.2.6"
+; მოკლე ინგლისური დასახელება — გამოიყენება ინსტალაციის საქაღალდისა და მალსახმობებისთვის,
+; რომ Program Files-ში და დესკტოპზე ქართული/გრძელი სახელი არ შეიქმნას.
+#define MyAppShortName "BCCStudents"
+#define MyAppVersion "1.0.2.7"
 #define MyAppPublisher "ბოლნისის კულტურის ცენტრი"
 #define MyAppExeName "BCCStudents.Presentation.exe"
-#define BuildOutput "BCCStudents.Presentation\bin\Release\net8.0-windows"
+#define BuildOutput "BCCStudents.Presentation\bin\Release\net8.0-windows10.0.17763.0"
 
 [Setup]
 AppId={{6950628A-E139-409D-BF65-B5C2BEBC5D36}};
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf64}\{#MyAppName}
+; საქაღალდე იქმნება მოკლე ინგლისური სახელით: C:\Program Files\BCCStudents
+DefaultDirName={autopf64}\{#MyAppShortName}
 UsePreviousAppDir=no
 DisableProgramGroupPage=yes
 OutputDir={#SourcePath}\Installer
@@ -34,8 +38,9 @@ Name: "{commonappdata}\BCCStudents"; Permissions: users-modify
 Source: "{#BuildOutput}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+; მალსახმობებს ენიჭება მოკლე ინგლისური სახელი (BCCStudents) Start მენიუსა და დესკტოპზე
+Name: "{autoprograms}\{#MyAppShortName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppShortName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

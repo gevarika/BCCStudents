@@ -13,15 +13,20 @@ namespace BCCStudents.Application.Services.Sync.UpStream
     public class UpStreamSyncService : IUpStreamSyncService
     {
         private readonly IDatabaseConnectionProvider _connectionProvider;
+        private readonly IUpStreamSyncWatermarkAdvancer _watermarkAdvancer;
         private readonly ISyncLogger _logger;
 
-        public UpStreamSyncService(IDatabaseConnectionProvider connectionProvider, ISyncLogger logger)
+        public UpStreamSyncService(
+            IDatabaseConnectionProvider connectionProvider,
+            IUpStreamSyncWatermarkAdvancer watermarkAdvancer,
+            ISyncLogger logger)
         {
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            _watermarkAdvancer = watermarkAdvancer ?? throw new ArgumentNullException(nameof(watermarkAdvancer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task<UpStreamSyncResult> TrySyncImmediatelyAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
+        public async Task<UpStreamSyncResult> TrySyncImmediatelyAsync(SyncChangePayload payload, CancellationToken cancellationToken = default)
         {
             if (payload == null) throw new ArgumentNullException(nameof(payload));
             cancellationToken.ThrowIfCancellationRequested();
@@ -41,8 +46,12 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                         throw new NotSupportedException($"Unsupported sync operation: {payload.Operation}");
                 }
 
+                await _watermarkAdvancer
+                    .AdvanceAfterSuccessfulUpStreamAsync(payload, cancellationToken)
+                    .ConfigureAwait(false);
+
                 _logger.Info($"UpStream (Immediate) წარმატებით ატვირთული: {payload.TableName}/{payload.Operation}/{payload.RecordKey}");
-                return Task.FromResult(UpStreamSyncResult.Ok());
+                return UpStreamSyncResult.Ok();
             }
             catch (Exception ex)
             {
@@ -56,7 +65,7 @@ namespace BCCStudents.Application.Services.Sync.UpStream
                     _logger.Error(message, ex);
                 }
 
-                return Task.FromResult(UpStreamSyncResult.Fail(ex.Message));
+                return UpStreamSyncResult.Fail(ex.Message);
             }
         }
 
@@ -70,7 +79,10 @@ namespace BCCStudents.Application.Services.Sync.UpStream
 
             var columnList = string.Join(", ", columns.Select(EscapeColumn));
             var parameterList = string.Join(", ", columns.Select(c => $"@{c}"));
-            var updateList = string.Join(", ", columns.Select(c => $"{EscapeColumn(c)} = VALUES({EscapeColumn(c)})"));
+            var versionColumn = SyncLastWriteWinHelper.ResolveVersionColumn(payload.TableName, columns);
+            var updateList = !string.IsNullOrEmpty(versionColumn)
+                ? string.Join(", ", columns.Select(c => SyncLastWriteWinHelper.BuildDuplicateKeyAssignment(c, versionColumn)))
+                : string.Join(", ", columns.Select(c => $"{EscapeColumn(c)} = VALUES({EscapeColumn(c)})"));
             var sql = new StringBuilder();
             sql.Append($"INSERT INTO {EscapeTable(payload.TableName)} ({columnList}) VALUES ({parameterList}) ");
             sql.Append($"ON DUPLICATE KEY UPDATE {updateList};");

@@ -1,3 +1,5 @@
+using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Logging;
 using BCCStudents.Infrastructure.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -15,6 +17,8 @@ namespace BCCStudents.Presentation.Logging
         public const string SyncSourceContext = "Sync";
 
         private static MySqlApplicationLogSink _dbSink;
+        private static IServiceScopeFactory _scopeFactory;
+        private static ApplicationLogWritePolicy _writePolicy;
 
         public static string LogDirectory { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -24,24 +28,36 @@ namespace BCCStudents.Presentation.Logging
         public static void Initialize()
         {
             Directory.CreateDirectory(LogDirectory);
-            Log.Logger = BuildLoggerConfiguration(includeDatabaseSink: false, dbSink: null).CreateLogger();
+            Log.Logger = BuildLoggerConfiguration(includeDatabaseSink: false, includeFileSinks: true, dbSink: null).CreateLogger();
             Log.Information("Application starting");
         }
 
-        public static void AddDatabaseSink(IServiceScopeFactory scopeFactory)
+        public static void AddDatabaseSink(IServiceScopeFactory scopeFactory, ApplicationLogWritePolicy writePolicy)
         {
             if (scopeFactory == null) throw new ArgumentNullException(nameof(scopeFactory));
+            if (writePolicy == null) throw new ArgumentNullException(nameof(writePolicy));
 
-            _dbSink?.Dispose();
-            _dbSink = new MySqlApplicationLogSink(scopeFactory);
-            Log.Logger = BuildLoggerConfiguration(includeDatabaseSink: true, dbSink: _dbSink).CreateLogger();
-            Log.Information("Database log sink enabled");
+            _scopeFactory = scopeFactory;
+            _writePolicy = writePolicy;
+            RebuildLogger();
         }
 
-        private static LoggerConfiguration BuildLoggerConfiguration(bool includeDatabaseSink, MySqlApplicationLogSink dbSink)
+        public static void RebuildLogger()
         {
-            var appLogPath = Path.Combine(LogDirectory, "app-.log");
-            var syncLogPath = Path.Combine(LogDirectory, "sync-.log");
+            if (_scopeFactory == null || _writePolicy == null)
+                return;
+
+            _dbSink?.Dispose();
+            _dbSink = new MySqlApplicationLogSink(_scopeFactory, _writePolicy);
+            Log.Logger = BuildLoggerConfiguration(
+                includeDatabaseSink: true,
+                includeFileSinks: _writePolicy.ShouldWriteLocalFiles,
+                dbSink: _dbSink).CreateLogger();
+            Log.Information("Serilog logger rebuilt (storage: {StorageMode})", _writePolicy.ShouldWriteServer ? "Server" : "Local");
+        }
+
+        private static LoggerConfiguration BuildLoggerConfiguration(bool includeDatabaseSink, bool includeFileSinks, MySqlApplicationLogSink dbSink)
+        {
             const string logTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}";
 
             var config = new LoggerConfiguration()
@@ -49,23 +65,31 @@ namespace BCCStudents.Presentation.Logging
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "BCCStudents")
-                .Enrich.With<UserEnricher>()
-                .WriteTo.Logger(appOnly => appOnly
-                    .Filter.ByExcluding(e => HasSourceContext(e, SyncSourceContext))
-                    .WriteTo.File(
-                        appLogPath,
-                        rollingInterval: RollingInterval.Day,
-                        retainedFileCountLimit: 14,
-                        shared: true,
-                        outputTemplate: logTemplate))
-                .WriteTo.Logger(syncOnly => syncOnly
-                    .Filter.ByIncludingOnly(e => HasSourceContext(e, SyncSourceContext))
-                    .WriteTo.File(
-                        syncLogPath,
-                        rollingInterval: RollingInterval.Day,
-                        retainedFileCountLimit: 14,
-                        shared: true,
-                        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+                .Enrich.With<UserEnricher>();
+
+            if (includeFileSinks)
+            {
+                var appLogPath = Path.Combine(LogDirectory, "app-.log");
+                var syncLogPath = Path.Combine(LogDirectory, "sync-.log");
+
+                config = config
+                    .WriteTo.Logger(appOnly => appOnly
+                        .Filter.ByExcluding(e => HasSourceContext(e, SyncSourceContext))
+                        .WriteTo.File(
+                            appLogPath,
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 14,
+                            shared: true,
+                            outputTemplate: logTemplate))
+                    .WriteTo.Logger(syncOnly => syncOnly
+                        .Filter.ByIncludingOnly(e => HasSourceContext(e, SyncSourceContext))
+                        .WriteTo.File(
+                            syncLogPath,
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 14,
+                            shared: true,
+                            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+            }
 
             if (includeDatabaseSink && dbSink != null)
                 config = config.WriteTo.Sink(dbSink);

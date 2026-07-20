@@ -97,6 +97,49 @@ namespace BCCStudents.Infrastructure.Repositories
             return results;
         }
 
+        public async Task<IReadOnlyList<ApplicationLogEntry>> GetFilteredFromServerAsync(
+            DateTime? from,
+            DateTime? to,
+            string sourceType,
+            string category,
+            string level,
+            string username,
+            string operation,
+            string searchText,
+            bool isAdmin,
+            bool canViewSystemLogs,
+            int currentUserId,
+            IReadOnlyList<string> allowedPermissionScopes,
+            IReadOnlyList<string> allowedCategories,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            var filter = CreateListFilter(
+                from, to, sourceType, category, level, username, operation, searchText,
+                isAdmin, canViewSystemLogs, currentUserId, allowedPermissionScopes, allowedCategories);
+
+            var sql = new StringBuilder(@"SELECT Id, LogGuid, SourceType, Category, Level, Operation, Status, UserId, Username,
+                               MachineName, PermissionScope, Message, Details, Exception, SourceContext,
+                               CreatedAt, SyncedToServerAt, Origin
+                        FROM ApplicationLogs
+                        WHERE 1=1");
+            using var connection = _connectionProvider.GetServerConnection();
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            using var command = new MySqlCommand(string.Empty, connection);
+
+            AppendListFilter(sql, command, filter);
+            sql.Append(" ORDER BY CreatedAt DESC LIMIT @Limit");
+            command.Parameters.AddWithValue("@Limit", Math.Max(1, Math.Min(limit, 5000)));
+            command.CommandText = sql.ToString();
+
+            var results = new List<ApplicationLogEntry>();
+            using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                results.Add(Map(reader));
+
+            return results;
+        }
+
         public async Task<int> DeleteAllAsync(CancellationToken cancellationToken = default)
         {
             EnsureSchema();

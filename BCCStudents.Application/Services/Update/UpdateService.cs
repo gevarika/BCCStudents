@@ -21,7 +21,12 @@ namespace BCCStudents.Application.Services.Update
 
         public Version GetCurrentVersion()
         {
-            return Assembly.GetExecutingAssembly().GetName().Version;
+            // მიმდინარე ვერსია უნდა წავიკითხოთ entry assembly-დან (BCCStudents.Presentation.exe),
+            // და არა GetExecutingAssembly()-დან, რომელიც აბრუნებს BCCStudents.Application.dll-ს —
+            // მისი ვერსია ყოველთვის 1.0.0.0-ია (csproj-ში Version მითითებული არ არის).
+            // fallback-ად რჩება GetExecutingAssembly() (მაგ. ტესტ-host-ში, სადაც EntryAssembly შეიძლება null იყოს).
+            return (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly())
+                .GetName().Version;
         }
 
         public async Task<UpdateManifest> GetManifestAsync(CancellationToken ct)
@@ -85,7 +90,10 @@ namespace BCCStudents.Application.Services.Update
                 if (!resp.IsSuccessStatusCode)
                 {
                     Log($"Download HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}");
-                    return null;
+                    // null-ის ჩუმად დაბრუნების ნაცვლად ვაგდებთ აღწერით შეცდომას, რომ გამომძახებელმა
+                    // მომხმარებელს ნამდვილი მიზეზი აჩვენოს (მაგ. HTTP 404 — ფაილი სერვერზე არ არის).
+                    throw new InvalidOperationException(
+                        $"განახლების ფაილის ჩამოტვირთვა ვერ მოხერხდა (HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}).");
                 }
                 var total = resp.Content.Headers.ContentLength ?? 0;
                 using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
@@ -382,7 +390,11 @@ namespace BCCStudents.Application.Services.Update
             ps.AppendLine("        Write-Log 'Executable found OK' 'Green'");
             ps.AppendLine("        try {");
             ps.AppendLine("            Write-Log 'Starting application...' 'Yellow'");
-            ps.AppendLine("            Start-Process -FilePath `\"$exePath`\" -WorkingDirectory `\"$target`\"");
+            // ცვლადები პირდაპირ გადაეცემა Start-Process-ს ბრჭყალების გარეშე.
+            // PowerShell ცვლადის მნიშვნელობას ერთ არგუმენტად აღიქვამს მაშინაც კი, როცა ბილიკში
+            // არის space ან ქართული სიმბოლოები. ხელით დამატებული `"..."` escaped-ბრჭყალები იწვევდა
+            // შეცდომას ("Cannot find drive '\"C'..."), რადგან ბრჭყალი ბილიკის ნაწილად ხდებოდა.
+            ps.AppendLine("            Start-Process -FilePath $exePath -WorkingDirectory $target");
             ps.AppendLine("            Start-Sleep -Seconds 2"); // დავრწმუნდეთ რომ პროცესი ჩაიტვირთა
             ps.AppendLine("            Write-Log 'Application restarted successfully! OK' 'Green'");
             ps.AppendLine("        } catch {");

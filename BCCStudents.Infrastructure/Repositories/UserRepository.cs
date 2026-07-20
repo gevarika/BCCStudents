@@ -249,6 +249,33 @@ namespace BCCStudents.Infrastructure.Repositories
             }
         }
 
+        public void DeleteUser(int userId)
+        {
+            using (var conn = _connectionProvider.GetLocalConnection())
+            {
+                conn.Open();
+                string query = "DELETE FROM Users WHERE Id = @Id";
+                using (var cmd = new MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", userId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public int GetAdminCount()
+        {
+            using (var conn = _connectionProvider.GetLocalConnection())
+            {
+                conn.Open();
+                string query = "SELECT COUNT(*) FROM Users WHERE LOWER(Role) = 'administrator'";
+                using (var cmd = new MySqlCommand(query, conn))
+                {
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+        }
+
         private static DateTime ReadUpdatedAt(MySqlDataReader reader)
         {
             if (reader["UpdatedAt"] != DBNull.Value)

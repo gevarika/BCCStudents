@@ -16,6 +16,8 @@ namespace BCCStudents.Domain.Interfaces
         void UpdatePermissions(int userId, string permissionsJson);
         void UpdatePassword(int userId, string passwordHash);
         void UpdateUser(int userId, string fullName, string email, string role, string permissionsJson);
+        void DeleteUser(int userId);
+        int GetAdminCount();
     }
 }
 

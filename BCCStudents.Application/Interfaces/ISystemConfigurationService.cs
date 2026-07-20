@@ -1,3 +1,5 @@
+using BCCStudents.Domain.Enums;
+
 namespace BCCStudents.Application.Interfaces
 {
     /// <summary>
@@ -49,5 +51,9 @@ namespace BCCStudents.Application.Interfaces
         /// შეამოწმებს, არის თუ არა თარიღი დასვენების პერიოდში (დიაპაზონში)
         /// </summary>
         bool IsDateInVacationPeriod(DateTime date);
+
+        LogStorageTarget GetLogStorageTarget();
+
+        void SetLogStorageTarget(LogStorageTarget target);
     }
 }

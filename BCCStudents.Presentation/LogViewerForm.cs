@@ -11,6 +11,7 @@ namespace BCCStudents.Presentation
         private readonly IApplicationLogQueryService _queryService;
         private readonly IApplicationLogDeleteService _deleteService;
         private readonly IUserContext _userContext;
+        private readonly ILogStorageSettings _logStorageSettings;
 
         private DataGridView dgvLogs;
         private ComboBox cmbLogSource;
@@ -39,17 +40,49 @@ namespace BCCStudents.Presentation
         public LogViewerForm(
             IApplicationLogQueryService queryService,
             IApplicationLogDeleteService deleteService,
-            IUserContext userContext)
+            IUserContext userContext,
+            ILogStorageSettings logStorageSettings)
         {
             _queryService = queryService ?? throw new ArgumentNullException(nameof(queryService));
             _deleteService = deleteService ?? throw new ArgumentNullException(nameof(deleteService));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
 
             this.Text = "ლოგების ნახვა";
             this.Width = 1280;
             this.Height = 700;
             InitializeComponents();
+            ApplyStorageModeUi();
             LoadLogs();
+        }
+
+        public void ApplyStorageModeUi()
+        {
+            var dbLabel = _logStorageSettings.IsServer
+                ? "ბაზა (სერვერი ApplicationLogs)"
+                : "ბაზა (ლოკალური ApplicationLogs)";
+
+            if (cmbLogSource.Items.Count > 0)
+                cmbLogSource.Items[0] = dbLabel;
+
+            var allowFileArchive = _logStorageSettings.IsLocal && _userContext.IsAdmin;
+            while (cmbLogSource.Items.Count > 1)
+                cmbLogSource.Items.RemoveAt(1);
+
+            if (allowFileArchive)
+                cmbLogSource.Items.Add("ფაილური არქივი");
+
+            if (cmbLogSource.SelectedIndex < 0 || cmbLogSource.SelectedIndex >= cmbLogSource.Items.Count)
+                cmbLogSource.SelectedIndex = 0;
+
+            if (_logStorageSettings.IsServer && cmbLogSource.SelectedIndex != 0)
+            {
+                cmbLogSource.SelectedIndex = 0;
+            }
+            else
+            {
+                OnSourceChanged();
+            }
         }
 
         private void InitializeComponents()
@@ -65,7 +98,7 @@ namespace BCCStudents.Presentation
             };
             dgvLogs.DataBindingComplete += (_, _) => HideIdColumn();
 
-            cmbLogSource = new ComboBox { Width = 120, Left = 10, Top = 10, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbLogSource = new ComboBox { Width = 180, Left = 10, Top = 10, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbLogSource.Items.Add("ბაზა (ApplicationLogs)");
             if (_userContext.IsAdmin)
                 cmbLogSource.Items.Add("ფაილური არქივი");

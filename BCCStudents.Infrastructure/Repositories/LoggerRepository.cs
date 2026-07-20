@@ -1,4 +1,5 @@
-﻿using BCCStudents.Application.Services.Logging;
+﻿using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Logging;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Infrastructure.Logging;
@@ -9,10 +10,17 @@ namespace BCCStudents.Infrastructure.Repositories
     public class LoggerRepository : ILoggerRepository
     {
         private readonly IApplicationLogRepository _applicationLogRepository;
+        private readonly IApplicationLogSyncService _syncService;
+        private readonly ApplicationLogWritePolicy _writePolicy;
 
-        public LoggerRepository(IApplicationLogRepository applicationLogRepository)
+        public LoggerRepository(
+            IApplicationLogRepository applicationLogRepository,
+            IApplicationLogSyncService syncService,
+            ApplicationLogWritePolicy writePolicy)
         {
             _applicationLogRepository = applicationLogRepository ?? throw new ArgumentNullException(nameof(applicationLogRepository));
+            _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
+            _writePolicy = writePolicy ?? throw new ArgumentNullException(nameof(writePolicy));
         }
 
         public void WriteLog(string operationType, string status, string details, string user = "System")
@@ -47,51 +55,66 @@ namespace BCCStudents.Infrastructure.Repositories
 
         private void WriteAudit(string fileName, string operationType, string status, string details, string user)
         {
-            try
+            if (_writePolicy.ShouldWriteLocalFiles)
             {
-                AuditLogFactory.GetLogger(fileName)
-                    .ForContext("Operation", operationType ?? string.Empty)
-                    .ForContext("Status", status ?? string.Empty)
-                    .ForContext("User", string.IsNullOrWhiteSpace(user) ? "System" : user)
-                    .ForContext("Details", details ?? string.Empty)
-                    .Information("Audit");
-            }
-            catch
-            {
-                // არ უნდა დაბლოკოს აპლიკაცია.
-            }
-
-            try
-            {
-                var category = ApplicationLogPermissionMapper.GetCategoryForAuditFile(fileName);
-                var level = MapAuditLevel(status);
-                var userId = ApplicationLogContext.UserId ?? (UserSession.Id > 0 ? UserSession.Id : (int?)null);
-                var username = string.IsNullOrWhiteSpace(user) ? ApplicationLogContext.Username ?? "System" : user;
-
-                var entry = new ApplicationLogEntry
+                try
                 {
-                    LogGuid = Guid.NewGuid().ToString(),
-                    SourceType = LogSourceType.Audit,
-                    Category = category,
-                    Level = level,
-                    Operation = operationType,
-                    Status = status,
-                    UserId = userId,
-                    Username = username,
-                    MachineName = Environment.MachineName,
-                    PermissionScope = ApplicationLogPermissionMapper.GetPermissionScopeForCategory(category),
-                    Message = operationType,
-                    Details = details,
-                    CreatedAt = DateTime.UtcNow,
-                    Origin = "Local"
-                };
+                    AuditLogFactory.GetLogger(fileName)
+                        .ForContext("Operation", operationType ?? string.Empty)
+                        .ForContext("Status", status ?? string.Empty)
+                        .ForContext("User", string.IsNullOrWhiteSpace(user) ? "System" : user)
+                        .ForContext("Details", details ?? string.Empty)
+                        .Information("Audit");
+                }
+                catch
+                {
+                    // არ უნდა დაბლოკოს აპლიკაცია.
+                }
+            }
 
-                _applicationLogRepository.InsertAsync(entry).GetAwaiter().GetResult();
+            try
+            {
+                var entry = CreateEntry(fileName, operationType, status, details, user);
+
+                if (_writePolicy.ShouldWriteLocalDatabase)
+                {
+                    _applicationLogRepository.InsertAsync(entry).GetAwaiter().GetResult();
+                }
+                else if (_writePolicy.ShouldWriteServer)
+                {
+                    _syncService.InsertToServerAsync(entry).GetAwaiter().GetResult();
+                }
             }
             catch
             {
                 // DB write failure must not block business operations.
             }
+        }
+
+        private static ApplicationLogEntry CreateEntry(string fileName, string operationType, string status, string details, string user)
+        {
+            var category = ApplicationLogPermissionMapper.GetCategoryForAuditFile(fileName);
+            var level = MapAuditLevel(status);
+            var userId = ApplicationLogContext.UserId ?? (UserSession.Id > 0 ? UserSession.Id : (int?)null);
+            var username = string.IsNullOrWhiteSpace(user) ? ApplicationLogContext.Username ?? "System" : user;
+
+            return new ApplicationLogEntry
+            {
+                LogGuid = Guid.NewGuid().ToString(),
+                SourceType = LogSourceType.Audit,
+                Category = category,
+                Level = level,
+                Operation = operationType,
+                Status = status,
+                UserId = userId,
+                Username = username,
+                MachineName = Environment.MachineName,
+                PermissionScope = ApplicationLogPermissionMapper.GetPermissionScopeForCategory(category),
+                Message = operationType,
+                Details = details,
+                CreatedAt = DateTime.UtcNow,
+                Origin = "Local"
+            };
         }
 
         private static string MapAuditLevel(string status)

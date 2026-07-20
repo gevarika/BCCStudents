@@ -178,6 +178,30 @@ namespace BCCStudents.Application.Services
             }
         }
 
+        public void DeleteUser(int userId)
+        {
+            var user = _userRepository.GetUserById(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("მომხმარებელი ვერ მოიძებნა!");
+            }
+
+            // ბოლო ადმინისტრატორის წაშლის აკრძალვა - სხვაგვარად სისტემა ადმინის გარეშე დარჩება
+            bool isAdmin = user.Role?.Equals("Administrator", StringComparison.OrdinalIgnoreCase) == true;
+            if (isAdmin && _userRepository.GetAdminCount() <= 1)
+            {
+                throw new InvalidOperationException("ბოლო ადმინისტრატორის წაშლა შეუძლებელია!");
+            }
+
+            _userRepository.DeleteUser(userId);
+
+            // Sync to server
+            if (_upStreamChangeTracker != null)
+            {
+                _upStreamChangeTracker.TrackDelete("Users", userId);
+            }
+        }
+
         public void UpdateUserPassword(int userId, string newPassword)
         {
             string passwordHash = HashPassword(newPassword);

@@ -1,4 +1,6 @@
 using System.Threading.Channels;
+using BCCStudents.Application.Interfaces;
+using BCCStudents.Application.Services.Logging;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,14 +12,16 @@ namespace BCCStudents.Infrastructure.Logging
     public sealed class MySqlApplicationLogSink : ILogEventSink, IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ApplicationLogWritePolicy _writePolicy;
         private readonly Channel<ApplicationLogEntry> _channel;
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _worker;
         private int _disposeStarted;
 
-        public MySqlApplicationLogSink(IServiceScopeFactory scopeFactory)
+        public MySqlApplicationLogSink(IServiceScopeFactory scopeFactory, ApplicationLogWritePolicy writePolicy)
         {
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            _writePolicy = writePolicy ?? throw new ArgumentNullException(nameof(writePolicy));
             _channel = Channel.CreateBounded<ApplicationLogEntry>(new BoundedChannelOptions(2000)
             {
                 FullMode = BoundedChannelFullMode.DropOldest,
@@ -30,6 +34,9 @@ namespace BCCStudents.Infrastructure.Logging
         public void Emit(LogEvent logEvent)
         {
             if (logEvent == null || Volatile.Read(ref _disposeStarted) != 0)
+                return;
+
+            if (!_writePolicy.ShouldWriteLocalDatabase && !_writePolicy.ShouldWriteServer)
                 return;
 
             if (!ApplicationLogDatabaseFilter.ShouldPersist(logEvent))
@@ -80,9 +87,16 @@ namespace BCCStudents.Infrastructure.Logging
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var repository = scope.ServiceProvider.GetRequiredService<IApplicationLogRepository>();
-                // Shutdown-ისას _cts უკვე Cancel/Dispose შეიძლება იყოს — ბოლო batch მაინც უნდა ჩაიწეროს.
-                await repository.InsertBatchAsync(batch, CancellationToken.None).ConfigureAwait(false);
+                if (_writePolicy.ShouldWriteLocalDatabase)
+                {
+                    var repository = scope.ServiceProvider.GetRequiredService<IApplicationLogRepository>();
+                    await repository.InsertBatchAsync(batch, CancellationToken.None).ConfigureAwait(false);
+                }
+                else if (_writePolicy.ShouldWriteServer)
+                {
+                    var syncService = scope.ServiceProvider.GetRequiredService<IApplicationLogSyncService>();
+                    await syncService.InsertBatchToServerAsync(batch, CancellationToken.None).ConfigureAwait(false);
+                }
             }
             catch (OperationCanceledException)
             {

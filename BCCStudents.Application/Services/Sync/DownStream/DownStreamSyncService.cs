@@ -31,19 +31,22 @@ namespace BCCStudents.Application.Services.Sync.DownStream
         private readonly IDownStreamConflictResolver _conflictResolver;
         private readonly IDatabaseConnectionChecker _connectionChecker;
         private readonly ISyncLogger _logger;
+        private readonly ILogStorageSettings _logStorageSettings;
 
         public DownStreamSyncService(
             IDownStreamSyncRepository repository,
             IDownStreamDataFetcher dataFetcher,
             IDownStreamConflictResolver conflictResolver,
             IDatabaseConnectionChecker connectionChecker,
-            ISyncLogger logger)
+            ISyncLogger logger,
+            ILogStorageSettings logStorageSettings)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _dataFetcher = dataFetcher ?? throw new ArgumentNullException(nameof(dataFetcher));
             _conflictResolver = conflictResolver ?? throw new ArgumentNullException(nameof(conflictResolver));
             _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
         }
 
         public async Task<SyncResult> SyncFromServerAsync(CancellationToken cancellationToken = default)
@@ -193,6 +196,9 @@ namespace BCCStudents.Application.Services.Sync.DownStream
 
         public Task<IReadOnlyList<string>> GetTablesToSyncAsync()
         {
+            if (_logStorageSettings.IsLocal)
+                return Task.FromResult<IReadOnlyList<string>>(DefaultTables.Where(t => t != "ApplicationLogs").ToArray());
+
             return Task.FromResult<IReadOnlyList<string>>(DefaultTables);
         }
 

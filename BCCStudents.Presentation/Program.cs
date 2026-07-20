@@ -127,7 +127,12 @@ namespace BCCStudents.Presentation
                 if (canConnect)
                 {
                     ApplicationLogRepository.EnsureTable(serviceProvider.GetRequiredService<IDatabaseConnectionProvider>());
-                    SerilogBootstrap.AddDatabaseSink(serviceProvider.GetRequiredService<IServiceScopeFactory>());
+                    var systemConfigService = serviceProvider.GetRequiredService<ISystemConfigurationService>();
+                    var logStorageSettings = serviceProvider.GetRequiredService<ILogStorageSettings>();
+                    logStorageSettings.Initialize(systemConfigService.GetLogStorageTarget());
+
+                    var writePolicy = serviceProvider.GetRequiredService<ApplicationLogWritePolicy>();
+                    SerilogBootstrap.AddDatabaseSink(serviceProvider.GetRequiredService<IServiceScopeFactory>(), writePolicy);
 
                     var loggerRepository = serviceProvider.GetRequiredService<ILoggerRepository>();
                     loggerRepository.WriteLog(
@@ -245,6 +250,8 @@ namespace BCCStudents.Presentation
             services.AddScoped<IApplicationLogQueryService, ApplicationLogQueryService>();
             services.AddScoped<IApplicationLogDeleteService, ApplicationLogDeleteService>();
             services.AddScoped<IApplicationLogSyncService, ApplicationLogSyncService>();
+            services.AddSingleton<ILogStorageSettings, LogStorageSettingsService>();
+            services.AddSingleton<ApplicationLogWritePolicy>();
             services.AddSingleton<IApplicationLogSyncManager, ApplicationLogSyncManager>();
             services.AddSingleton<IApplicationLogRetentionService, ApplicationLogRetentionService>();
             services.AddScoped<IUserRepository, UserRepository>();
@@ -283,7 +290,14 @@ namespace BCCStudents.Presentation
             services.AddScoped<ICleanupService, CleanupService>();
             services.AddScoped<IStudentExportService, StudentExportService>();
             services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
-            services.AddSingleton<IUpdateService, UpdateService>();
+            // განახლების სერვისი ერთ singleton ინსტანციად რეგისტრირდება.
+            // მნიშვნელოვანია: LoginForm და AdminPanelForm სერვისს პირდაპირ კონკრეტული ტიპით ითხოვენ
+            // (GetService<UpdateService>() / GetRequiredService<UpdateService>()), ამიტომ აუცილებელია
+            // თავად კონკრეტული ტიპის რეგისტრაცია — წინააღმდეგ შემთხვევაში GetService null-ს აბრუნებს
+            // და გაშვებისას ავტომატური განახლება ჩუმად ჩავარდება.
+            // IUpdateService იმავე ინსტანციაზე გადამისამართდება, რომ ორმაგი ობიექტი არ შეიქმნას.
+            services.AddSingleton<UpdateService>();
+            services.AddSingleton<IUpdateService>(sp => sp.GetRequiredService<UpdateService>());
             // Sync Services
             services.AddSingleton<ISyncLogger, SyncLogger>();
             services.AddScoped<IDownStreamSyncRepository, BCCStudents.Infrastructure.Repositories.DownStreamSyncRepository>();
@@ -296,6 +310,7 @@ namespace BCCStudents.Presentation
                     sp.GetRequiredService<ISyncLogger>(),
                     TimeSpan.FromMinutes(1)));
             services.AddSingleton<PendingRegistrationMonitor>();
+            services.AddScoped<IUpStreamSyncWatermarkAdvancer, UpStreamSyncWatermarkAdvancer>();
             services.AddScoped<IUpStreamSyncService, UpStreamSyncService>();
             services.AddScoped<IUpStreamPayloadBuilder, UpStreamPayloadBuilder>();
             services.AddScoped<IUpStreamChangeTracker, UpStreamChangeTracker>();

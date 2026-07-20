@@ -1,6 +1,7 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Application.Services;
 using BCCStudents.Application.Services.Update;
+using BCCStudents.Domain.Enums;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,9 @@ namespace BCCStudents.Presentation
         private readonly IApplicationStatus _appStatus;
         private readonly UserManagementFormFactory _userManagementFormFactory;
         private readonly LogViewerFormFactory _logViewerFormFactory;
+        private readonly ILogStorageSettings _logStorageSettings;
+        private readonly IDatabaseConnectionChecker _connectionChecker;
+        private readonly IUserContext _userContext;
         private DocumentConfig _config;
         private MainForm _mainForm;
         private TextBox txtAdminCode;
@@ -36,6 +40,11 @@ namespace BCCStudents.Presentation
         private TabPage tabLogs;
         private Panel panelLogs;
         private LogViewerForm logViewerForm;
+        private GroupBox grpLogStorage;
+        private RadioButton rbLogStorageLocal;
+        private RadioButton rbLogStorageServer;
+        private Button btnSaveLogStorage;
+        private Label lblLogStorageStatus;
         private System.Windows.Forms.CheckBox chkAutoDownstream;
         private System.Windows.Forms.CheckBox chkAutoUpstream;
         private System.Windows.Forms.CheckBox chkAutoUpdate;
@@ -59,7 +68,10 @@ namespace BCCStudents.Presentation
             ISystemConfigurationService systemConfigurationService,
             SetStudyStartDateFormFactory setStudyStartDateFormFactory,
             UserManagementFormFactory userManagementFormFactory,
-            LogViewerFormFactory logViewerFormFactory
+            LogViewerFormFactory logViewerFormFactory,
+            ILogStorageSettings logStorageSettings,
+            IDatabaseConnectionChecker connectionChecker,
+            IUserContext userContext
             )
         {
             InitializeComponent();
@@ -81,6 +93,9 @@ namespace BCCStudents.Presentation
             _setStudyStartDateFormFactory = setStudyStartDateFormFactory ?? throw new ArgumentNullException(nameof(setStudyStartDateFormFactory));
             _userManagementFormFactory = userManagementFormFactory ?? throw new ArgumentNullException(nameof(userManagementFormFactory));
             _logViewerFormFactory = logViewerFormFactory ?? throw new ArgumentNullException(nameof(logViewerFormFactory));
+            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
+            _connectionChecker = connectionChecker ?? throw new ArgumentNullException(nameof(connectionChecker));
+            _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
             if (_configService.IsTestDb)
                 FormTitleHelper.SetTitle(this, "პროგრამის პარამეტრები - სატესტო რეჟიმი");
             else
@@ -193,15 +208,34 @@ namespace BCCStudents.Presentation
                     {
                         dlg.Show(this);
                         string zip = null;
+                        string downloadError = null;
                         try
                         {
                             var progress = new Progress<(long current, long total)>(p => dlg.Report(p.current, p.total));
                             zip = await svc.DownloadAsync(manifest, progress, System.Threading.CancellationToken.None);
                         }
+                        catch (Exception downloadEx)
+                        {
+                            // ჩამოტვირთვის შეცდომას ვიჭერთ ცალკე, რომ ფანჯრის ჩუმად დახურვის ნაცვლად
+                            // მომხმარებელს გასაგები შეტყობინება მივცეთ.
+                            downloadError = downloadEx.Message;
+                        }
                         finally { dlg.Close(); }
+
                         if (!string.IsNullOrWhiteSpace(zip))
                         {
                             await svc.ScheduleApplyAndRestartAsync(zip, this);
+                        }
+                        else
+                        {
+                            // ჩამოტვირთვა ჩავარდა (zip == null) — ვაჩვენებთ შეცდომას
+                            MessageBox.Show(
+                                "განახლების ფაილი ვერ ჩამოიტვირთა." +
+                                (string.IsNullOrWhiteSpace(downloadError) ? string.Empty : $"\n\nდეტალები: {downloadError}") +
+                                "\n\nგთხოვთ სცადოთ მოგვიანებით ან მიმართოთ ადმინისტრატორს.",
+                                "ჩამოტვირთვის შეცდომა",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
                         }
                     }
                 }
@@ -790,16 +824,137 @@ namespace BCCStudents.Presentation
         private void InitializeLogsTab()
         {
             tabLogs = new TabPage("ლოგები");
+
+            var storagePanel = new Panel { Dock = DockStyle.Top, Height = 95, Padding = new Padding(8) };
+            var lblStorage = new Label
+            {
+                Text = "ლოგების შენახვა:",
+                AutoSize = true,
+                Left = 8,
+                Top = 12
+            };
+
+            grpLogStorage = new GroupBox
+            {
+                Text = "რეჟიმი",
+                Left = 130,
+                Top = 4,
+                Width = 320,
+                Height = 48
+            };
+
+            rbLogStorageLocal = new RadioButton
+            {
+                Text = "ლოკალურად",
+                AutoSize = true,
+                Left = 12,
+                Top = 18
+            };
+            rbLogStorageServer = new RadioButton
+            {
+                Text = "სერვერზე",
+                AutoSize = true,
+                Left = 140,
+                Top = 18
+            };
+            grpLogStorage.Controls.Add(rbLogStorageLocal);
+            grpLogStorage.Controls.Add(rbLogStorageServer);
+
+            btnSaveLogStorage = new Button
+            {
+                Text = "შენახვა",
+                Left = 460,
+                Top = 16,
+                Width = 90,
+                Height = 28
+            };
+            btnSaveLogStorage.Click += BtnSaveLogStorage_Click;
+
+            lblLogStorageStatus = new Label
+            {
+                AutoSize = true,
+                Left = 8,
+                Top = 62,
+                ForeColor = Color.DarkSlateGray
+            };
+
+            storagePanel.Controls.AddRange(new Control[]
+            {
+                lblStorage, grpLogStorage, btnSaveLogStorage, lblLogStorageStatus
+            });
+
             panelLogs = new Panel { Dock = DockStyle.Fill };
             logViewerForm = _logViewerFormFactory();
             logViewerForm.TopLevel = false;
             logViewerForm.FormBorderStyle = FormBorderStyle.None;
             logViewerForm.Dock = DockStyle.Fill;
             panelLogs.Controls.Add(logViewerForm);
+
             tabLogs.Controls.Add(panelLogs);
+            tabLogs.Controls.Add(storagePanel);
             tabControl1.TabPages.Add(tabLogs);
             logViewerForm.Show();
+
+            LoadLogStorageSettingsUi();
+
+            var canEditStorage = _userContext.IsAdmin;
+            grpLogStorage.Enabled = canEditStorage;
+            btnSaveLogStorage.Enabled = canEditStorage;
+            btnSaveLogStorage.Visible = canEditStorage;
         }
+
+        private void LoadLogStorageSettingsUi()
+        {
+            if (_logStorageSettings.IsServer)
+                rbLogStorageServer.Checked = true;
+            else
+                rbLogStorageLocal.Checked = true;
+
+            UpdateLogStorageStatusLabel();
+        }
+
+        private void UpdateLogStorageStatusLabel()
+        {
+            lblLogStorageStatus.Text = _logStorageSettings.IsServer
+                ? "მიმდინარე: სერვერზე შენახვა"
+                : "მიმდინარე: ლოკალურად შენახვა";
+        }
+
+        private void BtnSaveLogStorage_Click(object sender, EventArgs e)
+        {
+            if (!_userContext.IsAdmin)
+            {
+                MessageBox.Show("ლოგების რეჟიმის შეცვლა მხოლოდ ადმინისტრატორისთვისაა.", "წვდომა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var target = rbLogStorageServer.Checked ? LogStorageTarget.Server : LogStorageTarget.Local;
+            if (target == LogStorageTarget.Server && !_connectionChecker.CanConnectToServer())
+            {
+                MessageBox.Show("სერვერთან კავშირი არ არის. სერვერის რეჟიმის შენახვა ვერ მოხერხდება.",
+                    "კავშირი", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                LoadLogStorageSettingsUi();
+                return;
+            }
+
+            try
+            {
+                _systemConfigService.SetLogStorageTarget(target);
+                _logStorageSettings.SetTarget(target);
+                UpdateLogStorageStatusLabel();
+                logViewerForm.ApplyStorageModeUi();
+                MessageBox.Show("ლოგების შენახვის რეჟიმი განახლდა.", "შენახვა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"შეცდომა: {ex.Message}", "შეცდომა",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LoadLogStorageSettingsUi();
+            }
+        }
+
         public AdminPanelForm()
         {
             InitializeComponent();

@@ -66,7 +66,7 @@ namespace BCCStudents.Infrastructure.Repositories
             s.LastName,
             sg.DateOfPayment AS NextPaymentDate,
             g.Name AS GroupName,
-            COALESCE(sg.Price, g.Price) - (COALESCE(sg.Price, g.Price) * COALESCE(sg.Discount, 0) / 100) AS Price,
+            g.Price - (g.Price * COALESCE(sg.Discount, 0) / 100) AS Price,
             IFNULL(SUM(CASE WHEN p.PaymentStatus = 'Paid' THEN p.Amount ELSE 0 END), 0) AS TotalPaid
         FROM Students s
         JOIN StudentGroups sg ON sg.StudentId = s.Id
