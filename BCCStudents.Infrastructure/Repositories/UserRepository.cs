@@ -56,27 +56,33 @@ namespace BCCStudents.Infrastructure.Repositories
             using (var conn = _connectionProvider.GetLocalConnection())
             {
                 conn.Open();
-                string query = "SELECT * FROM Users WHERE Username = @Username";
-                using (var cmd = new MySqlCommand(query, conn))
+                return ReadUserByUsername(conn, username);
+            }
+        }
+
+        private static UserModel ReadUserByUsername(MySqlConnection conn, string username)
+        {
+            string query = "SELECT * FROM Users WHERE Username = @Username";
+            using (var cmd = new MySqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@Username", username);
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("@Username", username);
-                    using (var reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
+                        return new UserModel
                         {
-                            return new UserModel
-                            {
-                                Id = Convert.ToInt32(reader["Id"]),
-                                UserName = username,
-                                Password = reader["Password"].ToString(),
-                                FullName = reader["FullName"]?.ToString(),
-                                Email = reader["Email"]?.ToString(),
-                                Role = reader["Role"]?.ToString(),
-                                Permissions = reader["Permissions"]?.ToString(),
-                                LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : DateTime.MinValue,
-                                UpdatedAt = ReadUpdatedAt(reader)
-                            };
-                        }
+                            Id = Convert.ToInt32(reader["Id"]),
+                            UserName = username,
+                            Password = reader["Password"].ToString(),
+                            FullName = reader["FullName"]?.ToString(),
+                            Email = reader["Email"]?.ToString(),
+                            Role = reader["Role"]?.ToString(),
+                            Permissions = reader["Permissions"]?.ToString(),
+                            CreatedAt = reader["CreatedAt"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedAt"]) : (DateTime?)null,
+                            LastLogin = reader["LastLogin"] != DBNull.Value ? Convert.ToDateTime(reader["LastLogin"]) : (DateTime?)null,
+                            UpdatedAt = ReadUpdatedAt(reader)
+                        };
                     }
                 }
             }

@@ -1,0 +1,26 @@
+---
+description: Before adding code/methods, reuse existing similar functionality — no duplicates
+alwaysApply: true
+---
+
+# No Duplicate Functionality
+
+When changing a file or adding a new method, UI control, service, or sync path: **always search first** for existing similar behavior in the project (same layer and related layers). Do not introduce a second way to do the same thing.
+
+## Checklist (every change)
+
+1. Search for an existing method/class that already covers the need (name, domain verb, table, form action).
+2. If something close exists — **extend or call it**; do not copy-paste a parallel path.
+3. Only add a new API when the behavior is genuinely different (different outcome for the user or for data).
+4. Same for UI: one outcome → one control; do not add a button/checkbox that mirrors another.
+
+## Examples of what to avoid
+
+- Soft-delete that only flips Status when Status/აქტიური already exists in the same form
+- `HardDeleteX` + `SoftDeleteX` / `DeleteX` pairs that overlap for the same user action
+- Near-duplicate helpers in Repository and Service that do the same query with slight naming differences
+- A second sync path that reimplements an existing UpStream/DownStream flow
+
+## When in doubt
+
+Prefer reuse and a small extension of the existing path over a new parallel method.

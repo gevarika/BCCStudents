@@ -10,7 +10,6 @@
         public static string Role { get; set; }
         public static DateTime? CreatedAt { get; set; }
         public static DateTime? LastLogin { get; set; }
-        public static bool FirstStart { get; set; }
         public static bool IsAdmin => Role == "Administrator";
         public static bool IsAuthenticated => Id > 0;
         public static void Clear()

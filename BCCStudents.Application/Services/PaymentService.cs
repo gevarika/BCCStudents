@@ -14,7 +14,6 @@ namespace BCCStudents.Application.Services
         private readonly IStudentSubGroupRepository _studentSubGroupRepo;
         private readonly ILoggerRepository _loggerRepository;
         private readonly ISmsService _smsService;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         private readonly IConfigurationService _configService;
 
         public PaymentService(
@@ -25,7 +24,6 @@ namespace BCCStudents.Application.Services
             IStudentSubGroupRepository studentSubGroupRepo,
             ILoggerRepository loggerRepository,
             ISmsService smsService,
-            IUpStreamChangeTracker upStreamChangeTracker,
             IConfigurationService configService)
         {
             _paymentRepo = paymentRepo;
@@ -35,7 +33,6 @@ namespace BCCStudents.Application.Services
             _studentSubGroupRepo = studentSubGroupRepo;
             _loggerRepository = loggerRepository;
             _smsService = smsService ?? throw new ArgumentNullException(nameof(smsService));
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
         }
 
@@ -200,7 +197,6 @@ namespace BCCStudents.Application.Services
                             if (paymentId > 0)
                             {
                                 payment.Id = paymentId;
-                                await _upStreamChangeTracker.TrackPaymentChangeAsync(paymentId, SyncOperationType.Insert, payment);
 
                                 balance -= finalFee;
                                 paymentMade = true;
@@ -256,7 +252,6 @@ namespace BCCStudents.Application.Services
                             if (paymentId > 0)
                             {
                                 payment.Id = paymentId;
-                                await _upStreamChangeTracker.TrackPaymentChangeAsync(paymentId, SyncOperationType.Insert, payment);
 
                                 state.HasNewPayment = true;
                                 state.HasPartial = true;
@@ -310,20 +305,10 @@ namespace BCCStudents.Application.Services
                         }
 
                         _studentGroupRepo.UpdatePaymentStatusAndDate(studentId, state.Group.GroupId, status, nextPaymentDate);
-                        var updatedStudentGroup = _studentGroupRepo.GetByStudentAndGroup(studentId, state.Group.GroupId);
-                        if (updatedStudentGroup != null)
-                        {
-                            await _upStreamChangeTracker.TrackStudentGroupChangeAsync(updatedStudentGroup.Id, SyncOperationType.Update, updatedStudentGroup);
-                        }
 
                         if (state.Group.SubGroupId.HasValue)
                         {
                             _studentSubGroupRepo.UpdatePaymentStatus(studentId, state.Group.GroupId, state.Group.SubGroupId.Value, status);
-                            var updatedStudentSubGroup = _studentSubGroupRepo.GetByStudentAndGroup(studentId, state.Group.GroupId);
-                            if (updatedStudentSubGroup != null)
-                            {
-                                await _upStreamChangeTracker.TrackStudentSubGroupChangeAsync(updatedStudentSubGroup.Id, SyncOperationType.Update, updatedStudentSubGroup);
-                            }
                         }
                     }
 
@@ -349,11 +334,9 @@ namespace BCCStudents.Application.Services
 
                 // ⚠️ მნიშვნელოვანი: თუ ყველა ჯგუფი გამოტოვებულია (DateOfPayment არ არის, ან ჯერ არ დადგა დრო, ან უკვე გადახდილია),
                 // მაგრამ paymentAmount > 0, მაშინ ბალანსზე უნდა დაემატოს თანხა
-                bool balanceUpdated = false;
                 if (paymentMade || partialPayment || onlyCredited)
                 {
                     _studentRepo.UpdateStudentBalance(studentId, balance);
-                    balanceUpdated = true;
                 }
                 else if (paymentAmount > 0 && !paymentMade && !partialPayment)
                 {
@@ -362,16 +345,6 @@ namespace BCCStudents.Application.Services
                     _studentRepo.UpdateStudentBalance(studentId, balance);
                     logs.Add($"ყველა ჯგუფი გამოტოვებულია (თარიღი არ არის, ან ჯერ არ დადგა დრო, ან უკვე გადახდილია). თანხა დაემატა ბალანსზე: {paymentAmount} ₾");
                     onlyCredited = true; // რომ Status იყოს "Credited"
-                    balanceUpdated = true;
-                }
-
-                if (balanceUpdated)
-                {
-                    var updatedStudent = _studentRepo.GetStudentById(studentId);
-                    if (updatedStudent != null)
-                    {
-                        await _upStreamChangeTracker.TrackStudentChangeAsync(studentId, SyncOperationType.Update, updatedStudent);
-                    }
                 }
 
                 // ==================== 5. ლოგირება ====================

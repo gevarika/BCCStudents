@@ -10,20 +10,17 @@ namespace BCCStudents.Presentation
         private readonly IPaymentRepository _paymentRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IExcelPaymentImportService _importService;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         private DataTable _failedPayments;
 
         public UnmatchedPaymentsForm(
             IPaymentRepository paymentRepository,
             IStudentRepository studentRepository,
-            IExcelPaymentImportService importService,
-            IUpStreamChangeTracker upStreamChangeTracker)
+            IExcelPaymentImportService importService)
         {
             InitializeComponent();
             _paymentRepository = paymentRepository;
             _studentRepository = studentRepository;
             _importService = importService;
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             LoadFailedPayments();
         }
 
@@ -133,11 +130,6 @@ namespace BCCStudents.Presentation
             // გადახდის ბალანსზე ასახვა
             decimal amount = row.Cells["Amount"].Value != null ? Convert.ToDecimal(row.Cells["Amount"].Value) : 0;
             _studentRepository.UpdateStudentBalance(student.Id, amount);
-            var updatedStudent = _studentRepository.GetStudentById(student.Id);
-            if (updatedStudent != null)
-            {
-                _upStreamChangeTracker.TrackStudentChange(student.Id, SyncOperationType.Update, updatedStudent);
-            }
             // ჩანაწერის წაშლა FailedPayments-დან
             DateTime paymentDate = (DateTime)row.Cells["PaymentDate"].Value;
             //long? personalId = row.Cells["PersonalId"].Value != null ? Convert.ToInt64(row.Cells["PersonalId"].Value) : (long?)null;

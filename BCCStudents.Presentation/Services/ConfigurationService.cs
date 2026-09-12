@@ -207,19 +207,7 @@ namespace BCCStudents.Presentation.Services
             set { Settings.Default.DbChangedSinceLastBackup = value; }
         }
 
-        // Sync / update flags
-        public bool AutoDownstreamSyncEnabled
-        {
-            get => Settings.Default.AutoDownstreamSyncEnabled;
-            set { Settings.Default.AutoDownstreamSyncEnabled = value; }
-        }
-
-        public bool AutoUpstreamSyncEnabled
-        {
-            get => Settings.Default.AutoUpstreamSyncEnabled;
-            set { Settings.Default.AutoUpstreamSyncEnabled = value; }
-        }
-
+        // Update flags
         public bool AutoUpdateEnabled
         {
             get => Settings.Default.AutoUpdateEnabled;

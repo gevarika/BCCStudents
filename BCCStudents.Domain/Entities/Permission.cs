@@ -37,14 +37,36 @@ namespace BCCStudents.Domain.Entities
         public const string CanEditUsers = "CanEditUsers";
         public const string CanDeleteUsers = "CanDeleteUsers";
 
+        /// <summary>მოსწავლეების მოდულის გახსნა: Manage ან ნებისმიერი CRUD.</summary>
+        public static readonly string[] StudentsAccessPermissions =
+        {
+            CanManageStudents, CanAddStudents, CanEditStudents, CanDeleteStudents
+        };
+
+        /// <summary>ჯგუფების მოდულის გახსნა: Manage ან ნებისმიერი CRUD (ჯგუფი/ქვეჯგუფი).</summary>
+        public static readonly string[] GroupsAccessPermissions =
+        {
+            CanManageGroups, CanAddGroups, CanEditGroups, CanDeleteGroups,
+            CanAddSubGroups, CanEditSubGroups, CanDeleteSubGroups
+        };
+
+        /// <summary>გადახდების მოდულის გახსნა: Manage ან ნებისმიერი CRUD.</summary>
+        public static readonly string[] PaymentsAccessPermissions =
+        {
+            CanManagePayments, CanAddPayments, CanEditPayments, CanDeletePayments
+        };
+
+        /// <summary>მომხმარებლების მოდულის სრული სია: Manage ან ნებისმიერი CRUD.</summary>
+        public static readonly string[] UsersAccessPermissions =
+        {
+            CanManageUsers, CanAddUsers, CanEditUsers, CanDeleteUsers
+        };
+
         /// <summary>
-        /// ყველა permission-ის სია
+        /// ყველა permission-ის სია (კოდი / სინქი / ძველი JSON).
+        /// UI ასანიჭებელი სია: <see cref="GetAssignablePermissions"/>.
         /// 
-        /// NOTE: Hierarchical Permission System
-        /// - "CanManage*" permissions are parent permissions that automatically include all CRUD operations
-        /// - Granular permissions (CanAdd*, CanEdit*, CanDelete*) can be used for fine-grained control
-        /// - If user has "CanManageStudents", they automatically have CanAddStudents, CanEditStudents, CanDeleteStudents
-        /// - This allows both simple (assign CanManage*) and granular (assign specific operations) permission management
+        /// Hierarchical: CanManage* → CanAdd/Edit/Delete* (UserContext).
         /// </summary>
         public static string[] GetAllPermissions()
         {
@@ -64,9 +86,6 @@ namespace BCCStudents.Domain.Entities
                 CanAddPayments,
                 CanEditPayments,
                 CanDeletePayments,
-                // Logs permissions removed - logs are typically read-only (append-only)
-                // Reports CRUD permissions removed - reports are generated/viewed, not created/edited/deleted
-                // CanViewReports is kept for viewing access
                 CanAddUsers,
                 CanEditUsers,
                 CanDeleteUsers,
@@ -75,6 +94,37 @@ namespace BCCStudents.Domain.Entities
                 CanManageGroups,
                 CanManageStudents,
                 CanManagePayments,
+                CanExportData,
+                CanViewReports,
+                CanViewSystemLogs
+            };
+        }
+
+        /// <summary>
+        /// უფლებების პანელში ასანიჭებელი უფლებები — granular CRUD + სხვა;
+        /// CanManage* და ზოგადი CanDelete არ ჩანს (ზედმეტი / ძველი).
+        /// </summary>
+        public static string[] GetAssignablePermissions()
+        {
+            return new[]
+            {
+                CanImport,
+                CanAddStudents,
+                CanEditStudents,
+                CanDeleteStudents,
+                CanAddGroups,
+                CanEditGroups,
+                CanDeleteGroups,
+                CanAddSubGroups,
+                CanEditSubGroups,
+                CanDeleteSubGroups,
+                CanAddPayments,
+                CanEditPayments,
+                CanDeletePayments,
+                CanAddUsers,
+                CanEditUsers,
+                CanDeleteUsers,
+                CanEditSettings,
                 CanExportData,
                 CanViewReports,
                 CanViewSystemLogs

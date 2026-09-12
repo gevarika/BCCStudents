@@ -769,42 +769,60 @@ namespace BCCStudents.Infrastructure.Repositories
         #region ==================== DELETE - ქვეჯგუფის წაშლა ====================
 
         /// <summary>
-        /// ქვეჯგუფის წაშლა (Soft Delete)
+        /// ქვეჯგუფის სრული წაშლა (Hard Delete) + StudentSubGroups კავშირები.
         /// </summary>
         public bool DeleteSubGroup(int subGroupId)
         {
             using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                var query = "UPDATE SubGroups SET Status = 0, UpdatedAt = @UpdatedAt WHERE Id = @Id";
-
-                using (var cmd = new MySqlCommand(query, connection))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@Id", subGroupId);
+                    try
+                    {
+                        using (var cmdLinks = new MySqlCommand(
+                                   "DELETE FROM StudentSubGroups WHERE SubGroupId = @Id", connection, transaction))
+                        {
+                            cmdLinks.Parameters.AddWithValue("@Id", subGroupId);
+                            cmdLinks.ExecuteNonQuery();
+                        }
 
-                    return cmd.ExecuteNonQuery() > 0;
+                        using (var cmd = new MySqlCommand(
+                                   "DELETE FROM SubGroups WHERE Id = @Id", connection, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@Id", subGroupId);
+                            var affected = cmd.ExecuteNonQuery();
+                            transaction.Commit();
+                            return affected > 0;
+                        }
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
             }
         }
 
-        /// <summary>
-        /// ქვეჯგუფის სრული წაშლა (Hard Delete)
-        /// </summary>
-        public bool HardDeleteSubGroup(int subGroupId)
+        public List<int> GetStudentSubGroupIdsBySubGroupId(int subGroupId)
         {
+            var ids = new List<int>();
             using (var connection = _connectionProvider.GetLocalConnection())
             {
                 connection.Open();
-                var query = "DELETE FROM SubGroups WHERE Id = @Id";
-
+                const string query = "SELECT Id FROM StudentSubGroups WHERE SubGroupId = @SubGroupId";
                 using (var cmd = new MySqlCommand(query, connection))
                 {
-                    cmd.Parameters.AddWithValue("@Id", subGroupId);
-
-                    return cmd.ExecuteNonQuery() > 0;
+                    cmd.Parameters.AddWithValue("@SubGroupId", subGroupId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                            ids.Add(Convert.ToInt32(reader["Id"]));
+                    }
                 }
             }
+            return ids;
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using BCCStudents.Application.Interfaces;
 using BCCStudents.Domain.Interfaces;
+using Serilog;
 
 namespace BCCStudents.Application.Services.Logging
 {
@@ -7,20 +8,13 @@ namespace BCCStudents.Application.Services.Logging
     {
         private static readonly TimeSpan RetentionPeriod = TimeSpan.FromDays(90);
         private readonly IApplicationLogRepository _repository;
-        private readonly ISyncLogger _logger;
-        private readonly ILogStorageSettings _logStorageSettings;
         private System.Threading.Timer _timer;
         private int _isProcessing;
         private bool _disposed;
 
-        public ApplicationLogRetentionService(
-            IApplicationLogRepository repository,
-            ISyncLogger logger,
-            ILogStorageSettings logStorageSettings)
+        public ApplicationLogRetentionService(IApplicationLogRepository repository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
         }
 
         public void Start()
@@ -40,9 +34,6 @@ namespace BCCStudents.Application.Services.Logging
 
         public async Task<int> RunCleanupAsync(CancellationToken cancellationToken = default)
         {
-            if (!_logStorageSettings.IsLocal)
-                return 0;
-
             if (Interlocked.Exchange(ref _isProcessing, 1) == 1)
                 return 0;
 
@@ -51,12 +42,12 @@ namespace BCCStudents.Application.Services.Logging
                 var cutoff = DateTime.UtcNow.Subtract(RetentionPeriod);
                 var deleted = await _repository.DeleteOlderThanAsync(cutoff, cancellationToken).ConfigureAwait(false);
                 if (deleted > 0)
-                    _logger.Info($"ApplicationLogs retention: {deleted} ჩანაწერი წაიშალა (>{RetentionPeriod.TotalDays:0} დღე).");
+                    Log.Information("ApplicationLogs retention: {Deleted} ჩანაწერი წაიშალა (>{Days} დღე).", deleted, RetentionPeriod.TotalDays);
                 return deleted;
             }
             catch (Exception ex)
             {
-                _logger.Warn($"ApplicationLogs retention შეცდომა: {ex.Message}");
+                Log.Warning(ex, "ApplicationLogs retention შეცდომა");
                 return 0;
             }
             finally

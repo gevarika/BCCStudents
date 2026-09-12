@@ -22,32 +22,12 @@ namespace BCCStudents.Infrastructure.Services
             _databaseHelper = databaseHelper ?? throw new ArgumentNullException(nameof(databaseHelper));
         }
 
-        /// <summary>
-        /// აბრუნებს ლოკალურ მონაცემთა ბაზასთან კავშირს
-        /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
-        public MySqlConnection GetLocalConnection()
-        {
-            return _databaseHelper.GetLocalConnection();
-        }
+        /// <summary>Deprecated alias — server-only; იგივე GetServerConnection().</summary>
+        public MySqlConnection GetLocalConnection() => _databaseHelper.GetLocalConnection();
 
-        /// <summary>
-        /// აბრუნებს სერვერზე მონაცემთა ბაზასთან კავშირს
-        /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
-        public MySqlConnection GetServerConnection()
-        {
-            return _databaseHelper.GetServerConnection();
-        }
+        public MySqlConnection GetServerConnection() => _databaseHelper.GetServerConnection();
 
-        /// <summary>
-        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი - კონფიგურაციის მიხედვით)
-        /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
-        public MySqlConnection GetMySqlConnection()
-        {
-            return _databaseHelper.GetMySqlConnection();
-        }
+        public MySqlConnection GetMySqlConnection() => _databaseHelper.GetMySqlConnection();
     }
 }
 

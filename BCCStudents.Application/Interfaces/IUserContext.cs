@@ -18,6 +18,14 @@ namespace BCCStudents.Application.Interfaces
         /// </summary>
         bool HasPermission(string permissionName);
 
+        /// <summary>ნებისმიერი ჩამოთვლილი უფლება (Hierarchical HasPermission-ით).</summary>
+        bool HasAnyPermission(params string[] permissionNames);
+
+        bool CanAccessStudents();
+        bool CanAccessGroups();
+        bool CanAccessPayments();
+        bool CanAccessUsers();
+
         /// <summary>
         /// აბრუნებს მომხმარებლის ყველა permission-ს Dictionary-ს
         /// </summary>

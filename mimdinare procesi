@@ -1,0 +1,41 @@
+# BCCStudents — მიმდინარე პროცესი (სანიშნე)
+
+> ბოლო განახლება: 2026-09-12  
+> მიზანი: შესვენების შემდეგ სწრაფად გახსენდეს სად დარჩა სამუშაო.
+
+---
+
+## პრინციპი
+
+**არ გავაოროთ ფუნქცია/კოდი.** ახალი მეთოდი — ჯერ მოძებნე არსებული.
+
+---
+
+## ახლა სად ვართ
+
+**Server-only WinForms:** ლოკალური DB + UpStream/DownStream ამოღებულია. ყველა CRUD სერვერის MySQL-ზე (`GetLocalConnection` = server).
+
+**Git:** ცვლილებები სავარაუდოდ uncommitted.
+
+---
+
+## ბოლოს გაკეთებული (2026-09-12)
+
+### Sync-ის ამოღება
+- `GetLocalConnection` → server connection string
+- Track*/ChangeTracker ამოღებული სერვისებიდან
+- UpStream/DownStream სტეკი, SyncStatus UI, ApplicationLogSync წაშლილი
+- Login: ერთი გზა `GetUserByUsername` (სერვერი)
+- Pending registrations: 60წმ timer refresh
+- Connection status: მხოლოდ სერვერი
+
+### ტესტი
+- [ ] Login სერვერის Users-ით
+- [ ] CRUD ჩანს სხვა კომპზე იმავე სერვერზე
+- [ ] სერვერი offline → შეცდომა/სტატუსი
+
+---
+
+## შემდეგი (ვებ)
+
+ცენტრალური API + ვებ UI — ცალკე ეტაპი.

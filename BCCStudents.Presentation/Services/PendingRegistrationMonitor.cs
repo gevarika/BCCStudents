@@ -1,5 +1,4 @@
 using BCCStudents.Application.Interfaces;
-using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +7,7 @@ using static BCCStudents.Presentation.StudentManagementForm;
 namespace BCCStudents.Presentation.Services
 {
     /// <summary>
-    /// DownStream sync-ის შემდეგ ამოწმებს ახალ ონლაინ რეგისტრაციებს და აცხოვრებს UI-ს.
+    /// ამოწმებს ახალ ონლაინ რეგისტრაციებს და აცხოვრებს UI-ს.
     /// </summary>
     public sealed class PendingRegistrationMonitor
     {
@@ -43,13 +42,8 @@ namespace BCCStudents.Presentation.Services
             RaisePendingCountChanged(_lastKnownCount);
         }
 
-        public void HandleSyncCompleted(SyncStatusEventArgs args)
+        public void Refresh()
         {
-            if (args == null || !args.Success || !args.HasPendingRegistrationChanges())
-            {
-                return;
-            }
-
             var newCount = GetPendingCount();
             var newRegistrations = newCount - _lastKnownCount;
 
@@ -82,7 +76,7 @@ namespace BCCStudents.Presentation.Services
         private bool CanViewPendingRegistrations()
         {
             return _userContext.HasPermission(Permission.CanViewReports) ||
-                   _userContext.HasPermission(Permission.CanManageStudents);
+                   _userContext.CanAccessStudents();
         }
 
         private void ShowNotification(int newRegistrations)

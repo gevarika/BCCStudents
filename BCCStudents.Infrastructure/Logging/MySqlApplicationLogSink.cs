@@ -92,11 +92,6 @@ namespace BCCStudents.Infrastructure.Logging
                     var repository = scope.ServiceProvider.GetRequiredService<IApplicationLogRepository>();
                     await repository.InsertBatchAsync(batch, CancellationToken.None).ConfigureAwait(false);
                 }
-                else if (_writePolicy.ShouldWriteServer)
-                {
-                    var syncService = scope.ServiceProvider.GetRequiredService<IApplicationLogSyncService>();
-                    await syncService.InsertBatchToServerAsync(batch, CancellationToken.None).ConfigureAwait(false);
-                }
             }
             catch (OperationCanceledException)
             {

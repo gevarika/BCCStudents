@@ -24,47 +24,16 @@ namespace BCCStudents.Infrastructure.Data
             return new SQLiteConnection(_sqliteConnectionString);
         }*/
 
-        public MySqlConnection GetMySqlConnection()
-        {
+        /// <summary>
+        /// Server-only რეჟიმი: ყოველთვის სერვერის connection string.
+        /// </summary>
+        public MySqlConnection GetMySqlConnection() => GetServerConnection();
 
-
-            // Use settings-based switch: local vs server, and test vs prod variants with fallback to prod if test is empty
-            bool isTest = _config.IsTestDb;
-            bool useLocal = _config.UseLocalDb;
-            string localConnProd = _config.LocalMySqlConnectionString;
-            string serverConnProd = _config.ServerMySqlConnectionString;
-            string localConnTest = _config.LocalMySqlConnectionString_Test;
-            string serverConnTest = _config.ServerMySqlConnectionString_Test;
-            var localConn = isTest ? (string.IsNullOrWhiteSpace(localConnTest) ? localConnProd : localConnTest) : localConnProd;
-            var serverConn = isTest ? (string.IsNullOrWhiteSpace(serverConnTest) ? serverConnProd : serverConnTest) : serverConnProd;
-
-            if (useLocal && !string.IsNullOrWhiteSpace(localConn))
-                return new MySqlConnection(localConn);
-            if (!useLocal && !string.IsNullOrWhiteSpace(serverConn))
-                return new MySqlConnection(serverConn);
-
-            // Graceful fallback: if სასურველი მიზანი ცარიელია, სცადე მეორე
-            if (useLocal && string.IsNullOrWhiteSpace(localConn) && !string.IsNullOrWhiteSpace(serverConn))
-                return new MySqlConnection(serverConn);
-            if (!useLocal && string.IsNullOrWhiteSpace(serverConn) && !string.IsNullOrWhiteSpace(localConn))
-                return new MySqlConnection(localConn);
-
-            // თუ ორივე ცარიელია, მივუთითოთ, რომ Settings-ში სრული connection string-ები არ არის დაყენებული
-            throw new InvalidOperationException("No valid MySQL connection string configured in Settings (Local/Server, Test/Prod).");
-
-
-        }
-
-        public MySqlConnection GetLocalConnection()
-        {
-            bool isTest = false;//_config.IsTestDb;  // სატესტო ბაზაზე გადართვა დროებით გათიშულია
-            string localConnProd = _config.LocalMySqlConnectionString;
-            string localConnTest = _config.LocalMySqlConnectionString_Test;
-            var localConn = isTest ? (string.IsNullOrWhiteSpace(localConnTest) ? localConnProd : localConnTest) : localConnProd;
-            if (string.IsNullOrWhiteSpace(localConn))
-                throw new Exception("LocalMySqlConnectionString is not configured in Settings.");
-            return new MySqlConnection(localConn);
-        }
+        /// <summary>
+        /// Deprecated alias — server-only რეჟიმში იგივეა რაც GetServerConnection().
+        /// რეპოზიტორიები ჯერ ამ მეთოდს იყენებენ; მომავალში ერთ GetConnection()-ზე გავაერთიანებთ.
+        /// </summary>
+        public MySqlConnection GetLocalConnection() => GetServerConnection();
 
         public MySqlConnection GetServerConnection()
         {
@@ -122,8 +91,8 @@ namespace BCCStudents.Infrastructure.Data
 
         /// <summary>
         /// სერვერის ჯანმრთელობის შემოწმება — pooling გარეშე; timeout ცული/არასტაბილური ინტერნეტისთვის (15+10 წმ).
-        /// იძახება ConnectionMonitor-იდან (~30 წმ) და სინქიდან (CheckServerConnection).
-        /// შენიშვნა: MySql.Data SSL-ის შიდა timeout ზოგჯერ ცალკე thread-ზე ისროლებს exception-ს — იხ. SyncPeriodicTimerRunner / Program.UnhandledException.
+        /// იძახება ConnectionMonitor-იდან (~30 წმ).
+        /// შენიშვნა: MySql.Data SSL-ის შიდა timeout ზოგჯერ ცალკე thread-ზე ისროლებს exception-ს — იხ. Program.UnhandledException.
         /// </summary>
         private static ConnectionCheckResult TryProbeConnection(
             Func<MySqlConnection> getConnection,

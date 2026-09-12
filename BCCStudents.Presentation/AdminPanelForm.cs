@@ -45,8 +45,6 @@ namespace BCCStudents.Presentation
         private RadioButton rbLogStorageServer;
         private Button btnSaveLogStorage;
         private Label lblLogStorageStatus;
-        private System.Windows.Forms.CheckBox chkAutoDownstream;
-        private System.Windows.Forms.CheckBox chkAutoUpstream;
         private System.Windows.Forms.CheckBox chkAutoUpdate;
         private System.Windows.Forms.CheckBox chkUseFullBalance;
         private System.Windows.Forms.CheckBox chkAllowPartialPayments;
@@ -139,14 +137,10 @@ namespace BCCStudents.Presentation
             }
             catch { }
 
-            chkAutoDownstream = new System.Windows.Forms.CheckBox { Text = "Downstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 20) };
-            chkAutoUpstream = new System.Windows.Forms.CheckBox { Text = "Upstream ავტო-სინქი", AutoSize = true, Location = new System.Drawing.Point(20, 50) };
-            chkAutoUpdate = new System.Windows.Forms.CheckBox { Text = "ავტომატური განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 80) };
-            chkUseFullBalance = new System.Windows.Forms.CheckBox { Text = "სრული ბალანსის გამოყენება (რამდენ თვესაც ფარავს)", AutoSize = true, Location = new System.Drawing.Point(20, 110) };
-            chkAllowPartialPayments = new System.Windows.Forms.CheckBox { Text = "ნაწილობრივი გადახდის დაშვება", AutoSize = true, Location = new System.Drawing.Point(20, 140) };
-            btnCheckUpdates = new Button { Text = "პროგრამის განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 170) };
-            chkAutoDownstream.Checked = _configService.AutoDownstreamSyncEnabled;
-            chkAutoUpstream.Checked = _configService.AutoUpstreamSyncEnabled;
+            chkAutoUpdate = new System.Windows.Forms.CheckBox { Text = "ავტომატური განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 20) };
+            chkUseFullBalance = new System.Windows.Forms.CheckBox { Text = "სრული ბალანსის გამოყენება (რამდენ თვესაც ფარავს)", AutoSize = true, Location = new System.Drawing.Point(20, 50) };
+            chkAllowPartialPayments = new System.Windows.Forms.CheckBox { Text = "ნაწილობრივი გადახდის დაშვება", AutoSize = true, Location = new System.Drawing.Point(20, 80) };
+            btnCheckUpdates = new Button { Text = "პროგრამის განახლება", AutoSize = true, Location = new System.Drawing.Point(20, 110) };
             chkAutoUpdate.Checked = _configService.AutoUpdateEnabled;
             chkUseFullBalance.Checked = _configService.UseFullBalanceForAutoPayment; // default = true
             chkAllowPartialPayments.Checked = _configService.AllowPartialPayments;
@@ -154,14 +148,10 @@ namespace BCCStudents.Presentation
             // Load connection strings to fields
             LoadConnectionStringsToFields();
 
-            chkAutoDownstream.CheckedChanged += (s, e) => { _configService.AutoDownstreamSyncEnabled = chkAutoDownstream.Checked; _configService.Save(); };
-            chkAutoUpstream.CheckedChanged += (s, e) => { _configService.AutoUpstreamSyncEnabled = chkAutoUpstream.Checked; _configService.Save(); };
             chkAutoUpdate.CheckedChanged += (s, e) => { _configService.AutoUpdateEnabled = chkAutoUpdate.Checked; _configService.Save(); };
             chkUseFullBalance.CheckedChanged += (s, e) => { _configService.UseFullBalanceForAutoPayment = chkUseFullBalance.Checked; _configService.Save(); };
             chkAllowPartialPayments.CheckedChanged += (s, e) => { _configService.AllowPartialPayments = chkAllowPartialPayments.Checked; _configService.Save(); };
 
-            this.sogBox2.Controls.Add(chkAutoDownstream);
-            this.sogBox2.Controls.Add(chkAutoUpstream);
             this.sogBox2.Controls.Add(chkAutoUpdate);
             this.sogBox2.Controls.Add(chkUseFullBalance);
             this.sogBox2.Controls.Add(chkAllowPartialPayments);
@@ -801,7 +791,7 @@ namespace BCCStudents.Presentation
 
         private void btnRegisterUser_Click(object sender, EventArgs e)
         {
-            // იხსნება UserManagementForm-ის ნაცვლად RegisterForm-ის
+            // იხსნება მომხმარებლების მართვის ფორმა
             var userManagementForm = _userManagementFormFactory.Invoke();
             userManagementForm.Show();
         }

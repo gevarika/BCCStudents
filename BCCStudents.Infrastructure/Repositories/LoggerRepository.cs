@@ -10,16 +10,13 @@ namespace BCCStudents.Infrastructure.Repositories
     public class LoggerRepository : ILoggerRepository
     {
         private readonly IApplicationLogRepository _applicationLogRepository;
-        private readonly IApplicationLogSyncService _syncService;
         private readonly ApplicationLogWritePolicy _writePolicy;
 
         public LoggerRepository(
             IApplicationLogRepository applicationLogRepository,
-            IApplicationLogSyncService syncService,
             ApplicationLogWritePolicy writePolicy)
         {
             _applicationLogRepository = applicationLogRepository ?? throw new ArgumentNullException(nameof(applicationLogRepository));
-            _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
             _writePolicy = writePolicy ?? throw new ArgumentNullException(nameof(writePolicy));
         }
 
@@ -79,10 +76,6 @@ namespace BCCStudents.Infrastructure.Repositories
                 if (_writePolicy.ShouldWriteLocalDatabase)
                 {
                     _applicationLogRepository.InsertAsync(entry).GetAwaiter().GetResult();
-                }
-                else if (_writePolicy.ShouldWriteServer)
-                {
-                    _syncService.InsertToServerAsync(entry).GetAwaiter().GetResult();
                 }
             }
             catch

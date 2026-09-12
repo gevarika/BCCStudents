@@ -33,25 +33,24 @@ namespace BCCStudents.Presentation
 
         private void ApplySecurityChecks()
         {
-            // btnRefresh - CanManagePayments permission (viewing payment data)
+            bool canAccess = _userContext.CanAccessPayments();
+
             if (btnRefresh != null)
             {
-                btnRefresh.Tag = $"Permission_{Permission.CanManagePayments}";
-                btnRefresh.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+                btnRefresh.Tag = $"Permission_{Permission.CanEditPayments}";
+                btnRefresh.Enabled = canAccess;
             }
 
-            // გადახდებისისტორიაToolStripMenuItem - CanViewReports or CanManagePayments
             if (გადახდებისისტორიაToolStripMenuItem != null)
             {
-                გადახდებისისტორიაToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
-                გადახდებისისტორიაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+                გადახდებისისტორიაToolStripMenuItem.Tag = $"Permission_{Permission.CanEditPayments}";
+                გადახდებისისტორიაToolStripMenuItem.Enabled = canAccess || _userContext.HasPermission(Permission.CanViewReports);
             }
 
-            // დაუდასტურებელიგადახდებიToolStripMenuItem - CanManagePayments
             if (დაუდასტურებელიგადახდებიToolStripMenuItem != null)
             {
-                დაუდასტურებელიგადახდებიToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
-                დაუდასტურებელიგადახდებიToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
+                დაუდასტურებელიგადახდებიToolStripMenuItem.Tag = $"Permission_{Permission.CanEditPayments}";
+                დაუდასტურებელიგადახდებიToolStripMenuItem.Enabled = canAccess;
             }
         }
         private void SetupDataGridView()
@@ -92,8 +91,7 @@ namespace BCCStudents.Presentation
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -104,8 +102,7 @@ namespace BCCStudents.Presentation
 
         private void გადახდებისისტორიაToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments() && !_userContext.HasPermission(Permission.CanViewReports))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -119,8 +116,7 @@ namespace BCCStudents.Presentation
 
         private void დაუდასტურებელიგადახდებიToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

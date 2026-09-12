@@ -12,7 +12,6 @@ namespace BCCStudents.Presentation
         private readonly IBalanceRepository _balanceRepository;
         private readonly ILoggerRepository _loggerRepository;
         private readonly IUserContext _userContext;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
         private ComboBox cmbFromStudent;
         private ComboBox cmbToStudent;
@@ -32,14 +31,12 @@ namespace BCCStudents.Presentation
             IStudentRepository studentRepository,
             IBalanceRepository balanceRepository,
             ILoggerRepository loggerRepository,
-            IUserContext userContext,
-            IUpStreamChangeTracker upStreamChangeTracker)
+            IUserContext userContext)
         {
             _studentRepository = studentRepository ?? throw new ArgumentNullException(nameof(studentRepository));
             _balanceRepository = balanceRepository ?? throw new ArgumentNullException(nameof(balanceRepository));
             _loggerRepository = loggerRepository ?? throw new ArgumentNullException(nameof(loggerRepository));
             _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
 
             InitializeComponent();
             FormTitleHelper.SetTitle(this, "ბალანსის გადატანა");
@@ -249,7 +246,7 @@ namespace BCCStudents.Presentation
             btnTransfer.Enabled = amount <= sender.Balance;
         }
 
-        private async void BtnTransfer_Click(object sender, EventArgs e)
+        private void BtnTransfer_Click(object sender, EventArgs e)
         {
             try
             {
@@ -298,7 +295,6 @@ namespace BCCStudents.Presentation
 
                 var details = BuildLogDetails(senderOption, receiverOption, amount);
                 LogBalanceTransfer("Success", details);
-                await TrackBalanceTransferSyncAsync(senderOption.Id, receiverOption.Id);
 
                 MessageBox.Show("თანხა წარმატებით გადაიტანა.", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -324,32 +320,6 @@ namespace BCCStudents.Presentation
             var user = string.IsNullOrWhiteSpace(_userContext?.Username) ? "System" : _userContext.Username;
             _loggerRepository.LogPaymentAction("BalanceTransfer", status, details, user);
             WriteBalanceTransferFile("BalanceTransfer", status, details, user);
-        }
-
-        private async System.Threading.Tasks.Task TrackBalanceTransferSyncAsync(int fromStudentId, int toStudentId)
-        {
-            try
-            {
-                var fromStudent = _studentRepository.GetStudentById(fromStudentId);
-                if (fromStudent != null)
-                {
-                    await _upStreamChangeTracker.TrackStudentChangeAsync(fromStudentId, SyncOperationType.Update, fromStudent);
-                }
-
-                var toStudent = _studentRepository.GetStudentById(toStudentId);
-                if (toStudent != null)
-                {
-                    await _upStreamChangeTracker.TrackStudentChangeAsync(toStudentId, SyncOperationType.Update, toStudent);
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggerRepository.LogPaymentAction(
-                    "BalanceTransferSync",
-                    "Error",
-                    $"Sync failed: {ex.Message}",
-                    string.IsNullOrWhiteSpace(_userContext?.Username) ? "System" : _userContext.Username);
-            }
         }
 
         private void WriteBalanceTransferFile(string operationType, string status, string details, string user)

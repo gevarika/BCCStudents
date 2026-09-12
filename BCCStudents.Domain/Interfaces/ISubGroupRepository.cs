@@ -187,19 +187,19 @@ namespace BCCStudents.Domain.Interfaces
         #region DELETE - ქვეჯგუფის წაშლა
 
         /// <summary>
-        /// ქვეჯგუფის წაშლა (Soft Delete)
+        /// ქვეჯგუფის სრული წაშლა (Hard Delete) + დაკავშირებული StudentSubGroups.
         /// </summary>
         bool DeleteSubGroup(int subGroupId);
-
-        /// <summary>
-        /// ქვეჯგუფის სრული წაშლა (Hard Delete)
-        /// </summary>
-        bool HardDeleteSubGroup(int subGroupId);
 
         /// <summary>
         /// მოსწავლის ქვეჯგუფიდან ამოღება
         /// </summary>
         bool DeleteStudentFromSubGroup(int studentId, int groupId);
+
+        /// <summary>
+        /// StudentSubGroups ჩანაწერების Id-ები მოცემული ქვეჯგუფისთვის (UpStream Delete-ისთვის).
+        /// </summary>
+        List<int> GetStudentSubGroupIdsBySubGroupId(int subGroupId);
 
         #endregion
     }

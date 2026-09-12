@@ -141,7 +141,7 @@ namespace BCCStudents.Presentation
         private void btnAddGroup_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanManageGroups))
+            if (!_userContext.HasPermission(Permission.CanAddGroups))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -266,32 +266,28 @@ namespace BCCStudents.Presentation
 
         private void ApplySecurityChecks()
         {
-            // btnAddGroup - CanManageGroups permission
             if (btnAddGroup != null)
             {
-                btnAddGroup.Tag = $"Permission_{Permission.CanManageGroups}";
-                btnAddGroup.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
+                btnAddGroup.Tag = $"Permission_{Permission.CanAddGroups}";
+                btnAddGroup.Enabled = _userContext.HasPermission(Permission.CanAddGroups);
             }
 
-            // btnDeleteGroup - CanManageGroups permission (or CanDelete, but Groups management typically uses CanManageGroups)
             if (btnDeleteGroup != null)
             {
-                btnDeleteGroup.Tag = $"Permission_{Permission.CanManageGroups}";
-                btnDeleteGroup.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
+                btnDeleteGroup.Tag = $"Permission_{Permission.CanDeleteGroups}";
+                btnDeleteGroup.Enabled = _userContext.HasPermission(Permission.CanDeleteGroups);
             }
 
-            // tsEditGroups - CanManageGroups permission
             if (tsEditGroups != null)
             {
-                tsEditGroups.Tag = $"Permission_{Permission.CanManageGroups}";
-                tsEditGroups.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
+                tsEditGroups.Tag = $"Permission_{Permission.CanEditGroups}";
+                tsEditGroups.Enabled = _userContext.HasPermission(Permission.CanEditGroups);
             }
 
-            // tsEditSubGroups - CanManageGroups permission
             if (tsEditSubGroups != null)
             {
-                tsEditSubGroups.Tag = $"Permission_{Permission.CanManageGroups}";
-                tsEditSubGroups.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
+                tsEditSubGroups.Tag = $"Permission_{Permission.CanEditSubGroups}";
+                tsEditSubGroups.Enabled = _userContext.HasPermission(Permission.CanEditSubGroups);
             }
         }
 
@@ -307,7 +303,7 @@ namespace BCCStudents.Presentation
         private void BtnDeleteGroup_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanManageGroups))
+            if (!_userContext.HasPermission(Permission.CanDeleteGroups))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

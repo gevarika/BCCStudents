@@ -4,7 +4,7 @@ using BCCStudents.Domain.Entities;
 namespace BCCStudents.Presentation.Services
 {
     /// <summary>
-    /// ლოკალური/სერვერის კავშირის სტატუსი ყველა ფორმაზე (ქვედა status strip).
+    /// სერვერის კავშირის სტატუსი ყველა ფორმაზე (ქვედა status strip). Server-only რეჟიმი.
     /// </summary>
     public sealed class ConnectionStatusBarHost
     {
@@ -31,6 +31,9 @@ namespace BCCStudents.Presentation.Services
             _mainForm = mainForm;
             _mainLocalLabel = localLabel;
             _mainServerLabel = serverLabel;
+            // ლოკალური ლეიბლი აღარ სჭირდება — მხოლოდ სერვერი
+            if (_mainLocalLabel != null)
+                _mainLocalLabel.Visible = false;
             EnsureEventsHooked();
             RefreshAllLabels();
         }
@@ -40,7 +43,7 @@ namespace BCCStudents.Presentation.Services
             if (form.IsDisposed)
                 return;
 
-            if (form is MainForm or LoginForm or RegisterForm)
+            if (form is MainForm or LoginForm)
                 return;
 
             lock (_gate)
@@ -65,14 +68,6 @@ namespace BCCStudents.Presentation.Services
                     form.Controls.Add(strip);
                 }
 
-                var localLabel = new ToolStripStatusLabel
-                {
-                    Name = "connectionLocalStatusLabel",
-                    BorderSides = ToolStripStatusLabelBorderSides.Right,
-                    BorderStyle = Border3DStyle.Etched,
-                    AutoSize = true
-                };
-
                 var serverLabel = new ToolStripStatusLabel
                 {
                     Name = "connectionServerStatusLabel",
@@ -82,15 +77,13 @@ namespace BCCStudents.Presentation.Services
                 };
 
                 strip.Items.Insert(0, serverLabel);
-                strip.Items.Insert(0, localLabel);
 
                 lock (_gate)
                 {
-                    _bindings[form] = new StatusBinding(localLabel, serverLabel);
+                    _bindings[form] = new StatusBinding(serverLabel);
                 }
 
                 form.FormClosed += OnAttachedFormClosed;
-                ApplyLocalState(localLabel, _connectionStatusService.IsConnected);
                 ApplyServerState(
                     serverLabel,
                     _connectionMonitor.IsServerConnected,
@@ -110,7 +103,7 @@ namespace BCCStudents.Presentation.Services
             if (_eventsHooked)
                 return;
 
-            _connectionStatusService.ConnectionStatusChanged += OnLocalConnectionChanged;
+            _connectionStatusService.ConnectionStatusChanged += OnConnectionChanged;
             _connectionMonitor.ConnectionStatusChanged += OnLocalMonitorChanged;
             _connectionMonitor.ServerConnectionStatusChanged += OnServerConnectionChanged;
             _eventsHooked = true;
@@ -128,7 +121,7 @@ namespace BCCStudents.Presentation.Services
             }
         }
 
-        private void OnLocalConnectionChanged(object? sender, EventArgs e) =>
+        private void OnConnectionChanged(object? sender, EventArgs e) =>
             RefreshAllLabels();
 
         private void OnLocalMonitorChanged(object? sender, bool isConnected) =>
@@ -137,9 +130,6 @@ namespace BCCStudents.Presentation.Services
         private void OnServerConnectionChanged(object? sender, ServerConnectionChangedEventArgs e)
         {
             RefreshAllLabels();
-
-            if (_mainLocalLabel == null)
-                return;
 
             var mainForm = _mainForm;
             if (mainForm == null || mainForm.IsDisposed)
@@ -157,16 +147,7 @@ namespace BCCStudents.Presentation.Services
                     WindowsToastNotifier.ShowServerOffline(
                         "სერვერი გათიშულია",
                         message,
-                        "სინქრონიზაცია დროებით შეჩერდება. დეტალები — ლოგში (app-*.log).");
-
-                    // ძველი MessageBox (საცდელად toast-ზე გადასვლა):
-                    // MessageBox.Show(
-                    //     mainForm,
-                    //     message + Environment.NewLine + Environment.NewLine +
-                    //     "სინქრონიზაცია დროებით შეჩერდება. დეტალები — ლოგში (app-*.log).",
-                    //     "სერვერი გათიშულია",
-                    //     MessageBoxButtons.OK,
-                    //     MessageBoxIcon.Warning);
+                        "მონაცემებთან მუშაობა შეუძლებელია სანამ კავშირი არ აღდგება. დეტალები — ლოგში (app-*.log).");
                     return;
                 }
 
@@ -177,16 +158,7 @@ namespace BCCStudents.Presentation.Services
                 {
                     WindowsToastNotifier.ShowServerOnline(
                         "სერვერი დაკავშირებულია",
-                        "სერვერთან კავშირი აღდგა. სინქრონიზაცია განახლდება ავტომატურად.");
-
-                    // ძველი MessageBox:
-                    // MessageBox.Show(
-                    //     mainForm,
-                    //     "სერვერთან კავშირი აღდგა." + Environment.NewLine + Environment.NewLine +
-                    //     "სინქრონიზაცია განახლდება ავტომატურად.",
-                    //     "სერვერი დაკავშირებულია",
-                    //     MessageBoxButtons.OK,
-                    //     MessageBoxIcon.Information);
+                        "სერვერთან კავშირი აღდგა.");
                 }
             }
 
@@ -198,12 +170,8 @@ namespace BCCStudents.Presentation.Services
 
         public void RefreshAllLabels()
         {
-            var localConnected = _connectionStatusService.IsConnected;
             var serverConnected = _connectionMonitor.IsServerConnected;
             var serverFailure = _connectionMonitor.LastServerConnectionFailure;
-
-            if (_mainLocalLabel != null && !_mainLocalLabel.IsDisposed)
-                ApplyLocalState(_mainLocalLabel, localConnected);
 
             if (_mainServerLabel != null && !_mainServerLabel.IsDisposed)
                 ApplyServerState(_mainServerLabel, serverConnected, serverFailure);
@@ -216,25 +184,10 @@ namespace BCCStudents.Presentation.Services
 
             foreach (var binding in snapshot)
             {
-                if (binding.Local.IsDisposed || binding.Server.IsDisposed)
+                if (binding.Server.IsDisposed)
                     continue;
 
-                ApplyLocalState(binding.Local, localConnected);
                 ApplyServerState(binding.Server, serverConnected, serverFailure);
-            }
-        }
-
-        private static void ApplyLocalState(ToolStripStatusLabel label, bool isConnected)
-        {
-            if (isConnected)
-            {
-                label.Text = "✅ ლოკალური ბაზა";
-                label.ForeColor = Color.Green;
-            }
-            else
-            {
-                label.Text = "❌ ლოკალური ბაზა";
-                label.ForeColor = Color.Red;
             }
         }
 
@@ -257,13 +210,11 @@ namespace BCCStudents.Presentation.Services
 
         private sealed class StatusBinding
         {
-            public StatusBinding(ToolStripStatusLabel local, ToolStripStatusLabel server)
+            public StatusBinding(ToolStripStatusLabel server)
             {
-                Local = local;
                 Server = server;
             }
 
-            public ToolStripStatusLabel Local { get; }
             public ToolStripStatusLabel Server { get; }
         }
     }

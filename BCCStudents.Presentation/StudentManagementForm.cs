@@ -135,36 +135,33 @@ namespace BCCStudents.Presentation
         }
         private void ApplySecurityChecks()
         {
-            // btnAddStudent - CanAddStudents or CanManageStudents permission
+            // btnAddStudent - CanAddStudents (Manage იერარქიითაც)
             if (btnAddStudent != null)
             {
                 btnAddStudent.Tag = $"Permission_{Permission.CanAddStudents}";
-                btnAddStudent.Enabled = _userContext.HasPermission(Permission.CanAddStudents) ||
-                                       _userContext.HasPermission(Permission.CanManageStudents);
+                btnAddStudent.Enabled = _userContext.HasPermission(Permission.CanAddStudents);
             }
 
-            // მოსწავლისრედაქტირებაToolStripMenuItem - CanEditStudents or CanManageStudents permission
+            // მოსწავლისრედაქტირებაToolStripMenuItem - CanEditStudents
             if (მოსწავლისრედაქტირებაToolStripMenuItem != null)
             {
                 მოსწავლისრედაქტირებაToolStripMenuItem.Tag = $"Permission_{Permission.CanEditStudents}";
-                მოსწავლისრედაქტირებაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanEditStudents) ||
-                                                                   _userContext.HasPermission(Permission.CanManageStudents);
+                მოსწავლისრედაქტირებაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanEditStudents);
             }
 
-            // tsmFailedStudents - CanViewReports or CanManageStudents permission (viewing failed students is a read operation)
+            // ნახვის ოპერაციები: ანგარიშები ან მოსწავლეების მოდულის წვდომა
             if (tsmFailedStudents != null)
             {
                 tsmFailedStudents.Tag = $"Permission_{Permission.CanViewReports}";
                 tsmFailedStudents.Enabled = _userContext.HasPermission(Permission.CanViewReports) ||
-                                           _userContext.HasPermission(Permission.CanManageStudents);
+                                           _userContext.CanAccessStudents();
             }
 
-            // ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem - CanViewReports or CanManageStudents permission
             if (ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem != null)
             {
                 ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem.Tag = $"Permission_{Permission.CanViewReports}";
                 ონლაინრეგისტრირებულიმოსწავლეებიToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanViewReports) ||
-                                                                              _userContext.HasPermission(Permission.CanManageStudents);
+                                                                              _userContext.CanAccessStudents();
             }
 
             // btnExportToExcell - CanExportData permission
@@ -228,6 +225,12 @@ namespace BCCStudents.Presentation
         }
         private async void btnAddStudent_Click(object sender, EventArgs e)
         {
+            if (!_userContext.HasPermission(Permission.CanAddStudents))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var result = new OperationResultContext();
             try
             {
@@ -576,7 +579,7 @@ namespace BCCStudents.Presentation
         {
             // Security check
             if (!_userContext.HasPermission(Permission.CanViewReports) &&
-                !_userContext.HasPermission(Permission.CanManageStudents))
+                !_userContext.CanAccessStudents())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -595,8 +598,7 @@ namespace BCCStudents.Presentation
         private void მოსწავლისრედაქტირებაToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanEditStudents) &&
-                !_userContext.HasPermission(Permission.CanManageStudents))
+            if (!_userContext.HasPermission(Permission.CanEditStudents))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

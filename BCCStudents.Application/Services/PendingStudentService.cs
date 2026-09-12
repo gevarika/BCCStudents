@@ -14,7 +14,6 @@ namespace BCCStudents.Application.Services
         private readonly IStudentGroupRepository _studentGroupRepo;
         private readonly IStudentSubGroupRepository _studentSubGroupRepo;
         private readonly ISubGroupRepository _subGroupRepository;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
         public PendingStudentService(
             IGroupRepository groupRepository,
@@ -24,8 +23,7 @@ namespace BCCStudents.Application.Services
             IPendingStudentGroupRepository pendingStudentGroupRepository,
             IStudentGroupRepository studentGroupRepo,
             IStudentSubGroupRepository studentSubGroupRepo,
-            ISubGroupRepository subGroupRepository,
-            IUpStreamChangeTracker upStreamChangeTracker)
+            ISubGroupRepository subGroupRepository)
         {
             _pendingRepo = pendingRepo;
             _studentRepo = studentRepo;
@@ -35,7 +33,6 @@ namespace BCCStudents.Application.Services
             _studentGroupRepo = studentGroupRepo;
             _studentSubGroupRepo = studentSubGroupRepo;
             _subGroupRepository = subGroupRepository;
-            _upStreamChangeTracker = upStreamChangeTracker;
         }
 
         public List<PendingStudent> GetAllPending()
@@ -67,7 +64,6 @@ namespace BCCStudents.Application.Services
             if (selectedGroupIds.Count > 0)
             {
                 var discountPercent = Convert.ToDecimal(discountAmount);
-                var postSyncActions = new List<Action>();
 
                 // 1. დამატება Students ცხრილში
                 var student = new Student
@@ -89,8 +85,6 @@ namespace BCCStudents.Application.Services
 
                 if (studentId > 0)
                 {
-                    postSyncActions.Add(() => SyncStudentSnapshot(studentId, SyncOperationType.Insert));
-
                     // 2. ჯგუფ(ებ)ში დამატება და რაოდენობის გაზრდა
                     foreach (int groupId in selectedGroupIds)
                     {
@@ -117,11 +111,6 @@ namespace BCCStudents.Application.Services
 
                         // ჯგუფის მოსწავლეთა რაოდენობის გაზრდა
                         _groupRepository.IncrementStudentCount(groupId);
-
-                        var groupIdCopy = groupId;
-                        var studentIdCopyForGroup = studentId;
-                        postSyncActions.Add(() => SyncGroupSnapshot(groupIdCopy, SyncOperationType.Update));
-                        postSyncActions.Add(() => SyncStudentGroupSnapshot(studentIdCopyForGroup, groupIdCopy, SyncOperationType.Update));
                     }
 
                     // 2.5 ქვეჯგუფებში დამატება
@@ -151,41 +140,13 @@ namespace BCCStudents.Application.Services
 
                         // ქვეჯგუფის მოსწავლეთა რაოდენობის გაზრდა
                         _subGroupRepository.IncrementSubGroupCount(subGroup.SubGroupId, null, null);
-
-                        var subGroupIdCopy = subGroup.SubGroupId;
-                        var subGroupGroupIdCopy = subGroup.GroupId;
-                        var studentIdCopyForSubGroup = studentId;
-                        postSyncActions.Add(() => SyncSubGroupSnapshot(subGroupIdCopy, SyncOperationType.Update));
-                        postSyncActions.Add(() => SyncStudentSubGroupSnapshot(studentIdCopyForSubGroup, subGroupGroupIdCopy, subGroupIdCopy, SyncOperationType.Update));
                     }
 
-                    // 3. Pending ჩანაწერების წაშლა (ლოკალურად + სერვერზე)
+                    // 3. Pending ჩანაწერების წაშლა
                     var pendingStudentId = pendingStudent.Id;
-                    var pendingGroupLinkIds = _pendingGroupRepo.GetPendingGroupLinkIds(pendingStudentId);
-                    var pendingSubGroupLinkIds = _pendingGroupRepo.GetPendingSubGroupLinkIds(pendingStudentId);
-
-                    foreach (var linkId in pendingSubGroupLinkIds)
-                    {
-                        var linkIdCopy = linkId;
-                        postSyncActions.Add(() => _upStreamChangeTracker.TrackDelete("PendingStudentSubGroups", linkIdCopy));
-                    }
-
-                    foreach (var linkId in pendingGroupLinkIds)
-                    {
-                        var linkIdCopy = linkId;
-                        postSyncActions.Add(() => _upStreamChangeTracker.TrackDelete("PendingStudentGroups", linkIdCopy));
-                    }
-
-                    postSyncActions.Add(() => _upStreamChangeTracker.TrackDelete("PendingStudents", pendingStudentId));
-
                     _pendingGroupRepo.DeleteSubGroupsByPendingStudentId(pendingStudentId);
                     _pendingGroupRepo.DeleteByPendingStudentId(pendingStudentId);
                     _pendingRepo.Delete(pendingStudentId);
-
-                    foreach (var action in postSyncActions)
-                    {
-                        TryExecuteSyncAction(action);
-                    }
                 }
                 else
                 {
@@ -219,88 +180,6 @@ namespace BCCStudents.Application.Services
         {
             _pendingRepo.UpdatePartial(id, fields);
         }
-
-        #region Sync Helpers
-
-        private void TryExecuteSyncAction(Action action)
-        {
-            try
-            {
-                action?.Invoke();
-            }
-            catch
-            {
-                // სინქრონიზაციის შეცდომები არ უნდა დაბლოკოს სამუშაო ნაკადი
-            }
-        }
-
-        private void SyncStudentSnapshot(int studentId, SyncOperationType operation)
-        {
-            try
-            {
-                var student = _studentRepo.GetStudentById(studentId);
-                if (student != null)
-                {
-                    _upStreamChangeTracker.TrackStudentChange(studentId, operation, student);
-                }
-            }
-            catch { }
-        }
-
-        private void SyncGroupSnapshot(int groupId, SyncOperationType operation)
-        {
-            try
-            {
-                var group = _groupRepository.GetGroupById(groupId);
-                if (group != null)
-                {
-                    _upStreamChangeTracker.TrackGroupChange(groupId, operation, group);
-                }
-            }
-            catch { }
-        }
-
-        private void SyncSubGroupSnapshot(int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                var subGroup = _subGroupRepository.GetSubGroupById(subGroupId);
-                if (subGroup != null)
-                {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroupId, operation, subGroup);
-                }
-            }
-            catch { }
-        }
-
-        private void SyncStudentGroupSnapshot(int studentId, int groupId, SyncOperationType operation)
-        {
-            try
-            {
-                var snapshot = _studentGroupRepo.GetByStudentAndGroup(studentId, groupId);
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, operation, snapshot);
-                }
-            }
-            catch { }
-        }
-
-        private void SyncStudentSubGroupSnapshot(int studentId, int groupId, int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                var snapshot = _studentSubGroupRepo.GetByStudentGroupAndSubGroup(studentId, groupId, subGroupId);
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, operation, snapshot);
-                }
-            }
-            catch { }
-        }
-
-        #endregion
     }
 }
-
 

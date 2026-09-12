@@ -317,7 +317,7 @@ namespace BCCStudents.Presentation.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool UseLocalDb {
             get {
                 return ((bool)(this["UseLocalDb"]));

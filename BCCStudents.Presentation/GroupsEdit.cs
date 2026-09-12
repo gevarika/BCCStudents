@@ -34,6 +34,7 @@ namespace BCCStudents.Presentation
         private CheckBox chkSubGroupStatus;
         private Button btnSaveSubGroup;
         private Button btnCancelSubGroup;
+        private Button btnAddSubGroup;
         private Button btnDeleteSubGroup;
 
         // Close button
@@ -42,6 +43,7 @@ namespace BCCStudents.Presentation
         // Current selection
         private Group _selectedGroup;
         private SubGroup _selectedSubGroup;
+        private bool _isAddingSubGroup;
 
         public GroupsEdit(IGroupService groupService, ISubGroupService subGroupService, IUserContext userContext)
         {
@@ -100,23 +102,34 @@ namespace BCCStudents.Presentation
                 }
             }
 
-            // SubGroup editing panel - CanEditSubGroups permission
+            // SubGroup editing panel - CanEdit/CanAdd/CanDelete
             if (pnlEditSubGroup != null)
             {
                 bool canEditSubGroups = _userContext.HasPermission(Permission.CanEditSubGroups);
-                pnlEditSubGroup.Enabled = canEditSubGroups && pnlEditSubGroup.Enabled; // Preserve current selection state
+                bool canAddSubGroups = _userContext.HasPermission(Permission.CanAddSubGroups);
+                bool canDeleteSubGroups = _userContext.HasPermission(Permission.CanDeleteSubGroups);
 
-                // Individual controls in subgroup panel
+                pnlEditSubGroup.Enabled = (canEditSubGroups || canAddSubGroups) && (_selectedSubGroup != null || _isAddingSubGroup);
+
                 if (btnSaveSubGroup != null)
                 {
                     btnSaveSubGroup.Tag = $"Permission_{Permission.CanEditSubGroups}";
-                    btnSaveSubGroup.Enabled = canEditSubGroups && _selectedSubGroup != null;
+                    bool canSave = _isAddingSubGroup
+                        ? canAddSubGroups && _selectedGroup != null
+                        : canEditSubGroups && _selectedSubGroup != null;
+                    btnSaveSubGroup.Enabled = canSave;
+                }
+
+                if (btnAddSubGroup != null)
+                {
+                    btnAddSubGroup.Tag = $"Permission_{Permission.CanAddSubGroups}";
+                    btnAddSubGroup.Enabled = canAddSubGroups && _selectedGroup != null && !_isAddingSubGroup;
                 }
 
                 if (btnDeleteSubGroup != null)
                 {
                     btnDeleteSubGroup.Tag = $"Permission_{Permission.CanDeleteSubGroups}";
-                    btnDeleteSubGroup.Enabled = _userContext.HasPermission(Permission.CanDeleteSubGroups) && _selectedSubGroup != null;
+                    btnDeleteSubGroup.Enabled = canDeleteSubGroups && _selectedSubGroup != null && !_isAddingSubGroup;
                 }
             }
         }
@@ -252,7 +265,8 @@ namespace BCCStudents.Presentation
 
             btnSaveSubGroup = new Button { Text = "შენახვა", Location = new Point(140, 140), Size = new Size(80, 25) };
             btnCancelSubGroup = new Button { Text = "გაუქმება", Location = new Point(230, 140), Size = new Size(80, 25) };
-            btnDeleteSubGroup = new Button { Text = "წაშლა", Location = new Point(320, 140), Size = new Size(80, 25) };
+            btnAddSubGroup = new Button { Text = "დამატება", Location = new Point(320, 140), Size = new Size(80, 25) };
+            btnDeleteSubGroup = new Button { Text = "წაშლა", Location = new Point(410, 140), Size = new Size(80, 25) };
 
             // Close button - moved to center bottom
             btnClose = new Button { Text = "დახურვა", Location = new Point(450, 670), Size = new Size(100, 30) };
@@ -260,7 +274,7 @@ namespace BCCStudents.Presentation
             // Add controls to subgroup panel
             pnlEditSubGroup.Controls.AddRange(new Control[] {
                 lblSubGroupTitle, lblSubGroupName, txtSubGroupName, lblSubGroupPrice, txtSubGroupPrice,
-                chkSubGroupStatus, btnSaveSubGroup, btnCancelSubGroup, btnDeleteSubGroup
+                chkSubGroupStatus, btnSaveSubGroup, btnCancelSubGroup, btnAddSubGroup, btnDeleteSubGroup
             });
 
             // Add all controls to form
@@ -289,6 +303,7 @@ namespace BCCStudents.Presentation
             // SubGroup editing
             btnSaveSubGroup.Click += BtnSaveSubGroup_Click;
             btnCancelSubGroup.Click += BtnCancelSubGroup_Click;
+            btnAddSubGroup.Click += BtnAddSubGroup_Click;
             btnDeleteSubGroup.Click += BtnDeleteSubGroup_Click;
 
             // Close button
@@ -315,7 +330,8 @@ namespace BCCStudents.Presentation
 
         private void LoadSubGroups(int groupId)
         {
-            var subGroups = _subGroupService.GetSubGroupsByGroupId(groupId);
+            // აქტიური + არააქტიური: სტატუსის ჩექბოქსი ≠ წაშლა
+            var subGroups = _subGroupService.GetAllSubGroupsByGroupId(groupId);
             dgvSubGroups.DataSource = subGroups;
 
             // Set column headers
@@ -324,7 +340,7 @@ namespace BCCStudents.Presentation
                 dgvSubGroups.Columns["Id"].HeaderText = "ID";
                 dgvSubGroups.Columns["Name"].HeaderText = "სახელი";
                 dgvSubGroups.Columns["TuitionFee"].HeaderText = "ფასი";
-                dgvSubGroups.Columns["Status"].HeaderText = "სტატუსი";
+                dgvSubGroups.Columns["Status"].HeaderText = "აქტიური";
                 dgvSubGroups.Columns["MaxStudents"].Visible = false;
                 dgvSubGroups.Columns["GroupId"].Visible = false;
             }
@@ -332,6 +348,8 @@ namespace BCCStudents.Presentation
 
         private void DgvGroups_SelectionChanged(object sender, EventArgs e)
         {
+            CancelAddSubGroupMode();
+
             if (dgvGroups.CurrentRow != null)
             {
                 _selectedGroup = dgvGroups.CurrentRow.DataBoundItem as Group;
@@ -351,6 +369,9 @@ namespace BCCStudents.Presentation
 
         private void DgvSubGroups_SelectionChanged(object sender, EventArgs e)
         {
+            if (_isAddingSubGroup)
+                return;
+
             if (dgvSubGroups.CurrentRow != null)
             {
                 _selectedSubGroup = dgvSubGroups.CurrentRow.DataBoundItem as SubGroup;
@@ -376,34 +397,76 @@ namespace BCCStudents.Presentation
             {
                 btnSaveGroup.Enabled = canEditGroups && _selectedGroup != null;
             }
+
+            RefreshSubGroupActionButtons();
         }
 
         private void DisableGroupEditing()
         {
             pnlEditGroup.Enabled = false;
+            CancelAddSubGroupMode();
         }
 
         private void EnableSubGroupEditing()
         {
             bool canEditSubGroups = _userContext.HasPermission(Permission.CanEditSubGroups);
+            bool canAddSubGroups = _userContext.HasPermission(Permission.CanAddSubGroups);
             bool canDeleteSubGroups = _userContext.HasPermission(Permission.CanDeleteSubGroups);
 
-            pnlEditSubGroup.Enabled = canEditSubGroups;
+            pnlEditSubGroup.Enabled = canEditSubGroups || canAddSubGroups || (_isAddingSubGroup && canAddSubGroups);
 
             if (btnSaveSubGroup != null)
             {
-                btnSaveSubGroup.Enabled = canEditSubGroups && _selectedSubGroup != null;
+                bool canSave = _isAddingSubGroup
+                    ? canAddSubGroups && _selectedGroup != null
+                    : canEditSubGroups && _selectedSubGroup != null;
+                btnSaveSubGroup.Enabled = canSave;
+            }
+
+            if (btnAddSubGroup != null)
+            {
+                btnAddSubGroup.Enabled = canAddSubGroups && _selectedGroup != null && !_isAddingSubGroup;
             }
 
             if (btnDeleteSubGroup != null)
             {
-                btnDeleteSubGroup.Enabled = canDeleteSubGroups && _selectedSubGroup != null;
+                btnDeleteSubGroup.Enabled = canDeleteSubGroups && _selectedSubGroup != null && !_isAddingSubGroup;
             }
         }
 
         private void DisableSubGroupEditing()
         {
+            if (_isAddingSubGroup)
+                return;
             pnlEditSubGroup.Enabled = false;
+            RefreshSubGroupActionButtons();
+        }
+
+        private void RefreshSubGroupActionButtons()
+        {
+            bool canAddSubGroups = _userContext.HasPermission(Permission.CanAddSubGroups);
+            bool canDeleteSubGroups = _userContext.HasPermission(Permission.CanDeleteSubGroups);
+            bool canEditSubGroups = _userContext.HasPermission(Permission.CanEditSubGroups);
+
+            if (btnAddSubGroup != null)
+                btnAddSubGroup.Enabled = canAddSubGroups && _selectedGroup != null && !_isAddingSubGroup;
+
+            if (btnDeleteSubGroup != null)
+                btnDeleteSubGroup.Enabled = canDeleteSubGroups && _selectedSubGroup != null && !_isAddingSubGroup;
+
+            if (btnSaveSubGroup != null)
+            {
+                bool canSave = _isAddingSubGroup
+                    ? canAddSubGroups && _selectedGroup != null
+                    : canEditSubGroups && _selectedSubGroup != null;
+                btnSaveSubGroup.Enabled = canSave;
+            }
+
+            if (pnlEditSubGroup != null && _selectedGroup != null && (canAddSubGroups || canEditSubGroups))
+            {
+                if (_isAddingSubGroup || _selectedSubGroup != null)
+                    pnlEditSubGroup.Enabled = true;
+            }
         }
 
         private void LoadGroupData()
@@ -512,14 +575,27 @@ namespace BCCStudents.Presentation
 
         private void BtnSaveSubGroup_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanEditSubGroups))
+            if (_isAddingSubGroup)
+            {
+                if (!_userContext.HasPermission(Permission.CanAddSubGroups))
+                {
+                    MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            else if (!_userContext.HasPermission(Permission.CanEditSubGroups))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (_selectedSubGroup == null) return;
+            if (_selectedGroup == null)
+            {
+                MessageBox.Show("გთხოვთ აირჩიოთ ჯგუფი.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!_isAddingSubGroup && _selectedSubGroup == null) return;
 
             if (string.IsNullOrWhiteSpace(txtSubGroupName.Text))
             {
@@ -535,30 +611,91 @@ namespace BCCStudents.Presentation
 
             try
             {
-                _selectedSubGroup.Name = txtSubGroupName.Text.Trim();
-                _selectedSubGroup.TuitionFee = price;
-                _selectedSubGroup.MaxStudents = 0;
-                _selectedSubGroup.Status = chkSubGroupStatus.Checked;
-
-                bool success = _subGroupService.UpdateSubGroup(_selectedSubGroup);
-
-                if (success)
+                if (_isAddingSubGroup)
                 {
-                    MessageBox.Show("ქვეჯგუფი წარმატებით განახლდა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    if (_selectedGroup != null)
+                    var newSubGroup = new SubGroup
                     {
+                        GroupId = _selectedGroup.Id,
+                        Name = txtSubGroupName.Text.Trim(),
+                        TuitionFee = price,
+                        MaxStudents = 0,
+                        Status = chkSubGroupStatus.Checked,
+                        StudentCount = 0,
+                        UpdatedAt = DateTime.Now
+                    };
+
+                    int newId = _subGroupService.AddSubGroup(newSubGroup);
+                    if (newId > 0)
+                    {
+                        MessageBox.Show("ქვეჯგუფი წარმატებით დაემატა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        CancelAddSubGroupMode();
                         LoadSubGroups(_selectedGroup.Id);
+                    }
+                    else
+                    {
+                        MessageBox.Show("ქვეჯგუფის დამატება ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 else
                 {
-                    MessageBox.Show("ქვეჯგუფის განახლება ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    _selectedSubGroup.Name = txtSubGroupName.Text.Trim();
+                    _selectedSubGroup.TuitionFee = price;
+                    _selectedSubGroup.MaxStudents = 0;
+                    _selectedSubGroup.Status = chkSubGroupStatus.Checked;
+
+                    bool success = _subGroupService.UpdateSubGroup(_selectedSubGroup);
+
+                    if (success)
+                    {
+                        MessageBox.Show("ქვეჯგუფი წარმატებით განახლდა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadSubGroups(_selectedGroup.Id);
+                    }
+                    else
+                    {
+                        MessageBox.Show("ქვეჯგუფის განახლება ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"შეცდომა: {ex.Message}", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void BtnAddSubGroup_Click(object sender, EventArgs e)
+        {
+            if (!_userContext.HasPermission(Permission.CanAddSubGroups))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_selectedGroup == null)
+            {
+                MessageBox.Show("გთხოვთ ჯერ აირჩიოთ ჯგუფი.", "ინფორმაცია", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            _isAddingSubGroup = true;
+            _selectedSubGroup = null;
+            dgvSubGroups.ClearSelection();
+
+            var existing = _subGroupService.GetAllSubGroupsByGroupId(_selectedGroup.Id);
+            int nextNumber = existing.Count + 1;
+            txtSubGroupName.Text = $"კლასი {nextNumber}";
+            txtSubGroupPrice.Text = _selectedGroup.Price.ToString();
+            chkSubGroupStatus.Checked = true;
+
+            pnlEditSubGroup.Enabled = true;
+            RefreshSubGroupActionButtons();
+            txtSubGroupName.Focus();
+        }
+
+        private void CancelAddSubGroupMode()
+        {
+            _isAddingSubGroup = false;
+            ClearSubGroupData();
+            RefreshSubGroupActionButtons();
         }
 
         private void BtnDeleteSubGroup_Click(object sender, EventArgs e)
@@ -573,10 +710,12 @@ namespace BCCStudents.Presentation
             if (_selectedSubGroup == null) return;
 
             var result = MessageBox.Show(
-                $"დარწმუნებული ხართ რომ გსურთ ქვეჯგუფის წაშლა '{_selectedSubGroup.Name}'?",
+                $"დარწმუნებული ხართ რომ გსურთ ქვეჯგუფის სამუდამოდ წაშლა '{_selectedSubGroup.Name}'?\n\n" +
+                "ჩანაწერი წაიშლება ბაზიდან (არა მხოლოდ სტატუსის შეცვლა) და სინქის შემდეგ სხვა კომპიუტერებზეც გაქრება.\n" +
+                "თუ ქვეჯგუფში აქტიური მოსწავლეები არიან, წაშლა შეუძლებელია.",
                 "დადასტურება",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                MessageBoxIcon.Warning);
 
             if (result == DialogResult.Yes)
             {
@@ -587,15 +726,22 @@ namespace BCCStudents.Presentation
                     if (success)
                     {
                         MessageBox.Show("ქვეჯგუფი წარმატებით წაიშალა!", "წარმატება", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        _selectedSubGroup = null;
+                        ClearSubGroupData();
                         if (_selectedGroup != null)
                         {
                             LoadSubGroups(_selectedGroup.Id);
                         }
+                        RefreshSubGroupActionButtons();
                     }
                     else
                     {
                         MessageBox.Show("ქვეჯგუფის წაშლა ვერ მოხერხდა.", "შეცდომა", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    MessageBox.Show(ex.Message, "წაშლა შეუძლებელია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 catch (Exception ex)
                 {
@@ -611,6 +757,12 @@ namespace BCCStudents.Presentation
 
         private void BtnCancelSubGroup_Click(object sender, EventArgs e)
         {
+            if (_isAddingSubGroup)
+            {
+                CancelAddSubGroupMode();
+                return;
+            }
+
             LoadSubGroupData(); // Reload original data
         }
 

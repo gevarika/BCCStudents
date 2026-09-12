@@ -17,7 +17,6 @@ namespace BCCStudents.Application.Services
         private readonly IStudentSubGroupRepository _studentSubGroupRepository;
         private readonly DocumentService _documentService;
         private readonly IDatabaseConnectionProvider _connectionProvider;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         private readonly IStudentJsonService _studentJsonService;
         private readonly IStudentCodeGenerator _studentCodeGenerator;
         private readonly IGroupRepository _groupRepository;
@@ -34,7 +33,6 @@ namespace BCCStudents.Application.Services
             IDatabaseConnectionProvider connectionProvider,
             DocumentService documentService,
             IServiceProvider serviceProvider,
-            IUpStreamChangeTracker upStreamChangeTracker,
             IStudentJsonService studentJsonService,
             IApplicationStatus appStatus
             )
@@ -49,7 +47,6 @@ namespace BCCStudents.Application.Services
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _documentService = documentService;
             _studentCodeGenerator = studentCodeGenerator;
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             _studentJsonService = studentJsonService ?? throw new ArgumentNullException(nameof(studentJsonService));
             _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
         }
@@ -149,8 +146,6 @@ namespace BCCStudents.Application.Services
             }
 
             studentId = 0;
-            var postCommitSyncActions = new List<Action>();
-            var studentSyncScheduled = false;
 
             using (var connection = _connectionProvider.GetLocalConnection())
             {
@@ -214,12 +209,6 @@ namespace BCCStudents.Application.Services
                         int sid = _studentRepository.InsertStudent(student, connection, transaction);
                         if (sid == 0) { allSuccess = false; }
                         studentId = sid;
-                        var insertedStudentId = studentId;
-                        if (insertedStudentId > 0 && !studentSyncScheduled)
-                        {
-                            studentSyncScheduled = true;
-                            postCommitSyncActions.Add(() => SyncStudentSnapshot(insertedStudentId, SyncOperationType.Insert));
-                        }
                         foreach (var groupId in groupIds)
                         {
                             var groupPrice = _groupRepository.GetGroupPrice(groupId);
@@ -242,10 +231,6 @@ namespace BCCStudents.Application.Services
                             int sgId = _studentGroupsService.AddStudentGroup(studentGroup, connection, transaction);
                             if (sgId == 0) { allSuccess = false; break; }
                             _groupRepository.RecalculateStudentCount(groupId, connection, transaction);
-                            var groupIdCopy = groupId;
-                            var studentIdCopyForGroup = insertedStudentId;
-                            postCommitSyncActions.Add(() => SyncGroupSnapshot(groupIdCopy, SyncOperationType.Update));
-                            postCommitSyncActions.Add(() => SyncStudentGroupSnapshot(studentIdCopyForGroup, groupIdCopy, SyncOperationType.Update));
                             var subGroup = _subGroupRepository.GetFirstSubGroupByGroupId(groupId);
                             if (subGroup != null)
                             {
@@ -263,11 +248,6 @@ namespace BCCStudents.Application.Services
                                 int ssgId = _studentSubGroupRepository.InsertStudentSubGroup(studentSubGroup, connection, transaction);
                                 if (ssgId == 0) { allSuccess = false; break; }
                                 _subGroupRepository.IncrementSubGroupCount(subGroup.Id, connection, transaction);
-                                var subGroupIdCopy = subGroup.Id;
-                                var studentIdCopyForSubGroup = insertedStudentId;
-                                var subGroupGroupIdCopy = subGroup.GroupId;
-                                postCommitSyncActions.Add(() => SyncSubGroupSnapshot(subGroupIdCopy, SyncOperationType.Update));
-                                postCommitSyncActions.Add(() => SyncStudentSubGroupSnapshot(studentIdCopyForSubGroup, subGroupGroupIdCopy, subGroupIdCopy, SyncOperationType.Update));
                             }
                         }
                         _loggerRepository.LogStudentAction("Register", "Success", $"დარეგისტრირდა სტუდენტი: {student.FirstName} {student.LastName}", userId.ToString());
@@ -275,10 +255,6 @@ namespace BCCStudents.Application.Services
                         if (allSuccess)
                         {
                             transaction.Commit();
-                            foreach (var action in postCommitSyncActions)
-                            {
-                                TryExecuteSyncAction(action);
-                            }
                             return true;
                         }
                         else
@@ -301,7 +277,6 @@ namespace BCCStudents.Application.Services
         {
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. Student delete operation is blocked.");
-            var snapshot = _studentRepository.GetStudentById(studentId);
             // 1. წავშალოთ ჯგუფებთან კავშირი
             _studentRepository.RemoveStudentFromGroups(studentId);
 
@@ -310,11 +285,6 @@ namespace BCCStudents.Application.Services
 
             // 3. ჩავწეროთ ლოგი
             _loggerRepository.LogStudentAction("Delete", "Success", $"წაიშალა სტუდენტი ID: {studentId}", userId.ToString());
-
-            if (snapshot != null)
-            {
-                _upStreamChangeTracker.TrackStudentChange(studentId, SyncOperationType.Delete, snapshot);
-            }
         }
 
         public decimal CalculateFinalFee(decimal baseFee, decimal discountPercentage)
@@ -335,7 +305,6 @@ namespace BCCStudents.Application.Services
                 throw new InvalidOperationException("Database is offline. Student update operation is blocked.");
             student.UpdatedAt = DateTime.Now;
             _studentRepository.UpdateStudent(student);
-            SyncStudentSnapshot(student.Id, SyncOperationType.Update);
         }
 
         /// <summary>
@@ -348,7 +317,6 @@ namespace BCCStudents.Application.Services
                 throw new InvalidOperationException("Database is offline. Student field update operation is blocked.");
 
             _studentRepository.UpdateStudentFields(studentId, changedFields);
-            SyncStudentSnapshot(studentId, SyncOperationType.Update);
         }
 
 
@@ -358,17 +326,11 @@ namespace BCCStudents.Application.Services
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. Student group update operation is blocked.");
             _studentRepository.UpdateStudentGroupFields(original, updated);
-            SyncStudentGroupSnapshot(original.StudentId, original.GroupId, SyncOperationType.Update);
         }
 
         public bool UpdateStudentStatus(int studentId, int groupId, bool status)
         {
-            var ok = _studentRepository.UpdateStudentStatus(studentId, groupId, status);
-            if (ok)
-            {
-                SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
-            }
-            return ok;
+            return _studentRepository.UpdateStudentStatus(studentId, groupId, status);
         }
 
         /// <summary>
@@ -397,8 +359,6 @@ namespace BCCStudents.Application.Services
             };
             _studentGroupsService.AddStudentGroup(studentGroup, externalConnection, externalTransaction);
             _groupRepository.RecalculateStudentCount(groupId, externalConnection, externalTransaction);
-            SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
-            SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
 
         // Overload used by UI when აქვს სრულ ველებს
@@ -425,8 +385,6 @@ namespace BCCStudents.Application.Services
             };
             _studentGroupsService.AddStudentGroup(studentGroup);
             _groupRepository.RecalculateStudentCount(groupId, null, null);
-            SyncStudentGroupSnapshot(studentId, groupId, SyncOperationType.Update);
-            SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
 
         public void AddStudentToSubGroup(int studentId, int groupId, int subGroupId, string paymentStatus, DateTime? dateOfPayment, decimal price, double discount, bool status)
@@ -452,8 +410,6 @@ namespace BCCStudents.Application.Services
             if (result > 0)
             {
                 _subGroupRepository.IncrementSubGroupCount(subGroupId, null, null);
-                SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
-                SyncSubGroupSnapshot(subGroupId, SyncOperationType.Update);
             }
             else
             {
@@ -490,11 +446,6 @@ namespace BCCStudents.Application.Services
                 // განვაახლოთ StudentCount ორივე ჯგუფისთვის
                 _groupRepository.RecalculateStudentCount(oldGroupId.Value, null, null);
                 _groupRepository.RecalculateStudentCount(newGroupId, null, null);
-
-                // სინქრონიზაცია
-                SyncStudentGroupSnapshot(studentId, newGroupId, SyncOperationType.Update);
-                SyncGroupSnapshot(oldGroupId.Value, SyncOperationType.Update);
-                SyncGroupSnapshot(newGroupId, SyncOperationType.Update);
             }
 
             return success ? oldGroupId : null;
@@ -545,12 +496,9 @@ namespace BCCStudents.Application.Services
                 if (oldSubGroupId != newSubGroupId)
                 {
                     _subGroupRepository.DecreaseStudentCount(oldSubGroupId);
-                    SyncSubGroupSnapshot(oldSubGroupId, SyncOperationType.Update);
                 }
 
                 _subGroupRepository.IncrementSubGroupCount(newSubGroupId, null, null);
-                SyncStudentSubGroupSnapshot(studentId, newGroupId, newSubGroupId, SyncOperationType.Update);
-                SyncSubGroupSnapshot(newSubGroupId, SyncOperationType.Update);
             }
         }
 
@@ -641,11 +589,7 @@ namespace BCCStudents.Application.Services
         {
             if (!_appStatus.IsDatabaseOnline)
                 throw new InvalidOperationException("Database is offline. RemoveStudentFromGroup operation is blocked.");
-            // 1. ვიღებთ snapshots-ს სინქრონიზაციისთვის (soft delete-ის წინ)
-            var studentGroupSnapshot = GetStudentGroupSnapshot(studentId, groupId);
-            var studentSubGroupSnapshots = GetStudentSubGroupSnapshots(studentId, groupId);
-
-            // 2. ვიღებთ SubGroupIds-ს StudentCount-ის განახლებისთვის
+            // 1. ვიღებთ SubGroupIds-ს StudentCount-ის განახლებისთვის
             var subGroupIds = new List<int>();
             try
             {
@@ -669,68 +613,22 @@ namespace BCCStudents.Application.Services
             }
             catch { }
 
-            // 3. Soft delete: StudentGroups და StudentSubGroups (ლოკალურ ბაზაში Status=0, IsDeleted=1)
+            // 2. Soft delete: StudentGroups და StudentSubGroups (ლოკალურ ბაზაში Status=0, IsDeleted=1)
             _studentRepository.RemoveStudentFromGroup(studentId, groupId);
 
-            // 4. UpStream სინქრონიზაცია: StudentGroups
-            // მნიშვნელოვანია: ვიყენებთ Update ოპერაციას Status=false-ით, რადგან სერვერზეც უნდა გავაკეთოთ soft delete
-            if (studentGroupSnapshot != null)
-            {
-                // ვქმნით განახლებულ snapshot-ს Status=false-ით
-                var updatedSnapshot = new StudentGroups
-                {
-                    Id = studentGroupSnapshot.Id,
-                    StudentId = studentGroupSnapshot.StudentId,
-                    GroupId = studentGroupSnapshot.GroupId,
-                    Status = false, // Soft delete
-                    PaymentStatus = studentGroupSnapshot.PaymentStatus,
-                    DateOfPayment = studentGroupSnapshot.DateOfPayment,
-                    Price = studentGroupSnapshot.Price,
-                    Discount = studentGroupSnapshot.Discount,
-                    UpdatedAt = DateTime.Now
-                };
-                _upStreamChangeTracker.TrackStudentGroupChange(updatedSnapshot.Id, SyncOperationType.Update, updatedSnapshot);
-            }
-
-            // 5. UpStream სინქრონიზაცია: StudentSubGroups
-            // მნიშვნელოვანია: ვიყენებთ Update ოპერაციას Status=false-ით
-            foreach (var subGroupSnapshot in studentSubGroupSnapshots)
-            {
-                if (subGroupSnapshot != null)
-                {
-                    // ვქმნით განახლებულ snapshot-ს Status=false-ით
-                    var updatedSubGroupSnapshot = new StudentSubGroups
-                    {
-                        Id = subGroupSnapshot.Id,
-                        StudentId = subGroupSnapshot.StudentId,
-                        GroupId = subGroupSnapshot.GroupId,
-                        SubGroupId = subGroupSnapshot.SubGroupId,
-                        Status = false, // Soft delete
-                        PaymentStatus = subGroupSnapshot.PaymentStatus,
-                        DateOfPayment = subGroupSnapshot.DateOfPayment,
-                        Price = subGroupSnapshot.Price,
-                        Discount = subGroupSnapshot.Discount,
-                        UpdatedAt = DateTime.Now
-                    };
-                    _upStreamChangeTracker.TrackStudentSubGroupChange(updatedSubGroupSnapshot.Id, SyncOperationType.Update, updatedSubGroupSnapshot);
-                }
-            }
-
-            // 6. Local recounts after soft-delete: Groups
+            // 3. Local recounts after soft-delete: Groups
             try
             {
                 _groupRepository.RecalculateStudentCount(groupId, null, null);
-                SyncGroupSnapshot(groupId, SyncOperationType.Update);
             }
             catch { }
 
-            // 7. Local recounts after soft-delete: SubGroups
+            // 4. Local recounts after soft-delete: SubGroups
             foreach (var subGroupId in subGroupIds)
             {
                 try
                 {
                     _subGroupRepository.DecreaseStudentCount(subGroupId);
-                    SyncSubGroupSnapshot(subGroupId, SyncOperationType.Update);
                 }
                 catch { }
             }
@@ -789,238 +687,6 @@ namespace BCCStudents.Application.Services
             if (discountPercent <= 0)
                 return basePrice;
             return new DiscountCalculator(basePrice, (decimal)discountPercent).GetFinalAmount();
-        }
-
-        #endregion
-
-        #region Sync Helpers
-
-        /// <summary>
-        /// Executes sync actions safely so that upstream failures do not break the primary transaction.
-        /// </summary>
-        private void TryExecuteSyncAction(Action action)
-        {
-            try
-            {
-                action?.Invoke();
-            }
-            catch
-            {
-                // სინქრონიზაციის შეცდომები არ უნდა დაბლოკოს სამუშაო ნაკადი
-            }
-        }
-
-        /// <summary>
-        /// Loads the latest student snapshot and tracks it via UpStreamChangeTracker.
-        /// </summary>
-        private void SyncStudentSnapshot(int studentId, SyncOperationType operation)
-        {
-            try
-            {
-                var student = _studentRepository.GetStudentById(studentId);
-                if (student != null)
-                {
-                    _upStreamChangeTracker.TrackStudentChange(studentId, operation, student);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Loads the latest group snapshot (StudentCount, Status...) and sends it upstream.
-        /// </summary>
-        private void SyncGroupSnapshot(int groupId, SyncOperationType operation)
-        {
-            try
-            {
-                var group = _groupRepository.GetGroupById(groupId);
-                if (group != null)
-                {
-                    _upStreamChangeTracker.TrackGroupChange(groupId, operation, group);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Loads the latest subgroup snapshot and synchronises it.
-        /// </summary>
-        private void SyncSubGroupSnapshot(int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                var subGroup = _subGroupRepository.GetSubGroupById(subGroupId);
-                if (subGroup != null)
-                {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroupId, operation, subGroup);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Reads StudentGroups row (StudentId + GroupId) and sends it upstream.
-        /// </summary>
-        private void SyncStudentGroupSnapshot(int studentId, int groupId, SyncOperationType operation)
-        {
-            try
-            {
-                var snapshot = GetStudentGroupSnapshot(studentId, groupId);
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentGroupChange(snapshot.Id, operation, snapshot);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Reads StudentSubGroups row (StudentId + GroupId + SubGroupId) and sends it upstream.
-        /// </summary>
-        private void SyncStudentSubGroupSnapshot(int studentId, int groupId, int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                var snapshot = GetStudentSubGroupSnapshot(studentId, groupId, subGroupId);
-                if (snapshot != null)
-                {
-                    _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, operation, snapshot);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Fetches the most recent StudentGroups entry for the given student/group pair.
-        /// </summary>
-        private StudentGroups GetStudentGroupSnapshot(int studentId, int groupId)
-        {
-            try
-            {
-                using (var connection = _connectionProvider.GetLocalConnection())
-                {
-                    connection.Open();
-                    const string sql = @"SELECT Id, StudentId, GroupId, PaymentStatus, DateOfPayment, Price, Discount, Status, UpdatedAt
-                                         FROM StudentGroups
-                                         WHERE StudentId = @sid AND GroupId = @gid
-                                         ORDER BY Id DESC
-                                         LIMIT 1";
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@sid", studentId);
-                        command.Parameters.AddWithValue("@gid", groupId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                return new StudentGroups
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    StudentId = reader.GetInt32("StudentId"),
-                                    GroupId = reader.GetInt32("GroupId"),
-                                    PaymentStatus = reader["PaymentStatus"] == DBNull.Value ? null : reader.GetString("PaymentStatus"),
-                                    DateOfPayment = reader["DateOfPayment"] == DBNull.Value ? (DateTime?)null : reader.GetDateTime("DateOfPayment"),
-                                    Price = reader["Price"] == DBNull.Value ? 0 : reader.GetDecimal("Price"),
-                                    Discount = reader["Discount"] == DBNull.Value ? 0 : reader.GetDouble("Discount"),
-                                    Status = reader["Status"] != DBNull.Value && reader.GetBoolean("Status"),
-                                    UpdatedAt = reader.GetDateTime("UpdatedAt")
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Fetches all StudentSubGroups entries for the given student/group pair.
-        /// </summary>
-        private List<StudentSubGroups> GetStudentSubGroupSnapshots(int studentId, int groupId)
-        {
-            var snapshots = new List<StudentSubGroups>();
-            try
-            {
-                using (var connection = _connectionProvider.GetLocalConnection())
-                {
-                    connection.Open();
-                    const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
-                                         FROM StudentSubGroups
-                                         WHERE StudentId = @sid AND GroupId = @gid AND (IsDeleted=0 OR IsDeleted IS NULL) AND Status=1";
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@sid", studentId);
-                        command.Parameters.AddWithValue("@gid", groupId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                snapshots.Add(new StudentSubGroups
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    StudentId = reader.GetInt32("StudentId"),
-                                    GroupId = reader.GetInt32("GroupId"),
-                                    SubGroupId = reader.GetInt32("SubGroupId"),
-                                    Status = reader["Status"] != DBNull.Value && reader.GetBoolean("Status"),
-                                    PaymentStatus = reader["PaymentStatus"] == DBNull.Value ? null : reader.GetString("PaymentStatus"),
-                                    DateOfPayment = reader["DateOfPayment"] == DBNull.Value ? (DateTime?)null : reader.GetDateTime("DateOfPayment"),
-                                    Price = reader["Price"] == DBNull.Value ? 0 : reader.GetDecimal("Price"),
-                                    Discount = reader["Discount"] == DBNull.Value ? 0 : reader.GetDouble("Discount"),
-                                    UpdatedAt = reader["UpdatedAt"] == DBNull.Value ? DateTime.MinValue : reader.GetDateTime("UpdatedAt")
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-            return snapshots;
-        }
-
-        private StudentSubGroups GetStudentSubGroupSnapshot(int studentId, int groupId, int subGroupId)
-        {
-            try
-            {
-                using (var connection = _connectionProvider.GetLocalConnection())
-                {
-                    connection.Open();
-                    const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
-                                         FROM StudentSubGroups
-                                         WHERE StudentId = @sid AND GroupId = @gid AND SubGroupId = @subId
-                                         ORDER BY Id DESC
-                                         LIMIT 1";
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@sid", studentId);
-                        command.Parameters.AddWithValue("@gid", groupId);
-                        command.Parameters.AddWithValue("@subId", subGroupId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                return new StudentSubGroups
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    StudentId = reader.GetInt32("StudentId"),
-                                    GroupId = reader.GetInt32("GroupId"),
-                                    SubGroupId = reader.GetInt32("SubGroupId"),
-                                    Status = reader["Status"] != DBNull.Value && reader.GetBoolean("Status"),
-                                    PaymentStatus = reader["PaymentStatus"] == DBNull.Value ? null : reader.GetString("PaymentStatus"),
-                                    DateOfPayment = reader["DateOfPayment"] == DBNull.Value ? (DateTime?)null : reader.GetDateTime("DateOfPayment"),
-                                    Price = reader["Price"] == DBNull.Value ? 0 : reader.GetDecimal("Price"),
-                                    Discount = reader["Discount"] == DBNull.Value ? 0 : reader.GetDouble("Discount"),
-                                    UpdatedAt = reader.GetDateTime("UpdatedAt")
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            return null;
         }
 
         #endregion

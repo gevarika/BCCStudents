@@ -112,11 +112,11 @@ namespace BCCStudents.Presentation
             this.Controls.Add(panelMain);
             this.Controls.Add(panelButtons);
 
-            // ჩვეულებრივი მომხმარებლებისთვის დავამალოთ "ახალი მომხმარებელი" ღილაკი
-            if (!_userContext.IsAdmin)
+            // ჩვეულებრივი მომხმარებლებისთვის — დამატება მხოლოდ CanAddUsers/Admin-ით
+            bool canAddUsers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanAddUsers);
+            btnAddUser.Visible = canAddUsers;
+            if (!_userContext.IsAdmin && !_userContext.CanAccessUsers())
             {
-                btnAddUser.Visible = false;
-                // ვცვლით ფორმის სათაურს
                 this.Text = "პროფილის მართვა";
                 FormTitleHelper.SetTitle(this, "პროფილის მართვა");
             }
@@ -128,8 +128,8 @@ namespace BCCStudents.Presentation
             {
                 List<UserModel> users;
 
-                // თუ ადმინისტრატორია, ყველა მომხმარებელს ვაჩვენებთ; თუ არა - მხოლოდ საკუთარს
-                if (_userContext.IsAdmin)
+                // სრული სია: Admin ან მომხმარებლების CRUD უფლება; სხვაგვარად მხოლოდ საკუთარი პროფილი
+                if (_userContext.IsAdmin || _userContext.CanAccessUsers())
                 {
                     users = _userService.GetAllUsers();
                 }
@@ -184,8 +184,11 @@ namespace BCCStudents.Presentation
                 var row = dgvUsers.SelectedRows[0];
                 _selectedUserId = (int)row.Cells["Id"].Value;
 
-                // ჩვეულებრივი მომხმარებლებს მხოლოდ საკუთარი პროფილის რედაქტირება შეუძლიათ
-                if (!_userContext.IsAdmin && _selectedUserId.Value != _userContext.UserId)
+                bool canEditOthers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanEditUsers);
+                bool canDeleteOthers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanDeleteUsers);
+                bool isSelf = _selectedUserId.Value == _userContext.UserId;
+
+                if (!canEditOthers && !isSelf)
                 {
                     btnEditUser.Enabled = false;
                     btnChangePassword.Enabled = false;
@@ -193,10 +196,9 @@ namespace BCCStudents.Presentation
                 }
                 else
                 {
-                    btnEditUser.Enabled = true;
-                    btnChangePassword.Enabled = true;
-                    // ადმინს ნებისმიერის წაშლა შეუძლია, ჩვეულებრივ მომხმარებელს - მხოლოდ საკუთარი თავის
-                    btnDeleteUser.Enabled = _userContext.IsAdmin || _selectedUserId.Value == _userContext.UserId;
+                    btnEditUser.Enabled = canEditOthers || isSelf;
+                    btnChangePassword.Enabled = canEditOthers || isSelf;
+                    btnDeleteUser.Enabled = canDeleteOthers || isSelf;
                 }
             }
             else
@@ -210,6 +212,12 @@ namespace BCCStudents.Presentation
 
         private void BtnAddUser_Click(object sender, EventArgs e)
         {
+            if (!_userContext.IsAdmin && !_userContext.HasPermission(Permission.CanAddUsers))
+            {
+                MessageBox.Show("თქვენ არ გაქვთ მომხმარებლის დამატების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             using (var form = new UserEditForm(_userService, null))
             {
                 if (form.ShowDialog() == DialogResult.OK)
@@ -223,8 +231,9 @@ namespace BCCStudents.Presentation
         {
             if (!_selectedUserId.HasValue) return;
 
-            // ჩვეულებრივი მომხმარებლებს მხოლოდ საკუთარი პროფილის რედაქტირება შეუძლიათ
-            if (!_userContext.IsAdmin && _selectedUserId.Value != _userContext.UserId)
+            bool isSelf = _selectedUserId.Value == _userContext.UserId;
+            bool canEditOthers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanEditUsers);
+            if (!canEditOthers && !isSelf)
             {
                 MessageBox.Show("თქვენ შეგიძლიათ მხოლოდ საკუთარი პროფილის რედაქტირება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -237,25 +246,24 @@ namespace BCCStudents.Presentation
                 return;
             }
 
-            // ჩვეულებრივი მომხმარებლებისთვის გამარტივებული ფორმა (მხოლოდ სახელი და ელფოსტა)
-            if (!_userContext.IsAdmin)
+            if (canEditOthers)
             {
-                using (var form = new UserProfileEditForm(_userService, user, _userContext))
+                using (var form = new UserEditForm(_userService, user))
                 {
                     if (form.ShowDialog() == DialogResult.OK)
                     {
-                        _userContext.Refresh(); // ანახლებს კონტექსტს თუ რედაქტირებულია მიმდინარე მომხმარებელი
+                        _userContext.Refresh();
                         LoadUsers();
                     }
                 }
             }
             else
             {
-                using (var form = new UserEditForm(_userService, user))
+                using (var form = new UserProfileEditForm(_userService, user, _userContext))
                 {
                     if (form.ShowDialog() == DialogResult.OK)
                     {
-                        _userContext.Refresh(); // ანახლებს კონტექსტს თუ რედაქტირებულია მიმდინარე მომხმარებელი
+                        _userContext.Refresh();
                         LoadUsers();
                     }
                 }
@@ -266,8 +274,9 @@ namespace BCCStudents.Presentation
         {
             if (!_selectedUserId.HasValue) return;
 
-            // ჩვეულებრივი მომხმარებლებს მხოლოდ საკუთარი პაროლის შეცვლა შეუძლიათ
-            if (!_userContext.IsAdmin && _selectedUserId.Value != _userContext.UserId)
+            bool isSelf = _selectedUserId.Value == _userContext.UserId;
+            bool canEditOthers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanEditUsers);
+            if (!canEditOthers && !isSelf)
             {
                 MessageBox.Show("თქვენ შეგიძლიათ მხოლოდ საკუთარი პაროლის შეცვლა!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -295,9 +304,9 @@ namespace BCCStudents.Presentation
 
             int targetUserId = _selectedUserId.Value;
             bool isSelf = targetUserId == _userContext.UserId;
+            bool canDeleteOthers = _userContext.IsAdmin || _userContext.HasPermission(Permission.CanDeleteUsers);
 
-            // ადმინს ნებისმიერის წაშლა შეუძლია, ჩვეულებრივ მომხმარებელს - მხოლოდ საკუთარი თავის
-            if (!_userContext.IsAdmin && !isSelf)
+            if (!canDeleteOthers && !isSelf)
             {
                 MessageBox.Show("თქვენ შეგიძლიათ მხოლოდ საკუთარი ანგარიშის წაშლა!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -375,6 +384,8 @@ namespace BCCStudents.Presentation
         private GroupBox grpPermissions;
         private Panel grpPanell;
         private Dictionary<CheckBox, string> _permissionCheckboxes;
+        private Button btnSelectAllPermissions;
+        private Button btnDeselectAllPermissions;
         private Button btnSave;
         private Button btnCancel;
 
@@ -438,14 +449,39 @@ namespace BCCStudents.Presentation
                 Size = new Size(440, 300),
                 AutoScrollOffset = new Point(0, 0)
             };
+            var panelPermissionActions = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 35
+            };
+
+            btnSelectAllPermissions = new Button
+            {
+                Text = "ყველას მონიშვნა",
+                Location = new Point(15, 5),
+                Size = new Size(130, 25)
+            };
+            btnSelectAllPermissions.Click += (_, _) => SetAllPermissionsChecked(true);
+
+            btnDeselectAllPermissions = new Button
+            {
+                Text = "მონიშვნის მოხსნა",
+                Location = new Point(155, 5),
+                Size = new Size(130, 25)
+            };
+            btnDeselectAllPermissions.Click += (_, _) => SetAllPermissionsChecked(false);
+
+            panelPermissionActions.Controls.Add(btnSelectAllPermissions);
+            panelPermissionActions.Controls.Add(btnDeselectAllPermissions);
+
             grpPanell = new Panel
             {
                 Dock = DockStyle.Fill,
                 AutoScroll = true
             };
             _permissionCheckboxes = new Dictionary<CheckBox, string>();
-            var permissions = Permission.GetAllPermissions();
-            int checkY = 25;
+            var permissions = Permission.GetAssignablePermissions();
+            int checkY = 10;
 
             foreach (var permission in permissions)
             {
@@ -461,6 +497,7 @@ namespace BCCStudents.Presentation
                 checkY += 30;
             }
             grpPermissions.Controls.Add(grpPanell);
+            grpPermissions.Controls.Add(panelPermissionActions);
             this.Controls.Add(grpPermissions);
             yPos += 320;
 
@@ -476,12 +513,19 @@ namespace BCCStudents.Presentation
             this.CancelButton = btnCancel;
         }
 
+        private void SetAllPermissionsChecked(bool isChecked)
+        {
+            foreach (var checkbox in _permissionCheckboxes.Keys)
+            {
+                checkbox.Checked = isChecked;
+            }
+        }
+
         private string GetPermissionDisplayName(string permission)
         {
             var names = new Dictionary<string, string>
             {
                 { Permission.CanImport, "იმპორტი" },
-                { Permission.CanDelete, "წაშლა" },
                 { Permission.CanAddStudents, "მოსწავლის დამატება" },
                 { Permission.CanEditStudents, "მოსწავლის რედაქტირება" },
                 { Permission.CanDeleteStudents, "მოსწავლის წაშლა" },
@@ -494,18 +538,13 @@ namespace BCCStudents.Presentation
                 { Permission.CanAddPayments, "გადახდის დამატება" },
                 { Permission.CanEditPayments, "გადახდის რედაქტირება" },
                 { Permission.CanDeletePayments, "გადახდის წაშლა" },
-                // Logs permissions removed - logs are read-only
-                // Reports CRUD permissions removed - reports are generated, not CRUD
                 { Permission.CanAddUsers, "მომხმარებლის დამატება" },
                 { Permission.CanEditUsers, "მომხმარებლის რედაქტირება" },
                 { Permission.CanDeleteUsers, "მომხმარებლის წაშლა" },
                 { Permission.CanEditSettings, "პარამეტრების რედაქტირება" },
-                { Permission.CanManageUsers, "მომხმარებლების მართვა" },
-                { Permission.CanManageGroups, "ჯგუფების მართვა" },
-                { Permission.CanManageStudents, "მოსწავლეების მართვა" },
-                { Permission.CanManagePayments, "გადახდების მართვა" },
                 { Permission.CanExportData, "მონაცემების ექსპორტი" },
-                { Permission.CanViewReports, "ანგარიშების ნახვა" }
+                { Permission.CanViewReports, "ანგარიშების ნახვა" },
+                { Permission.CanViewSystemLogs, "სისტემური ლოგების ნახვა" }
             };
             return names.ContainsKey(permission) ? names[permission] : permission;
         }
@@ -528,10 +567,39 @@ namespace BCCStudents.Presentation
                 catch { }
             }
 
+            ExpandManagePermissionsIntoCrud(permissions);
+
             foreach (var kvp in _permissionCheckboxes)
             {
                 kvp.Key.Checked = permissions.ContainsKey(kvp.Value) && permissions[kvp.Value];
             }
+        }
+
+        /// <summary>
+        /// ძველი CanManage* JSON → UI-ში შესაბამისი Add/Edit/Delete ჩექბოქსები.
+        /// </summary>
+        private static void ExpandManagePermissionsIntoCrud(Dictionary<string, bool> permissions)
+        {
+            if (permissions == null) return;
+
+            void Expand(string manageKey, params string[] crudKeys)
+            {
+                if (permissions.TryGetValue(manageKey, out var enabled) && enabled)
+                {
+                    foreach (var key in crudKeys)
+                        permissions[key] = true;
+                }
+            }
+
+            Expand(Permission.CanManageStudents,
+                Permission.CanAddStudents, Permission.CanEditStudents, Permission.CanDeleteStudents);
+            Expand(Permission.CanManageGroups,
+                Permission.CanAddGroups, Permission.CanEditGroups, Permission.CanDeleteGroups,
+                Permission.CanAddSubGroups, Permission.CanEditSubGroups, Permission.CanDeleteSubGroups);
+            Expand(Permission.CanManagePayments,
+                Permission.CanAddPayments, Permission.CanEditPayments, Permission.CanDeletePayments);
+            Expand(Permission.CanManageUsers,
+                Permission.CanAddUsers, Permission.CanEditUsers, Permission.CanDeleteUsers);
         }
 
         private void BtnSave_Click(object sender, EventArgs e)

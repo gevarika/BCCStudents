@@ -1,5 +1,4 @@
 using BCCStudents.Application.Interfaces;
-using BCCStudents.Application.Services.Sync;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
 using BCCStudents.Presentation.Logging;
@@ -21,15 +20,10 @@ namespace BCCStudents.Presentation
         private readonly IStatisticsService _statisticService;
         //private readonly IServiceProvider _serviceProvider;
         private readonly AutoFileDetectionManager _autoDetectionManager;
-        private readonly IDownStreamSyncService _downStreamSyncService;
-        private readonly IDownStreamSyncManager _downStreamSyncManager;
-        private readonly IUpStreamSyncManager _upStreamSyncManager;
-        private readonly IApplicationLogSyncManager _applicationLogSyncManager;
         private readonly IApplicationLogRetentionService _applicationLogRetentionService;
         private readonly ILogStorageSettings _logStorageSettings;
         private readonly IConnectionMonitor _connectionMonitor;
         private readonly IConnectionStatusService _connectionStatusService;
-        private readonly IApplicationStatus _appStatus;
         private bool _previousConnectionStatus; // წინა კავშირის სტატუსი MessageBox-ებისთვის
         private readonly IConfigurationService _configurationService;
         private readonly IUserContext _userContext;
@@ -50,7 +44,6 @@ namespace BCCStudents.Presentation
         private readonly PaymentFormFactory _paymentFormFactory;
         private readonly LogViewerFormFactory _logViewerFormFactory;
         private readonly PaymentTestFormFactory _paymentTestFormFactory;
-        private SyncStatusControl _syncStatusControl;
         private readonly AdminPanelFormFactory _adminPanelFormFactory;
         private readonly UserManagementFormFactory _userManagementFormFactory;
         private readonly BalanceTransferFormFactory _balanceTransferFormFactory;
@@ -63,10 +56,6 @@ namespace BCCStudents.Presentation
             ILoggerRepository loggerRepository,
             IStatisticsService statisticsService,
             AutoFileDetectionManager autoDetectionManager,
-            IDownStreamSyncService downStreamSyncService,
-            IDownStreamSyncManager downStreamSyncManager,
-            IUpStreamSyncManager upStreamSyncManager,
-            IApplicationLogSyncManager applicationLogSyncManager,
             IApplicationLogRetentionService applicationLogRetentionService,
             ILogStorageSettings logStorageSettings,
             IConnectionMonitor connectionMonitor,
@@ -86,7 +75,6 @@ namespace BCCStudents.Presentation
             BalanceTransferFormFactory balanceTransferFormFactory,
             UserManagementFormFactory userManagementFormFactory,
             PendingRegistrationMonitor pendingRegistrationMonitor,
-            IApplicationStatus appStatus,
             ISystemConfigurationService systemConfigService,
             IPaymentDateService paymentDateService,
             IUserContext userContext,
@@ -104,10 +92,6 @@ namespace BCCStudents.Presentation
             _paymentService = paymentService;
             _studentService = studentService ?? throw new ArgumentNullException(nameof(studentService));
             _autoDetectionManager = autoDetectionManager;
-            _downStreamSyncService = downStreamSyncService ?? throw new ArgumentNullException(nameof(downStreamSyncService));
-            _downStreamSyncManager = downStreamSyncManager ?? throw new ArgumentNullException(nameof(downStreamSyncManager));
-            _upStreamSyncManager = upStreamSyncManager ?? throw new ArgumentNullException(nameof(upStreamSyncManager));
-            _applicationLogSyncManager = applicationLogSyncManager ?? throw new ArgumentNullException(nameof(applicationLogSyncManager));
             _applicationLogRetentionService = applicationLogRetentionService ?? throw new ArgumentNullException(nameof(applicationLogRetentionService));
             _logStorageSettings = logStorageSettings ?? throw new ArgumentNullException(nameof(logStorageSettings));
             _logStorageSettings.TargetChanged += OnLogStorageTargetChanged;
@@ -130,7 +114,6 @@ namespace BCCStudents.Presentation
             _balanceTransferFormFactory = balanceTransferFormFactory ?? throw new ArgumentNullException(nameof(balanceTransferFormFactory));
             _pendingRegistrationMonitor = pendingRegistrationMonitor ?? throw new ArgumentNullException(nameof(pendingRegistrationMonitor));
             _pendingRegistrationMonitor.SetInvokeControl(this);
-            _appStatus = appStatus ?? throw new ArgumentNullException(nameof(appStatus));
             _systemConfigService = systemConfigService ?? throw new ArgumentNullException(nameof(systemConfigService));
             _paymentDateService = paymentDateService ?? throw new ArgumentNullException(nameof(paymentDateService));
             if (configService.IsTestDb)
@@ -142,7 +125,6 @@ namespace BCCStudents.Presentation
             LoadColumnSettings();
 
             SetupDataGridView();
-            SetupSyncStatus();
 
             // DataGridView სვეტების ზომის ცვლილების ივენთი - შენახვისთვის
             dgvPayments.ColumnWidthChanged += DgvPayments_ColumnWidthChanged;
@@ -237,32 +219,32 @@ namespace BCCStudents.Presentation
             // Buttons
             if (btnStudents != null)
             {
-                btnStudents.Enabled = _userContext.HasPermission(Permission.CanManageStudents);
-                btnStudents.Tag = $"Permission_{Permission.CanManageStudents}";
+                btnStudents.Enabled = _userContext.CanAccessStudents();
+                btnStudents.Tag = $"Permission_{Permission.CanAddStudents}";
             }
 
             if (btnGroups != null)
             {
-                btnGroups.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
-                btnGroups.Tag = $"Permission_{Permission.CanManageGroups}";
+                btnGroups.Enabled = _userContext.CanAccessGroups();
+                btnGroups.Tag = $"Permission_{Permission.CanAddGroups}";
             }
 
             if (btnGroupsEdit != null)
             {
-                btnGroupsEdit.Enabled = _userContext.HasPermission(Permission.CanManageGroups);
-                btnGroupsEdit.Tag = $"Permission_{Permission.CanManageGroups}";
+                btnGroupsEdit.Enabled = _userContext.CanAccessGroups();
+                btnGroupsEdit.Tag = $"Permission_{Permission.CanEditGroups}";
             }
 
             if (btnRefreshPaymentProcess != null)
             {
-                btnRefreshPaymentProcess.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
-                btnRefreshPaymentProcess.Tag = $"Permission_{Permission.CanManagePayments}";
+                btnRefreshPaymentProcess.Enabled = _userContext.CanAccessPayments();
+                btnRefreshPaymentProcess.Tag = $"Permission_{Permission.CanEditPayments}";
             }
 
             if (btnPaymentHistory != null)
             {
-                btnPaymentHistory.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
-                btnPaymentHistory.Tag = $"Permission_{Permission.CanManagePayments}";
+                btnPaymentHistory.Enabled = _userContext.CanAccessPayments();
+                btnPaymentHistory.Tag = $"Permission_{Permission.CanEditPayments}";
             }
 
             // Menu Items
@@ -274,20 +256,20 @@ namespace BCCStudents.Presentation
 
             if (PaymentsToolStripMenuItem != null)
             {
-                PaymentsToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
-                PaymentsToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
+                PaymentsToolStripMenuItem.Enabled = _userContext.CanAccessPayments();
+                PaymentsToolStripMenuItem.Tag = $"Permission_{Permission.CanEditPayments}";
             }
 
             if (PaymentToolStripMenuItem != null)
             {
-                PaymentToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
-                PaymentToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
+                PaymentToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanAddPayments);
+                PaymentToolStripMenuItem.Tag = $"Permission_{Permission.CanAddPayments}";
             }
 
             if (PaymentTestToolStripMenuItem != null)
             {
-                PaymentTestToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanManagePayments);
-                PaymentTestToolStripMenuItem.Tag = $"Permission_{Permission.CanManagePayments}";
+                PaymentTestToolStripMenuItem.Enabled = _userContext.CanAccessPayments();
+                PaymentTestToolStripMenuItem.Tag = $"Permission_{Permission.CanEditPayments}";
             }
 
             if (tsmAdminPanel != null)
@@ -297,53 +279,46 @@ namespace BCCStudents.Presentation
 
             if (LogsToolStripMenuItem != null)
             {
-                LogsToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanViewReports);
+                LogsToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanViewReports) ||
+                                               _userContext.HasPermission(Permission.CanViewSystemLogs);
                 LogsToolStripMenuItem.Tag = $"Permission_{Permission.CanViewReports}";
             }
 
             if (userManagementToolStripMenuItem != null)
             {
-                // ყველა ავტენტიფიცირებული მომხმარებელი შეძლებს წვდომას
-                // UserManagementForm-ში თავად არის შეზღუდვები admin/regular user-ისთვის
                 userManagementToolStripMenuItem.Enabled = _userContext.IsAuthenticated;
             }
         }
 
         private void btnStudents_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManageStudents))
+            if (!_userContext.CanAccessStudents())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // StudentManagementForm გამოძახება
             OpenOrActivateForm(_studentFormFactory.Invoke);
         }
         private void btnGroups_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManageGroups))
+            if (!_userContext.CanAccessGroups())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // GroupManagementForm გამოძახება
             OpenOrActivateForm(_groupManFormFactory.Invoke);
         }
 
         private void btnGroupsEdit_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManageGroups))
+            if (!_userContext.CanAccessGroups())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // GroupsEdit ფორმის გამოძახება
             OpenOrActivateForm(_groupsEditFormFactory.Invoke);
         }
 
@@ -396,20 +371,25 @@ namespace BCCStudents.Presentation
                 Log.Warning(ex, "შეცდომა ავტომატური ფაილების აღმოჩენისას");
             }
 
-            StartDownStreamSync();
-            StartUpStreamSync();
-            _applicationLogSyncManager.Stop();
             _applicationLogRetentionService.Start();
             // ბაზასთან კავშირის მონიტორინგის გაშვება
             StartConnectionMonitoring();
+
+            timer1.Interval = 60_000;
+            timer1.Tick += PendingRegistrationMonitorTimer_Tick;
+            timer1.Start();
 
             // გადახდების სიის ჩატვირთვა
             LoadUpcomingPayments();
         }
 
+        private void PendingRegistrationMonitorTimer_Tick(object? sender, EventArgs e)
+        {
+            _pendingRegistrationMonitor.Refresh();
+        }
+
         private void OnLogStorageTargetChanged(object sender, EventArgs e)
         {
-            _applicationLogSyncManager.Stop();
             SerilogBootstrap.RebuildLogger();
         }
 
@@ -874,8 +854,7 @@ namespace BCCStudents.Presentation
         }
         private void PaymentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -885,9 +864,6 @@ namespace BCCStudents.Presentation
         }
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _downStreamSyncManager.Stop();
-            _upStreamSyncManager.Stop();
-            _applicationLogSyncManager.Stop();
             _applicationLogRetentionService.Stop();
 
             // ბაზასთან კავშირის მონიტორინგის გაჩერება
@@ -924,79 +900,9 @@ namespace BCCStudents.Presentation
 
         }
 
-        /// <summary>
-        /// ინიციალიზაცია DownStream სინქრონიზაციის (სერვერიდან მონაცემების) და გაშვება პერიოდული სინქრონიზაცია.
-        /// </summary>
-        private void StartDownStreamSync()
-        {
-            _downStreamSyncManager.Start();
-        }
-
-        /// <summary>
-        /// ინიციალიზაცია UpStream სინქრონიზაციის (ლოკალური ცვლილებების სერვერზე გაგზავნა) და გაშვება პერიოდული სინქრონიზაცია.
-        /// </summary>
-        private void StartUpStreamSync()
-        {
-            if (_appStatus.IsAuthenticated)
-            {
-                _upStreamSyncManager.Start();
-            }
-        }
-
-        /// <summary>
-        /// ასახვა სინქრონიზაციის სტატუსის statusStrip-ში
-        /// </summary>
-        private void SetupSyncStatus()
-        {
-            _syncStatusControl = new SyncStatusControl();
-            // ვაყენებთ Control-ს Invoke-ისთვის
-            _syncStatusControl.SetInvokeControl(statusStrip1);
-            var statusItems = _syncStatusControl.GetStatusItems();
-
-            // ვამატებთ statusStrip-ში
-            foreach (var item in statusItems)
-            {
-                statusStrip1.Items.Add(item);
-            }
-
-            // Event handlers-ის დამატება
-            _downStreamSyncManager.SyncCompleted += (sender, args) =>
-            {
-                _syncStatusControl.UpdateDownStreamStatus(args);
-                RefreshUiAfterDownStreamSync(args);
-            };
-
-            _upStreamSyncManager.SyncCompleted += (sender, args) =>
-            {
-                _syncStatusControl.UpdateUpStreamStatus(args);
-            };
-        }
-
-        private void RefreshUiAfterDownStreamSync(SyncStatusEventArgs args)
-        {
-            if (args == null)
-            {
-                return;
-            }
-
-            if (InvokeRequired)
-            {
-                BeginInvoke(new Action(() => RefreshUiAfterDownStreamSync(args)));
-                return;
-            }
-
-            if (args.Success && args.RecordsSynced > 0)
-            {
-                LoadUpcomingPayments();
-            }
-
-            _pendingRegistrationMonitor.HandleSyncCompleted(args);
-        }
-
         private void PaymentToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.HasPermission(Permission.CanAddPayments))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -1005,7 +911,6 @@ namespace BCCStudents.Presentation
             var paymentForm = _paymentFormFactory.Invoke();
             paymentForm.ShowDialog();
             LoadUpcomingPayments(); // გადახდების სიის განახლება
-            // აქ შეიძლება დამატებითი ლოგიკა იყოს საჭირო
         }
 
         /// <summary>
@@ -1136,8 +1041,7 @@ namespace BCCStudents.Presentation
 
         private async void btnRefreshPaymentProcess_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -1172,8 +1076,7 @@ namespace BCCStudents.Presentation
 
         private void PaymentTestToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Security check
-            if (!_userContext.HasPermission(Permission.CanManagePayments))
+            if (!_userContext.CanAccessPayments())
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

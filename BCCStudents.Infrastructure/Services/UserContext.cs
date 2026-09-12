@@ -66,6 +66,25 @@ namespace BCCStudents.Infrastructure.Services
             return false;
         }
 
+        public bool HasAnyPermission(params string[] permissionNames)
+        {
+            if (permissionNames == null || permissionNames.Length == 0)
+                return false;
+
+            foreach (var permission in permissionNames)
+            {
+                if (HasPermission(permission))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool CanAccessStudents() => HasAnyPermission(Permission.StudentsAccessPermissions);
+        public bool CanAccessGroups() => HasAnyPermission(Permission.GroupsAccessPermissions);
+        public bool CanAccessPayments() => HasAnyPermission(Permission.PaymentsAccessPermissions);
+        public bool CanAccessUsers() => HasAnyPermission(Permission.UsersAccessPermissions);
+
         /// <summary>
         /// ამოწმებს აქვს თუ არა granular permission-ს parent permission
         /// მაგ: CanAddStudents -> CanManageStudents

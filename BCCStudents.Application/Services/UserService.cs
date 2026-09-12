@@ -9,13 +9,10 @@ namespace BCCStudents.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
-        //UserSession UserSession = new UserSession();
 
-        public UserService(IUserRepository userRepository, IUpStreamChangeTracker upStreamChangeTracker = null)
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
-            _upStreamChangeTracker = upStreamChangeTracker; // Optional - თუ null-ია, sync არ მოხდება
         }
         public UserModel GetUserByUsername(string username)
         { return _userRepository.GetUserByUsername(username); }
@@ -26,49 +23,34 @@ namespace BCCStudents.Application.Services
         public bool Login(string username, string password, out int userId)
         {
             userId = -1;
-            var user = _userRepository.GetUserByUsername(username);
 
+            var user = _userRepository.GetUserByUsername(username);
             if (user == null)
                 return false;
 
-            if (VerifyPassword(password, user.Password))
-            {
-                userId = user.Id;
-                var loginTime = DateTime.Now;
+            if (!VerifyPassword(password, user.Password))
+                return false;
 
-                // სესიის გაწერა პირდაპირ აქ
-                UserSession.Id = user.Id;
-                UserSession.UserName = user.UserName;
-                UserSession.FullName = user.FullName;
-                UserSession.Email = user.Email;
-                UserSession.Role = user.Role;
-                UserSession.LastLogin = loginTime;
+            userId = user.Id;
+            var loginTime = DateTime.Now;
 
-                _userRepository.UpdateLastLogin(userId, loginTime);
-                SyncUserAfterLogin(userId);
+            UserSession.Id = user.Id;
+            UserSession.UserName = user.UserName;
+            UserSession.FullName = user.FullName;
+            UserSession.Email = user.Email;
+            UserSession.Role = user.Role;
+            UserSession.LastLogin = loginTime;
 
-                return true;
-            }
+            _userRepository.UpdateLastLogin(userId, loginTime);
 
-            return false;
+            return true;
         }
+
         public void UpdateLastLogin(int userId, DateTime lastLogin)
         {
             _userRepository.UpdateLastLogin(userId, lastLogin);
-            SyncUserAfterLogin(userId);
         }
 
-        private void SyncUserAfterLogin(int userId)
-        {
-            if (_upStreamChangeTracker == null)
-                return;
-
-            var updatedUser = _userRepository.GetUserById(userId);
-            if (updatedUser != null)
-            {
-                _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
-            }
-        }
         private bool VerifyPassword(string password, string storedHash)
         {
             using (var sha256 = SHA256.Create())
@@ -106,19 +88,7 @@ namespace BCCStudents.Application.Services
                 CreatedAt = DateTime.Now
             };
 
-            int userId = _userRepository.RegisterUser(user);
-
-            // Sync to server
-            if (_upStreamChangeTracker != null && userId > 0)
-            {
-                var createdUser = _userRepository.GetUserById(userId);
-                if (createdUser != null)
-                {
-                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Insert, createdUser);
-                }
-            }
-
-            return userId;
+            return _userRepository.RegisterUser(user);
         }
         public bool IsCurrentUserAdmin()
         {
@@ -151,31 +121,11 @@ namespace BCCStudents.Application.Services
         public void UpdateUser(int userId, string fullName, string email, string role, string permissionsJson)
         {
             _userRepository.UpdateUser(userId, fullName, email, role, permissionsJson);
-
-            // Sync to server
-            if (_upStreamChangeTracker != null)
-            {
-                var updatedUser = _userRepository.GetUserById(userId);
-                if (updatedUser != null)
-                {
-                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
-                }
-            }
         }
 
         public void UpdateUserPermissions(int userId, string permissionsJson)
         {
             _userRepository.UpdatePermissions(userId, permissionsJson);
-
-            // Sync to server
-            if (_upStreamChangeTracker != null)
-            {
-                var updatedUser = _userRepository.GetUserById(userId);
-                if (updatedUser != null)
-                {
-                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
-                }
-            }
         }
 
         public void DeleteUser(int userId)
@@ -194,31 +144,12 @@ namespace BCCStudents.Application.Services
             }
 
             _userRepository.DeleteUser(userId);
-
-            // Sync to server
-            if (_upStreamChangeTracker != null)
-            {
-                _upStreamChangeTracker.TrackDelete("Users", userId);
-            }
         }
 
         public void UpdateUserPassword(int userId, string newPassword)
         {
             string passwordHash = HashPassword(newPassword);
             _userRepository.UpdatePassword(userId, passwordHash);
-
-            // Sync to server (Password changes are also synced)
-            if (_upStreamChangeTracker != null)
-            {
-                var updatedUser = _userRepository.GetUserById(userId);
-                if (updatedUser != null)
-                {
-                    _upStreamChangeTracker.TrackUserChange(userId, SyncOperationType.Update, updatedUser);
-                }
-            }
         }
     }
 }
-
-
-

@@ -106,39 +106,37 @@ namespace BCCStudents.Presentation
         /// </summary>
         private void ApplySecurityChecks()
         {
-            // btnDel - CanDelete permission
+            // btnDel / წაშლა — CanDeleteStudents (არა ძველი ზოგადი CanDelete)
             if (btndel != null)
             {
-                btndel.Tag = $"Permission_{Permission.CanDelete}";
-                btndel.Enabled = _userContext.HasPermission(Permission.CanDelete);
+                btndel.Tag = $"Permission_{Permission.CanDeleteStudents}";
+                btndel.Enabled = _userContext.HasPermission(Permission.CanDeleteStudents);
             }
 
-            // წაშლაToolStripMenuItem - CanDelete permission
             if (წაშლაToolStripMenuItem != null)
             {
-                წაშლაToolStripMenuItem.Tag = $"Permission_{Permission.CanDelete}";
-                წაშლაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanDelete);
+                წაშლაToolStripMenuItem.Tag = $"Permission_{Permission.CanDeleteStudents}";
+                წაშლაToolStripMenuItem.Enabled = _userContext.HasPermission(Permission.CanDeleteStudents);
             }
 
-            // btnSaveChanges - CanManageStudents permission
+            // btnSaveChanges / აქტივაცია — CanEditStudents
             if (btnSaveChanges != null)
             {
-                btnSaveChanges.Tag = $"Permission_{Permission.CanManageStudents}";
-                btnSaveChanges.Enabled = _userContext.HasPermission(Permission.CanManageStudents);
+                btnSaveChanges.Tag = $"Permission_{Permission.CanEditStudents}";
+                btnSaveChanges.Enabled = _userContext.HasPermission(Permission.CanEditStudents);
             }
 
-            // btnStudentActivation - CanManageStudents permission
             if (btnStudentActivation != null)
             {
-                btnStudentActivation.Tag = $"Permission_{Permission.CanManageStudents}";
-                btnStudentActivation.Enabled = _userContext.HasPermission(Permission.CanManageStudents);
+                btnStudentActivation.Tag = $"Permission_{Permission.CanEditStudents}";
+                btnStudentActivation.Enabled = _userContext.HasPermission(Permission.CanEditStudents);
             }
         }
 
         private void btnDel_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanDelete))
+            if (!_userContext.HasPermission(Permission.CanDeleteStudents))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -709,7 +707,7 @@ namespace BCCStudents.Presentation
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanManageStudents))
+            if (!_userContext.HasPermission(Permission.CanEditStudents))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -1432,7 +1430,7 @@ namespace BCCStudents.Presentation
         private void btnStudentActivation_Click(object sender, EventArgs e)
         {
             // Security check
-            if (!_userContext.HasPermission(Permission.CanManageStudents))
+            if (!_userContext.HasPermission(Permission.CanEditStudents))
             {
                 MessageBox.Show("თქვენ არ გაქვთ ამ ოპერაციის გამოყენების უფლება!", "წვდომა უარყოფილია", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

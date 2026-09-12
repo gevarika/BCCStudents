@@ -20,7 +20,6 @@ namespace BCCStudents.Application.Services
         private readonly IStudentSubGroupRepository _studentSubGroupRepository;
         private readonly IDatabaseConnectionProvider _connectionProvider;
         private readonly IStudentCodeGenerator _studentCodeGenerator;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
         private readonly ISystemConfigurationService _systemConfigService;
 
         public ImportServiceV2(
@@ -31,7 +30,6 @@ namespace BCCStudents.Application.Services
             IStudentSubGroupRepository studentSubGroupRepository,
             IDatabaseConnectionProvider connectionProvider,
             IStudentCodeGenerator studentCodeGenerator,
-            IUpStreamChangeTracker upStreamChangeTracker,
             ISystemConfigurationService systemConfigService)
         {
             _studentRepository = studentRepository ?? throw new ArgumentNullException(nameof(studentRepository));
@@ -41,7 +39,6 @@ namespace BCCStudents.Application.Services
             _studentSubGroupRepository = studentSubGroupRepository ?? throw new ArgumentNullException(nameof(studentSubGroupRepository));
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             _studentCodeGenerator = studentCodeGenerator ?? throw new ArgumentNullException(nameof(studentCodeGenerator));
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
             _systemConfigService = systemConfigService ?? throw new ArgumentNullException(nameof(systemConfigService));
         }
 
@@ -708,7 +705,6 @@ namespace BCCStudents.Application.Services
                         var student = _studentRepository.GetStudentById(studentId);
                         if (student != null)
                         {
-                            await _upStreamChangeTracker.TrackStudentChangeAsync(studentId, SyncOperationType.Insert, student);
                         }
                     }
                     catch
@@ -725,7 +721,6 @@ namespace BCCStudents.Application.Services
                         var studentGroup = _studentGroupRepository.GetById(studentGroupId);
                         if (studentGroup != null)
                         {
-                            await _upStreamChangeTracker.TrackStudentGroupChangeAsync(studentGroupId, SyncOperationType.Insert, studentGroup);
                         }
                     }
                     catch
@@ -742,7 +737,6 @@ namespace BCCStudents.Application.Services
                         var studentSubGroup = _studentSubGroupRepository.GetById(studentSubGroupId);
                         if (studentSubGroup != null)
                         {
-                            await _upStreamChangeTracker.TrackStudentSubGroupChangeAsync(studentSubGroupId, SyncOperationType.Insert, studentSubGroup);
                         }
                     }
                     catch
@@ -759,7 +753,6 @@ namespace BCCStudents.Application.Services
                         var group = _groupService.GetGroupById(groupId);
                         if (group != null)
                         {
-                            await _upStreamChangeTracker.TrackGroupChangeAsync(groupId, SyncOperationType.Update, group);
                         }
                     }
                     catch
@@ -776,7 +769,6 @@ namespace BCCStudents.Application.Services
                         var subGroup = _subGroupRepository.GetSubGroupById(subGroupId);
                         if (subGroup != null)
                         {
-                            await _upStreamChangeTracker.TrackSubGroupChangeAsync(subGroupId, SyncOperationType.Update, subGroup);
                         }
                     }
                     catch

@@ -10,13 +10,11 @@ namespace BCCStudents.Application.Services
     {
         private readonly ISubGroupRepository _subGroupRepository;
         private readonly IDatabaseConnectionProvider _connectionProvider;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public SubGroupService(ISubGroupRepository subGroupRepository, IDatabaseConnectionProvider connectionProvider, IUpStreamChangeTracker upStreamChangeTracker)
+        public SubGroupService(ISubGroupRepository subGroupRepository, IDatabaseConnectionProvider connectionProvider)
         {
             _subGroupRepository = subGroupRepository;
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
 
 
@@ -25,26 +23,16 @@ namespace BCCStudents.Application.Services
             for (int i = 1; i <= subGroupCount; i++)
             {
                 subGroup.Name = $"კლასი {i}";
-                int newSubGroupId = _subGroupRepository.AddSubGroup(subGroup);
-                SyncSubGroupSnapshot(newSubGroupId, SyncOperationType.Insert);
+                _subGroupRepository.AddSubGroup(subGroup);
             }
         }
         public int AddSubGroup(SubGroup subGroup)
         {
-            int newSubGroupId = _subGroupRepository.AddSubGroup(subGroup);
-
-            //IncrementSubGroupCount(newSubGroupId);
-            SyncSubGroupSnapshot(newSubGroupId, SyncOperationType.Insert);
-            return newSubGroupId;
+            return _subGroupRepository.AddSubGroup(subGroup);
         }
         public void DeleteStudentFromSubGroup(int studentId, int groupId)
         {
-            var snapshots = GetStudentSubGroupSnapshots(studentId, groupId);
             _subGroupRepository.DeleteStudentFromSubGroup(studentId, groupId);
-            foreach (var snapshot in snapshots)
-            {
-                _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, SyncOperationType.Delete, snapshot);
-            }
         }
         public List<SubGroup> GetStudentSubGroupsByStudentId(int studentId)
         {
@@ -53,6 +41,11 @@ namespace BCCStudents.Application.Services
         public List<SubGroup> GetSubGroupsByGroupId(int groupId)
         {
             return _subGroupRepository.GetSubGroupsByGroupId(groupId);
+        }
+
+        public List<SubGroup> GetAllSubGroupsByGroupId(int groupId)
+        {
+            return _subGroupRepository.GetAllSubGroupsByGroupId(groupId);
         }
         public int GetCurrentStudentSubGroupId(int studentId, int groupId, bool status)
         { return _subGroupRepository.GetCurrentStudentSubGroupId(studentId, groupId, status); }
@@ -71,7 +64,6 @@ namespace BCCStudents.Application.Services
         public void UpdateStudentSubGroupPaymentDate(int studentId, int groupId, int subGroupId, DateTime paymentDate)
         {
             _subGroupRepository.UpdateStudentSubGroupPaymentDate(studentId, groupId, subGroupId, paymentDate);
-            SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
         }
 
         public void UpdateStudentSubGroup(int studentId, int groupId, int subGroupId, int oldSubGroupId)
@@ -84,24 +76,14 @@ namespace BCCStudents.Application.Services
             {
                 // ძველი ქვეჯგუფის StudentCount-ის შემცირება (-1)
                 _subGroupRepository.DecreaseStudentCount(oldSubGroupId);
-                SyncSubGroupSnapshot(oldSubGroupId, SyncOperationType.Update);
 
                 // ახალი ქვეჯგუფის StudentCount-ის გაზრდა (+1)
                 _subGroupRepository.IncrementSubGroupCount(subGroupId, null, null);
-                SyncSubGroupSnapshot(subGroupId, SyncOperationType.Update);
             }
-
-            // StudentSubGroups-ის სინქრონიზაცია
-            SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
         }
         public bool UpdateStudentSubGroupPaymentStatus(int studentId, int groupId, int subGroupId, string status)
         {
-            var ok = _subGroupRepository.UpdateStudentSubGroupPaymentStatus(studentId, groupId, subGroupId, status);
-            if (ok)
-            {
-                SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
-            }
-            return ok;
+            return _subGroupRepository.UpdateStudentSubGroupPaymentStatus(studentId, groupId, subGroupId, status);
         }
         /*public void UpdateSubGroupStudentCount(int subGroupId, int count)
         { _subGroupRepository.UpdateSubGroupStudentCount(subGroupId, count); }
@@ -157,7 +139,6 @@ namespace BCCStudents.Application.Services
                 try
                 {
                     _subGroupRepository.DecreaseStudentCount(subGroupId);
-                    SyncSubGroupSnapshot(subGroupId, SyncOperationType.Update);
                 }
                 catch { }
             }
@@ -171,7 +152,6 @@ namespace BCCStudents.Application.Services
             try
             {
                 _subGroupRepository.UpdateSubGroup(subGroup);
-                SyncSubGroupSnapshot(subGroup.Id, SyncOperationType.Update);
                 return true;
             }
             catch
@@ -181,19 +161,29 @@ namespace BCCStudents.Application.Services
         }
 
         /// <summary>
-        /// Delete a subgroup by ID
+        /// ქვეჯგუფის სრული წაშლა (Hard Delete).
+        /// აქტიური მოსწავლეების არსებობისას იკრძალება.
         /// </summary>
         public bool DeleteSubGroup(int subGroupId)
         {
             try
             {
                 var snapshot = _subGroupRepository.GetSubGroupById(subGroupId);
-                _subGroupRepository.DeleteSubGroup(subGroupId);
-                if (snapshot != null)
+                if (snapshot == null)
+                    return false;
+
+                var activeStudents = _subGroupRepository.GetStudentCountInSubGroup(subGroupId);
+                if (activeStudents > 0)
                 {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroupId, SyncOperationType.Delete, snapshot);
+                    throw new InvalidOperationException(
+                        $"ქვეჯგუფში არის {activeStudents} აქტიური მოსწავლე. ჯერ გადაიტანეთ ან ამოიღეთ მოსწავლეები, შემდეგ წაშალეთ ქვეჯგუფი.");
                 }
-                return true;
+
+                return _subGroupRepository.DeleteSubGroup(subGroupId);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch
             {
@@ -208,13 +198,7 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                // 1) Update locally (all subgroups under the group)
                 _subGroupRepository.UpdateSubGroupsStatusByGroupId(groupId, status);
-                var updatedSubGroups = _subGroupRepository.GetAllSubGroupsByGroupId(groupId);
-                foreach (var subGroup in updatedSubGroups)
-                {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroup.Id, SyncOperationType.Update, subGroup);
-                }
                 return true;
             }
             catch
@@ -224,18 +208,13 @@ namespace BCCStudents.Application.Services
         }
 
         /// <summary>
-        /// Update tuition fee of all subgroups for a given group and sync to server
+        /// Update tuition fee of all subgroups for a given group
         /// </summary>
         public bool UpdateSubGroupsTuitionFeeByGroupId(int groupId, decimal newFee)
         {
             try
             {
                 _subGroupRepository.UpdateSubGroupsTuitionFeeByGroupId(groupId, newFee);
-                var updatedSubGroups = _subGroupRepository.GetAllSubGroupsByGroupId(groupId);
-                foreach (var subGroup in updatedSubGroups)
-                {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroup.Id, SyncOperationType.Update, subGroup);
-                }
                 return true;
             }
             catch
@@ -252,130 +231,12 @@ namespace BCCStudents.Application.Services
         {
             try
             {
-                var ok = _subGroupRepository.UpdateStudentSubGroupStatus(groupId, studentId, subGroupId, status);
-                if (ok)
-                {
-                    SyncStudentSubGroupSnapshot(studentId, groupId, subGroupId, SyncOperationType.Update);
-                }
-                return ok;
+                return _subGroupRepository.UpdateStudentSubGroupStatus(groupId, studentId, subGroupId, status);
             }
             catch
             {
                 return false;
             }
         }
-        #region Sync Helpers
-
-        /// <summary>
-        /// Loads single subgroup and triggers UpStream change tracking.
-        /// </summary>
-        private void SyncSubGroupSnapshot(int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                var subGroup = _subGroupRepository.GetSubGroupById(subGroupId);
-                if (subGroup != null)
-                {
-                    _upStreamChangeTracker.TrackSubGroupChange(subGroupId, operation, subGroup);
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Loads single StudentSubGroups record and triggers UpStream change tracking.
-        /// </summary>
-        private void SyncStudentSubGroupSnapshot(int studentId, int groupId, int subGroupId, SyncOperationType operation)
-        {
-            try
-            {
-                using (var connection = _connectionProvider.GetMySqlConnection())
-                {
-                    connection.Open();
-                    const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
-                                         FROM StudentSubGroups
-                                         WHERE StudentId = @sid AND GroupId = @gid AND SubGroupId = @subId
-                                         ORDER BY Id DESC
-                                         LIMIT 1";
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@sid", studentId);
-                        command.Parameters.AddWithValue("@gid", groupId);
-                        command.Parameters.AddWithValue("@subId", subGroupId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                var snapshot = new StudentSubGroups
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    StudentId = reader.GetInt32("StudentId"),
-                                    GroupId = reader.GetInt32("GroupId"),
-                                    SubGroupId = reader.GetInt32("SubGroupId"),
-                                    Status = reader["Status"] != DBNull.Value && reader.GetBoolean("Status"),
-                                    PaymentStatus = reader["PaymentStatus"] == DBNull.Value ? null : reader.GetString("PaymentStatus"),
-                                    DateOfPayment = reader["DateOfPayment"] == DBNull.Value ? (DateTime?)null : reader.GetDateTime("DateOfPayment"),
-                                    Price = reader["Price"] == DBNull.Value ? 0 : reader.GetDecimal("Price"),
-                                    Discount = reader["Discount"] == DBNull.Value ? 0 : reader.GetDouble("Discount"),
-                                    UpdatedAt = reader["UpdatedAt"] == DBNull.Value ? DateTime.MinValue : reader.GetDateTime("UpdatedAt")
-                                };
-                                _upStreamChangeTracker.TrackStudentSubGroupChange(snapshot.Id, operation, snapshot);
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// Loads all StudentSubGroups records for the student/group combination (before deletion).
-        /// </summary>
-        private List<StudentSubGroups> GetStudentSubGroupSnapshots(int studentId, int groupId)
-        {
-            var snapshots = new List<StudentSubGroups>();
-            try
-            {
-                using (var connection = _connectionProvider.GetMySqlConnection())
-                {
-                    connection.Open();
-                    const string sql = @"SELECT Id, StudentId, GroupId, SubGroupId, Status, PaymentStatus, DateOfPayment, Price, Discount, UpdatedAt
-                                         FROM StudentSubGroups
-                                         WHERE StudentId = @sid AND GroupId = @gid";
-                    using (var command = new MySqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@sid", studentId);
-                        command.Parameters.AddWithValue("@gid", groupId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                snapshots.Add(new StudentSubGroups
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    StudentId = reader.GetInt32("StudentId"),
-                                    GroupId = reader.GetInt32("GroupId"),
-                                    SubGroupId = reader.GetInt32("SubGroupId"),
-                                    Status = reader["Status"] != DBNull.Value && reader.GetBoolean("Status"),
-                                    PaymentStatus = reader["PaymentStatus"] == DBNull.Value ? null : reader.GetString("PaymentStatus"),
-                                    DateOfPayment = reader["DateOfPayment"] == DBNull.Value ? (DateTime?)null : reader.GetDateTime("DateOfPayment"),
-                                    Price = reader["Price"] == DBNull.Value ? 0 : reader.GetDecimal("Price"),
-                                    Discount = reader["Discount"] == DBNull.Value ? 0 : reader.GetDouble("Discount"),
-                                    UpdatedAt = reader["UpdatedAt"] == DBNull.Value ? DateTime.MinValue : reader.GetDateTime("UpdatedAt")
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-            return snapshots;
-        }
-
-        #endregion
     }
 }
-
-
-
-

@@ -13,16 +13,14 @@ namespace BCCStudents.Application.Services
         //private readonly IStudentService _studentService;
         private readonly ISubGroupService _subGroupService;
         private readonly IDatabaseConnectionProvider _connectionProvider;
-        private readonly IUpStreamChangeTracker _upStreamChangeTracker;
 
-        public GroupService(IDatabaseConnectionProvider connectionProvider, IGroupRepository groupRepository, IStudentGroupsService studentGroupsService, ISubGroupService subGroupService, IUpStreamChangeTracker upStreamChangeTracker)
+        public GroupService(IDatabaseConnectionProvider connectionProvider, IGroupRepository groupRepository, IStudentGroupsService studentGroupsService, ISubGroupService subGroupService)
         {
             _groupRepository = groupRepository;
             _studentGroupsService = studentGroupsService;
             //_studentService = studentService;
             _subGroupService = subGroupService;
             _connectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
-            _upStreamChangeTracker = upStreamChangeTracker ?? throw new ArgumentNullException(nameof(upStreamChangeTracker));
         }
 
         #region ==================== INSERT - ჯგუფის დამატება ====================
@@ -32,12 +30,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public int? AddGroup(Group group)
         {
-            var id = _groupRepository.InsertGroup(group);
-            if (id > 0)
-            {
-                SyncGroupSnapshot(id, SyncOperationType.Insert);
-            }
-            return id;
+            return _groupRepository.InsertGroup(group);
         }
 
         /// <summary>
@@ -45,12 +38,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public int? AddGroupByName(string name)
         {
-            var id = _groupRepository.InsertGroupByName(name);
-            if (id > 0)
-            {
-                SyncGroupSnapshot(id, SyncOperationType.Insert);
-            }
-            return id;
+            return _groupRepository.InsertGroupByName(name);
         }
 
         /// <summary>
@@ -58,12 +46,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public int? AddGroupWithPrice(string name, decimal price)
         {
-            var id = _groupRepository.InsertGroupWithPrice(name, price);
-            if (id > 0)
-            {
-                SyncGroupSnapshot(id, SyncOperationType.Insert);
-            }
-            return id;
+            return _groupRepository.InsertGroupWithPrice(name, price);
         }
 
         /// <summary>
@@ -71,12 +54,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public int? AddGroupWithTeacher(string name, decimal price, string teacher)
         {
-            var id = _groupRepository.InsertGroupWithTeacher(name, price, teacher);
-            if (id > 0)
-            {
-                SyncGroupSnapshot(id, SyncOperationType.Insert);
-            }
-            return id;
+            return _groupRepository.InsertGroupWithTeacher(name, price, teacher);
         }
 
         #endregion
@@ -186,9 +164,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupName(int groupId, string newName)
         {
-            var result = _groupRepository.UpdateGroupName(groupId, newName);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.UpdateGroupName(groupId, newName);
         }
 
         /// <summary>
@@ -200,7 +176,6 @@ namespace BCCStudents.Application.Services
             if (result)
             {
                 _subGroupService.UpdateSubGroupsTuitionFeeByGroupId(groupId, newPrice);
-                SyncGroupSnapshot(groupId, SyncOperationType.Update);
             }
             return result;
         }
@@ -210,9 +185,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupTeacher(int groupId, string newTeacher)
         {
-            var result = _groupRepository.UpdateGroupTeacher(groupId, newTeacher);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.UpdateGroupTeacher(groupId, newTeacher);
         }
 
         /// <summary>
@@ -220,14 +193,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupStatus(int groupId, bool newStatus)
         {
-            var result = _groupRepository.UpdateGroupStatus(groupId, newStatus);
-            if (result)
-            {
-                // ქვეჯგუფების სტატუსიც განვაახლოთ
-                //_subGroupService.UpdateSubGroupsStatusByGroupId(groupId, newStatus);
-                SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            }
-            return result;
+            return _groupRepository.UpdateGroupStatus(groupId, newStatus);
         }
 
         /// <summary>
@@ -235,9 +201,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupContractTemplatePath(int groupId, string newPath)
         {
-            var result = _groupRepository.UpdateGroupContractTemplatePath(groupId, newPath);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.UpdateGroupContractTemplatePath(groupId, newPath);
         }
 
         /// <summary>
@@ -245,9 +209,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool UpdateGroupMaxStudents(int groupId, int newMaxStudents)
         {
-            var result = _groupRepository.UpdateGroupMaxStudents(groupId, newMaxStudents);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.UpdateGroupMaxStudents(groupId, newMaxStudents);
         }
 
         #endregion
@@ -274,13 +236,12 @@ namespace BCCStudents.Application.Services
                     _subGroupService.UpdateSubGroupsStatusByGroupId(group.Id, group.Status);
                 }
 
-                // თუ ფასი შეიცვალა, განვაახლოთ ქვეჯგუფების ფასებიც და სინქრონდეს სერვერზე
+                // თუ ფასი შეიცვალა, განვაახლოთ ქვეჯგუფების ფასებიც
                 if (priceChanged)
                 {
                     _subGroupService.UpdateSubGroupsTuitionFeeByGroupId(group.Id, group.Price);
                 }
 
-                SyncGroupSnapshot(group.Id, SyncOperationType.Update);
                 return result;
             }
             catch
@@ -297,9 +258,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool IncrementGroupStudentCount(int groupId)
         {
-            var result = _groupRepository.IncrementStudentCount(groupId);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.IncrementStudentCount(groupId);
         }
 
         /// <summary>
@@ -307,9 +266,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool DecrementGroupStudentCount(int groupId)
         {
-            var result = _groupRepository.DecrementStudentCount(groupId);
-            if (result) SyncGroupSnapshot(groupId, SyncOperationType.Update);
-            return result;
+            return _groupRepository.DecrementStudentCount(groupId);
         }
 
         /// <summary>
@@ -321,7 +278,6 @@ namespace BCCStudents.Application.Services
             {
                 _groupRepository.IncrementStudentCount(groupId);
             }
-            SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
 
         /// <summary>
@@ -333,7 +289,6 @@ namespace BCCStudents.Application.Services
             {
                 _groupRepository.DecrementStudentCount(groupId);
             }
-            SyncGroupSnapshot(groupId, SyncOperationType.Update);
         }
 
         public bool RecalculateStudentCount(int groupId, MySqlConnection externalConnection, MySqlTransaction externalTransaction)
@@ -437,13 +392,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool DeleteGroup(int groupId)
         {
-            var snapshot = _groupRepository.GetGroupById(groupId);
-            var result = _groupRepository.DeleteGroup(groupId);
-            if (result && snapshot != null)
-            {
-                _upStreamChangeTracker.TrackGroupChange(groupId, SyncOperationType.Delete, snapshot);
-            }
-            return result;
+            return _groupRepository.DeleteGroup(groupId);
         }
 
         /// <summary>
@@ -451,35 +400,7 @@ namespace BCCStudents.Application.Services
         /// </summary>
         public bool HardDeleteGroup(int groupId)
         {
-            var snapshot = _groupRepository.GetGroupById(groupId);
-            var result = _groupRepository.HardDeleteGroup(groupId);
-            if (result && snapshot != null)
-            {
-                _upStreamChangeTracker.TrackGroupChange(groupId, SyncOperationType.Delete, snapshot);
-            }
-            return result;
-        }
-
-        #endregion
-        #region ==================== Sync Helpers ====================
-
-        /// <summary>
-        /// ჯგუფის სინქრონიზაცია სერვერთან
-        /// </summary>
-        private void SyncGroupSnapshot(int groupId, SyncOperationType operation)
-        {
-            try
-            {
-                var group = _groupRepository.GetGroupById(groupId);
-                if (group != null)
-                {
-                    _upStreamChangeTracker.TrackGroupChange(groupId, operation, group);
-                }
-            }
-            catch
-            {
-                // სინქრონიზაციის შეცდომა არ უნდა შეაჩეროს მთავარი ოპერაცია
-            }
+            return _groupRepository.HardDeleteGroup(groupId);
         }
 
         #endregion

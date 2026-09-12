@@ -16,8 +16,6 @@ namespace BCCStudents.Infrastructure.Data
             "Users",
             "Payments",
             "SystemConfig",
-            "SyncOutbox",
-            "SyncState",
             "PendingStudents",
             "PendingStudentGroups",
             "PendingStudentSubGroups",
@@ -38,29 +36,25 @@ namespace BCCStudents.Infrastructure.Data
                 return false;
             }
 
-            if (!config.UseLocalDb)
-            {
-                return true;
-            }
-
+            // Server-only: ინიციალიზაცია სერვერის connection string-ით.
             try
             {
-                var localConn = config.IsTestDb
-                    ? (string.IsNullOrWhiteSpace(config.LocalMySqlConnectionString_Test)
-                        ? config.LocalMySqlConnectionString
-                        : config.LocalMySqlConnectionString_Test)
-                    : config.LocalMySqlConnectionString;
+                var serverConn = config.IsTestDb
+                    ? (string.IsNullOrWhiteSpace(config.ServerMySqlConnectionString_Test)
+                        ? config.ServerMySqlConnectionString
+                        : config.ServerMySqlConnectionString_Test)
+                    : config.ServerMySqlConnectionString;
 
-                if (string.IsNullOrWhiteSpace(localConn))
+                if (string.IsNullOrWhiteSpace(serverConn))
                 {
-                    errorMessage = "Local MySQL connection string is empty.";
+                    errorMessage = "Server MySQL connection string is empty.";
                     return false;
                 }
 
-                var builder = new MySqlConnectionStringBuilder(localConn);
+                var builder = new MySqlConnectionStringBuilder(serverConn);
                 if (string.IsNullOrWhiteSpace(builder.Database))
                 {
-                    errorMessage = "Local MySQL connection string does not include a database name.";
+                    errorMessage = "Server MySQL connection string does not include a database name.";
                     return false;
                 }
 
@@ -78,7 +72,10 @@ namespace BCCStudents.Infrastructure.Data
                     }
                 }
 
-                var missingTables = GetMissingTables(localConn, databaseName);
+                builder.Database = databaseName;
+                var fullConn = builder.ConnectionString;
+
+                var missingTables = GetMissingTables(fullConn, databaseName);
                 if (missingTables.Count == 0)
                 {
                     return true;
@@ -90,14 +87,14 @@ namespace BCCStudents.Infrastructure.Data
                     return false;
                 }
 
-                using (var connection = new MySqlConnection(localConn))
+                using (var connection = new MySqlConnection(fullConn))
                 {
                     connection.Open();
                     var script = new MySqlScript(connection, File.ReadAllText(initScriptPath));
                     script.Execute();
                 }
 
-                missingTables = GetMissingTables(localConn, databaseName);
+                missingTables = GetMissingTables(fullConn, databaseName);
                 if (missingTables.Count > 0)
                 {
                     errorMessage = "Database initialized, but some required tables are still missing: " +

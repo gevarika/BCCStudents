@@ -23,6 +23,8 @@ namespace BCCStudents.Application.Interfaces
         // ქვეჯგუფების მიღება
         List<SubGroup> GetStudentSubGroupsByStudentId(int studentId);
         List<SubGroup> GetSubGroupsByGroupId(int groupId);
+        /// <summary>აქტიური და არააქტიური ქვეჯგუფები (რედაქტირების ფორმისთვის).</summary>
+        List<SubGroup> GetAllSubGroupsByGroupId(int groupId);
         DataTable GetAllSubGroupsFor();
         List<SubGroup> GetAllSubGroups();
         SubGroup GetFirstSubGroupByGroupId(int groupId);

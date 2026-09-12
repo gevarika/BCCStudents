@@ -1,10 +1,7 @@
 using BCCStudents.Application.Interfaces; // IConnectionStatusService-სთვის
 using BCCStudents.Application.Services;
 using BCCStudents.Application.Services.AutoFileDetection;
-using BCCStudents.Application.Services.Sync;
-using BCCStudents.Application.Services.Sync.DownStream;
 using BCCStudents.Application.Services.Logging;
-using BCCStudents.Application.Services.Sync.UpStream;
 using BCCStudents.Application.Services.Update;
 using BCCStudents.Domain.Entities;
 using BCCStudents.Domain.Interfaces;
@@ -69,7 +66,7 @@ namespace BCCStudents.Presentation
                 TaskScheduler.UnobservedTaskException += (_, args) =>
                 {
                     // სინქის Timer-ის fire-and-forget Task ან MySql SSL timeout — არა კრიტიკული UI შეცდომა.
-                    if (SyncConnectionHelper.IsLikelyConnectionError(args.Exception))
+                    if (ConnectionErrorHelper.IsLikelyConnectionError(args.Exception))
                     {
                         Log.Warning(args.Exception, "Unobserved task exception (connection/SSL, observed)");
                     }
@@ -142,38 +139,25 @@ namespace BCCStudents.Presentation
                         Environment.UserName);
                 }
 
-                var userService = serviceProvider.GetRequiredService<IUserService>();
-                var upStreamManager = serviceProvider.GetRequiredService<IUpStreamSyncManager>();
-                var downStreamManager = serviceProvider.GetRequiredService<IDownStreamSyncManager>();
-                var applicationLogSyncManager = serviceProvider.GetRequiredService<IApplicationLogSyncManager>();
                 var applicationLogRetention = serviceProvider.GetRequiredService<IApplicationLogRetentionService>();
 
                 System.Windows.Forms.Application.ApplicationExit += (_, _) =>
                 {
-                    upStreamManager.Stop();
-                    downStreamManager.Stop();
-                    applicationLogSyncManager.Stop();
                     applicationLogRetention.Stop();
                     AuditLogFactory.CloseAndFlush();
                     SerilogBootstrap.Shutdown();
                 };
 
-                Form initialForm;
-
-                if (userService.IsUserRegistered())
-                {
-                    initialForm = serviceProvider.GetRequiredService<LoginForm>();
-                }
-                else
-                {
-                    initialForm = serviceProvider.GetRequiredService<RegisterForm>();
-                    UserSession.FirstStart = true;
-                }
-
+                var initialForm = ResolveInitialForm(serviceProvider);
                 System.Windows.Forms.Application.Run(initialForm);
             }
 
 
+        }
+
+        private static Form ResolveInitialForm(ServiceProvider serviceProvider)
+        {
+            return serviceProvider.GetRequiredService<LoginForm>();
         }
         private static void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
         {
@@ -185,7 +169,7 @@ namespace BCCStudents.Presentation
         {
             // MySql.Data-ის შიდა SSL/timeout timer ზოგჯერ აქ მოდის (ConnectionMonitor-ის გარდა, სინქის Open-ებიდან).
             // უკვე ლოგდება sync-ში/Connection-ში — მომხმარებელს არ ვაჩვენებთ კრიტიკულ MessageBox-ს.
-            if (e.ExceptionObject is Exception ex && SyncConnectionHelper.IsLikelyConnectionError(ex))
+            if (e.ExceptionObject is Exception ex && ConnectionErrorHelper.IsLikelyConnectionError(ex))
             {
                 Log.Warning(ex, "Background connection error at AppDomain boundary (terminating={IsTerminating})", e.IsTerminating);
                 return;
@@ -249,10 +233,8 @@ namespace BCCStudents.Presentation
             services.AddScoped<IApplicationLogRepository, ApplicationLogRepository>();
             services.AddScoped<IApplicationLogQueryService, ApplicationLogQueryService>();
             services.AddScoped<IApplicationLogDeleteService, ApplicationLogDeleteService>();
-            services.AddScoped<IApplicationLogSyncService, ApplicationLogSyncService>();
             services.AddSingleton<ILogStorageSettings, LogStorageSettingsService>();
             services.AddSingleton<ApplicationLogWritePolicy>();
-            services.AddSingleton<IApplicationLogSyncManager, ApplicationLogSyncManager>();
             services.AddSingleton<IApplicationLogRetentionService, ApplicationLogRetentionService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ISubGroupRepository, SubGroupRepository>();
@@ -260,7 +242,6 @@ namespace BCCStudents.Presentation
             services.AddScoped<IPendingStudentRepository, PendingStudentRepository>();
             services.AddScoped<IPendingStudentGroupRepository, PendingStudentGroupRepository>();
             services.AddScoped<IFileTrackingRepository, FileTrackingRepository>();
-            services.AddScoped<IUpStreamSyncRepository, UpStreamSyncRepository>();
             services.AddScoped<BCCStudents.Domain.Interfaces.ISystemConfigurationRepository, BCCStudents.Infrastructure.Repositories.SystemConfigurationRepository>();
 
 
@@ -298,23 +279,7 @@ namespace BCCStudents.Presentation
             // IUpdateService იმავე ინსტანციაზე გადამისამართდება, რომ ორმაგი ობიექტი არ შეიქმნას.
             services.AddSingleton<UpdateService>();
             services.AddSingleton<IUpdateService>(sp => sp.GetRequiredService<UpdateService>());
-            // Sync Services
-            services.AddSingleton<ISyncLogger, SyncLogger>();
-            services.AddScoped<IDownStreamSyncRepository, BCCStudents.Infrastructure.Repositories.DownStreamSyncRepository>();
-            services.AddScoped<IDownStreamDataFetcher, DownStreamDataFetcher>();
-            services.AddScoped<IDownStreamConflictResolver, DownStreamConflictResolver>();
-            services.AddScoped<IDownStreamSyncService, DownStreamSyncService>();
-            services.AddSingleton<IDownStreamSyncManager>(sp =>
-                new DownStreamSyncManager(
-                    sp.GetRequiredService<IDownStreamSyncService>(),
-                    sp.GetRequiredService<ISyncLogger>(),
-                    TimeSpan.FromMinutes(1)));
             services.AddSingleton<PendingRegistrationMonitor>();
-            services.AddScoped<IUpStreamSyncWatermarkAdvancer, UpStreamSyncWatermarkAdvancer>();
-            services.AddScoped<IUpStreamSyncService, UpStreamSyncService>();
-            services.AddScoped<IUpStreamPayloadBuilder, UpStreamPayloadBuilder>();
-            services.AddScoped<IUpStreamChangeTracker, UpStreamChangeTracker>();
-            services.AddSingleton<IUpStreamSyncManager, UpStreamSyncManager>();
 
             // AutoFileDetection კონფიგურაცია
             services.AddSingleton<AutoFileDetectionConfig>(provider =>
@@ -349,7 +314,6 @@ namespace BCCStudents.Presentation
             // აქ მხოლოდ UI ელემენტები რეგისტრირდება (Transient).
             //services.AddTransient<SetupWizardForm>();
             services.AddTransient<LoginForm>();
-            services.AddTransient<RegisterForm>();
             services.AddTransient<MainForm>();
             services.AddTransient<mainFormFactory>(servicepProvider =>
             {

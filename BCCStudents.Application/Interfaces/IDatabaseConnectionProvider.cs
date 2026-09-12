@@ -3,28 +3,23 @@ using MySql.Data.MySqlClient;
 namespace BCCStudents.Application.Interfaces
 {
     /// <summary>
-    /// ინტერფეისი მონაცემთა ბაზასთან კავშირის მისაღებად
-    /// Clean Architecture-ის დაცვით - Application Layer არ დამოკიდებულია Infrastructure Layer-ზე პირდაპირ
+    /// მონაცემთა ბაზასთან კავშირი. Server-only რეჟიმი: ყველა getter სერვერის MySQL-ს უბრუნებს.
     /// </summary>
     public interface IDatabaseConnectionProvider
     {
         /// <summary>
-        /// აბრუნებს ლოკალურ მონაცემთა ბაზასთან კავშირს
+        /// Deprecated alias — იგივე რაც GetServerConnection() (server-only).
         /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
         MySqlConnection GetLocalConnection();
 
         /// <summary>
-        /// აბრუნებს სერვერზე მონაცემთა ბაზასთან კავშირს
+        /// სერვერის MySQL კავშირი (ერთადერთი სამუშაო ბაზა).
         /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
         MySqlConnection GetServerConnection();
 
         /// <summary>
-        /// აბრუნებს მონაცემთა ბაზასთან კავშირს (ლოკალური ან სერვერი - კონფიგურაციის მიხედვით)
+        /// სერვერის MySQL კავშირი (GetServerConnection-ის იგივე).
         /// </summary>
-        /// <returns>MySqlConnection ინსტანსი</returns>
         MySqlConnection GetMySqlConnection();
     }
 }
-

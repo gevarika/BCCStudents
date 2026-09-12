@@ -38,9 +38,7 @@ namespace BCCStudents.Domain.Interfaces
         DateTime LastBackupTime { get; set; }
         bool DbChangedSinceLastBackup { get; set; }
 
-        // Sync / update flags
-        bool AutoDownstreamSyncEnabled { get; set; }
-        bool AutoUpstreamSyncEnabled { get; set; }
+        // Update flags
         bool AutoUpdateEnabled { get; set; }
         bool UpgradeRequired { get; set; }
 
